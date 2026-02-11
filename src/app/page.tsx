@@ -1,5 +1,14 @@
+import { MarketingLayout } from "@/components/home/marketing-layout";
+import { LanguageProvider } from "@/lib/language-context";
+
 export default function Home() {
   return (
-    <div className="min-h-screen bg-muted/40" />
+    <LanguageProvider>
+      <MarketingLayout>
+        <div className="px-6">
+          {/* Homepage content will go here */}
+        </div>
+      </MarketingLayout>
+    </LanguageProvider>
   );
 }

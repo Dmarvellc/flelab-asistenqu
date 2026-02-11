@@ -20,18 +20,21 @@ export function middleware(request: NextRequest) {
   if (matchedPrefix) {
     const requiredRole = routeRoles[matchedPrefix]
     const isLoginPage = path === `${matchedPrefix}/login`
+    const isRegisterPage = path === `${matchedPrefix}/register`
+    // Allow public access to login and register pages
+    const isPublicPage = isLoginPage || isRegisterPage
 
-    // Case 1: User is on login page
-    if (isLoginPage) {
+    if (isPublicPage) {
       // If user is already logged in with the correct role, redirect to dashboard
-      if (roleCookie === requiredRole) {
+      // Only redirect if they are on the login page specifically to avoid redirect loops or annoyance
+      if (isLoginPage && roleCookie === requiredRole) {
         return NextResponse.redirect(new URL(matchedPrefix, request.url))
       }
-      // Otherwise, allow access to login page
+      // Otherwise, allow access
       return NextResponse.next()
     }
 
-    // Case 2: User is on a protected page (not login)
+    // Case 2: User is on a protected page
     // If user does not have the correct role, redirect to login
     if (roleCookie !== requiredRole) {
       return NextResponse.redirect(new URL(`${matchedPrefix}/login`, request.url))

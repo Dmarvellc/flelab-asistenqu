@@ -6,19 +6,13 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, Eye, EyeOff, Loader2 } from "lucide-react";
 
 export default function DeveloperLoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -46,12 +40,12 @@ export default function DeveloperLoginPage() {
         data.user?.role !== "developer" &&
         data.user?.role !== "super_admin"
       ) {
-        setError("This account is not authorized for developer access.");
+        setError("Account authorized for developer access only.");
         setLoading(false);
         return;
       }
 
-      // Successful login
+      localStorage.setItem("user", JSON.stringify(data.user));
       router.push("/developer");
     } catch (err) {
       console.error(err);
@@ -61,22 +55,26 @@ export default function DeveloperLoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-muted/40 p-4">
-      <Card className="mx-auto w-full max-w-md">
-        <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold">Developer Login</CardTitle>
-          <CardDescription>
+    <div className="min-h-screen bg-background flex flex-col justify-center items-center p-6 md:p-12">
+      <div className="w-full max-w-md space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+
+        {/* Header - Left Aligned */}
+        <div className="space-y-2 text-left w-full border-b pb-6">
+          <h1 className="text-3xl font-bold tracking-tight">Login Developer</h1>
+          <p className="text-muted-foreground">
             Enter your credentials to access the developer console.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {error && (
-              <div className="flex items-center gap-2 rounded-md bg-destructive/15 p-3 text-sm text-destructive">
-                <AlertCircle className="h-4 w-4" />
-                {error}
-              </div>
-            )}
+          </p>
+        </div>
+
+        <div className="space-y-6">
+          {error && (
+            <div className="flex items-center gap-2 rounded-lg border border-red-500/20 bg-red-50/50 p-4 text-red-600 animate-in slide-in-from-top-2">
+              <AlertCircle className="h-5 w-5" />
+              <p className="text-sm font-medium">{error}</p>
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
@@ -87,36 +85,64 @@ export default function DeveloperLoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={loading}
+                className="h-11"
               />
             </div>
+
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                disabled={loading}
-              />
+              <div className="flex items-center justify-between">
+                <Label htmlFor="password">Password</Label>
+                <Link
+                  href="#"
+                  className="text-xs font-medium text-primary hover:underline hover:text-primary/80"
+                >
+                  Forgot Password?
+                </Link>
+              </div>
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  disabled={loading}
+                  className="h-11 pr-10"
+                  placeholder="Enter your password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-1"
+                  tabIndex={-1}
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </button>
+              </div>
             </div>
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Signing in..." : "Sign In"}
+
+            <Button type="submit" size="lg" className="w-full h-12 text-base font-semibold mt-4" disabled={loading}>
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Signing in...
+                </>
+              ) : "Sign In"}
             </Button>
           </form>
-          <div className="mt-4 text-center text-sm text-muted-foreground">
-            <p>
-              Not a developer?{" "}
-              <Link
-                href="/agent/login" // Changed to new structure if agent login moves
-                className="underline hover:text-primary"
-              >
-                Agent Login
-              </Link>
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+
+          <p className="text-center text-muted-foreground text-sm">
+            Not a developer?{" "}
+            <Link href="/agent/login" className="font-semibold text-primary hover:underline">
+              Agent Login
+            </Link>
+          </p>
+        </div>
+      </div>
     </div>
   );
 }

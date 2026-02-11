@@ -19,25 +19,25 @@ export default function HospitalLayout({ children }: { children: React.ReactNode
       <SidebarHeader>
         <Link href="/hospital" className="flex items-center gap-2 font-semibold">
           <Building2 className="h-6 w-6" />
-          <span>Hospital Admin</span>
+          <span>Admin Rumah Sakit</span>
         </Link>
       </SidebarHeader>
       <SidebarContent>
         <NavItem href="/hospital" icon={LayoutDashboard} active>
-          Dashboard
+          Dasbor
         </NavItem>
         <NavItem href="/hospital/patients" icon={Users}>
-          Patients
+          Pasien
         </NavItem>
         <NavItem href="/hospital/reports" icon={Activity}>
-          Reports
+          Laporan
         </NavItem>
       </SidebarContent>
       <SidebarFooter>
         <Button variant="ghost" className="w-full justify-start gap-2" asChild>
           <Link href="/api/auth/logout">
             <LogOut className="h-4 w-4" />
-            Sign Out
+            Keluar
           </Link>
         </Button>
       </SidebarFooter>

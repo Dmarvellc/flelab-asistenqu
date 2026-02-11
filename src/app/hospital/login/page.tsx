@@ -61,9 +61,9 @@ export default function HospitalLoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-muted/40 p-4">
       <Card className="mx-auto w-full max-w-md">
         <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold">Hospital Login</CardTitle>
+          <CardTitle className="text-2xl font-bold">Login Rumah Sakit</CardTitle>
           <CardDescription>
-            Enter your credentials to access the hospital dashboard
+            Masukkan kredensial Anda untuk mengakses dasbor rumah sakit
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -79,7 +79,7 @@ export default function HospitalLoginPage() {
               <Input
                 id="email"
                 type="email"
-                placeholder="name@hospital.com"
+                placeholder="nama@rumahsakit.com"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -87,7 +87,7 @@ export default function HospitalLoginPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">Kata Sandi</Label>
               <Input
                 id="password"
                 type="password"
@@ -98,7 +98,7 @@ export default function HospitalLoginPage() {
               />
             </div>
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Signing in..." : "Login"}
+              {loading ? "Masuk..." : "Masuk"}
             </Button>
           </form>
         </CardContent>

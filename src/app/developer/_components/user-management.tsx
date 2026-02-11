@@ -3,7 +3,13 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import {
   Card,
@@ -155,12 +161,16 @@ export default function UserManagement() {
               <div className="space-y-2">
                 <Label htmlFor="role">Role</Label>
                 <Select
-                  id="role"
                   value={createRole}
-                  onChange={(e) => setCreateRole(e.target.value)}
+                  onValueChange={setCreateRole}
                 >
-                  <option value="hospital_admin">Hospital Admin</option>
-                  <option value="insurance_admin">Insurance Admin</option>
+                  <SelectTrigger id="role">
+                    <SelectValue placeholder="Select role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="hospital_admin">Hospital Admin</SelectItem>
+                    <SelectItem value="insurance_admin">Insurance Admin</SelectItem>
+                  </SelectContent>
                 </Select>
               </div>
               <Button type="submit" disabled={loading} className="w-full">

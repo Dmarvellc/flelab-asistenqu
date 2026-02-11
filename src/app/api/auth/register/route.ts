@@ -13,6 +13,12 @@ export async function POST(request: Request) {
     email?: string;
     password?: string;
     role?: string;
+    fullName?: string;
+    nik?: string;
+    phoneNumber?: string;
+    address?: string;
+    birthDate?: string;
+    gender?: string;
   };
 
   if (!body.email || !body.password || !body.role) {
@@ -32,6 +38,12 @@ export async function POST(request: Request) {
       email: body.email,
       password: body.password,
       role: body.role,
+      fullName: body.fullName,
+      nik: body.nik,
+      phoneNumber: body.phoneNumber,
+      address: body.address,
+      birthDate: body.birthDate,
+      gender: body.gender,
     });
     return NextResponse.json({ user });
   } catch (error) {
