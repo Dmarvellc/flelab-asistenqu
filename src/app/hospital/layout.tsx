@@ -2,7 +2,8 @@
 
 import { usePathname } from "next/navigation";
 import { DashboardLayout, DashboardSidebar, SidebarHeader, SidebarContent, SidebarFooter, NavItem, DashboardHeader } from "@/components/dashboard/dashboard-layout"
-import { LayoutDashboard, Activity, Building2, Users, LogOut } from "lucide-react"
+import { EmergencyButton } from "@/components/claims/emergency-button"
+import { LayoutDashboard, Activity, Users, LogOut, FileText } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 
@@ -18,7 +19,6 @@ export default function HospitalLayout({ children }: { children: React.ReactNode
     <DashboardSidebar>
       <SidebarHeader>
         <Link href="/hospital" className="flex items-center gap-2 font-semibold">
-          <Building2 className="h-6 w-6" />
           <span>Admin Rumah Sakit</span>
         </Link>
       </SidebarHeader>
@@ -28,6 +28,9 @@ export default function HospitalLayout({ children }: { children: React.ReactNode
         </NavItem>
         <NavItem href="/hospital/patients" icon={Users}>
           Pasien
+        </NavItem>
+        <NavItem href="/hospital/claims" icon={FileText}>
+          Klaim
         </NavItem>
         <NavItem href="/hospital/reports" icon={Activity}>
           Laporan
@@ -47,6 +50,7 @@ export default function HospitalLayout({ children }: { children: React.ReactNode
   return (
     <DashboardLayout sidebar={sidebar} header={<DashboardHeader mobileSidebar={sidebar} />}>
       {children}
+      <EmergencyButton unitLabel="Tim Rumah Sakit" />
     </DashboardLayout>
   )
 }

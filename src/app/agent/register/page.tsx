@@ -180,11 +180,38 @@ export default function AgentRegisterPage() {
         setFormData((prev) => ({ ...prev, [name]: value }));
     };
 
+    const [fieldErrors, setFieldErrors] = useState<Record<string, boolean>>({});
+
+    const validateForm = () => {
+        const newErrors: Record<string, boolean> = {};
+        let isValid = true;
+
+        const fields = ['email', 'password', 'fullName', 'nik', 'phoneNumber', 'birthDate', 'gender', 'addressStreet', 'provinceId', 'regencyId', 'districtId', 'villageId', 'postalCode'];
+        fields.forEach(field => {
+            if (!formData[field as keyof typeof formData]) {
+                newErrors[field] = true;
+                isValid = false;
+            }
+        });
+
+        setFieldErrors(newErrors);
+        
+        if (!isValid) {
+            setError("Mohon lengkapi kolom yang ditandai merah.");
+        }
+        return isValid;
+    };
+
     async function handleSubmit(event: React.FormEvent) {
         event.preventDefault();
         setLoading(true);
         setMessage(null);
         setError(null);
+
+        if (!validateForm()) {
+            setLoading(false);
+            return;
+        }
 
         if (!nikValidation.valid) {
             setError("Mohon perbaiki data agar sesuai dengan NIK.");
@@ -288,9 +315,12 @@ export default function AgentRegisterPage() {
                                         type="email"
                                         required
                                         value={formData.email}
-                                        onChange={handleChange}
+                                        onChange={(e) => {
+                                            handleChange(e);
+                                            if (fieldErrors.email) setFieldErrors({...fieldErrors, email: false});
+                                        }}
                                         placeholder="nama@email.com"
-                                        className="h-11"
+                                        className={cn("h-11", fieldErrors.email && "border-red-500 focus-visible:ring-red-500")}
                                     />
                                 </div>
                                 <div className="space-y-2">
@@ -301,9 +331,12 @@ export default function AgentRegisterPage() {
                                         type="password"
                                         required
                                         value={formData.password}
-                                        onChange={handleChange}
+                                        onChange={(e) => {
+                                            handleChange(e);
+                                            if (fieldErrors.password) setFieldErrors({...fieldErrors, password: false});
+                                        }}
                                         placeholder="Minimal 8 karakter"
-                                        className="h-11"
+                                        className={cn("h-11", fieldErrors.password && "border-red-500 focus-visible:ring-red-500")}
                                     />
                                 </div>
                             </div>
@@ -320,8 +353,11 @@ export default function AgentRegisterPage() {
                                     type="text"
                                     required
                                     value={formData.fullName}
-                                    onChange={handleChange}
-                                    className="h-11 font-medium"
+                                    onChange={(e) => {
+                                        handleChange(e);
+                                        if (fieldErrors.fullName) setFieldErrors({...fieldErrors, fullName: false});
+                                    }}
+                                    className={cn("h-11 font-medium", fieldErrors.fullName && "border-red-500 focus-visible:ring-red-500")}
                                 />
                             </div>
 
@@ -339,8 +375,9 @@ export default function AgentRegisterPage() {
                                         onChange={(e) => {
                                             const val = e.target.value.replace(/[^0-9]/g, '');
                                             if (val.length <= 16) handleChange({ ...e, target: { ...e.target, name: 'nik', value: val } });
+                                            if (fieldErrors.nik) setFieldErrors({...fieldErrors, nik: false});
                                         }}
-                                        className={cn("h-11", !nikValidation.valid && "border-red-500 ring-red-500")}
+                                        className={cn("h-11", (!nikValidation.valid || fieldErrors.nik) && "border-red-500 ring-red-500")}
                                         placeholder="16 Digit NIK"
                                     />
                                 </div>
@@ -352,8 +389,11 @@ export default function AgentRegisterPage() {
                                         type="tel"
                                         required
                                         value={formData.phoneNumber}
-                                        onChange={handleChange}
-                                        className="h-11"
+                                        onChange={(e) => {
+                                            handleChange(e);
+                                            if (fieldErrors.phoneNumber) setFieldErrors({...fieldErrors, phoneNumber: false});
+                                        }}
+                                        className={cn("h-11", fieldErrors.phoneNumber && "border-red-500 focus-visible:ring-red-500")}
                                     />
                                 </div>
                             </div>
@@ -367,8 +407,11 @@ export default function AgentRegisterPage() {
                                         type="date"
                                         required
                                         value={formData.birthDate}
-                                        onChange={handleChange}
-                                        className={cn("h-11", !nikValidation.valid && nikValidation.message?.includes("Tanggal") && "border-red-500")}
+                                        onChange={(e) => {
+                                            handleChange(e);
+                                            if (fieldErrors.birthDate) setFieldErrors({...fieldErrors, birthDate: false});
+                                        }}
+                                        className={cn("h-11", ((!nikValidation.valid && nikValidation.message?.includes("Tanggal")) || fieldErrors.birthDate) && "border-red-500")}
                                     />
                                 </div>
                                 <div className="space-y-2">
@@ -377,9 +420,12 @@ export default function AgentRegisterPage() {
                                         <Select
                                             name="gender"
                                             value={formData.gender}
-                                            onValueChange={(value) => handleChange({ target: { name: 'gender', value } } as any)}
+                                            onValueChange={(value) => {
+                                                handleChange({ target: { name: 'gender', value } } as any);
+                                                if (fieldErrors.gender) setFieldErrors({...fieldErrors, gender: false});
+                                            }}
                                         >
-                                            <SelectTrigger id="gender" className={cn("h-11 w-full", !nikValidation.valid && nikValidation.message?.includes("kelamin") && "border-red-500")}>
+                                            <SelectTrigger id="gender" className={cn("h-11 w-full", ((!nikValidation.valid && nikValidation.message?.includes("kelamin")) || fieldErrors.gender) && "border-red-500")}>
                                                 <SelectValue placeholder="Pilih Jenis Kelamin" />
                                             </SelectTrigger>
                                             <SelectContent>
@@ -406,9 +452,12 @@ export default function AgentRegisterPage() {
                                     name="addressStreet"
                                     required
                                     value={formData.addressStreet}
-                                    onChange={handleChange}
+                                    onChange={(e) => {
+                                        handleChange(e);
+                                        if (fieldErrors.addressStreet) setFieldErrors({...fieldErrors, addressStreet: false});
+                                    }}
                                     placeholder="Contoh: Jl. Jendral Sudirman No. 10, RT 01 / RW 02"
-                                    className="h-11"
+                                    className={cn("h-11", fieldErrors.addressStreet && "border-red-500 focus-visible:ring-red-500")}
                                 />
                             </div>
 
@@ -419,9 +468,12 @@ export default function AgentRegisterPage() {
                                         <Select
                                             name="provinceId"
                                             value={formData.provinceId}
-                                            onValueChange={(value) => handleChange({ target: { name: 'provinceId', value } } as any)}
+                                            onValueChange={(value) => {
+                                                handleChange({ target: { name: 'provinceId', value } } as any);
+                                                if (fieldErrors.provinceId) setFieldErrors({...fieldErrors, provinceId: false});
+                                            }}
                                         >
-                                            <SelectTrigger id="provinceId" className="h-11 w-full">
+                                            <SelectTrigger id="provinceId" className={cn("h-11 w-full", fieldErrors.provinceId && "border-red-500 ring-red-500")}>
                                                 <SelectValue placeholder="Pilih Provinsi" />
                                             </SelectTrigger>
                                             <SelectContent>
@@ -438,10 +490,13 @@ export default function AgentRegisterPage() {
                                         <Select
                                             name="regencyId"
                                             value={formData.regencyId}
-                                            onValueChange={(value) => handleChange({ target: { name: 'regencyId', value } } as any)}
+                                            onValueChange={(value) => {
+                                                handleChange({ target: { name: 'regencyId', value } } as any);
+                                                if (fieldErrors.regencyId) setFieldErrors({...fieldErrors, regencyId: false});
+                                            }}
                                             disabled={!formData.provinceId}
                                         >
-                                            <SelectTrigger id="regencyId" className="h-11 w-full">
+                                            <SelectTrigger id="regencyId" className={cn("h-11 w-full", fieldErrors.regencyId && "border-red-500 ring-red-500")}>
                                                 <SelectValue placeholder="Pilih Kabupaten/Kota" />
                                             </SelectTrigger>
                                             <SelectContent>
@@ -461,10 +516,13 @@ export default function AgentRegisterPage() {
                                         <Select
                                             name="districtId"
                                             value={formData.districtId}
-                                            onValueChange={(value) => handleChange({ target: { name: 'districtId', value } } as any)}
+                                            onValueChange={(value) => {
+                                                handleChange({ target: { name: 'districtId', value } } as any);
+                                                if (fieldErrors.districtId) setFieldErrors({...fieldErrors, districtId: false});
+                                            }}
                                             disabled={!formData.regencyId}
                                         >
-                                            <SelectTrigger id="districtId" className="h-11 w-full">
+                                            <SelectTrigger id="districtId" className={cn("h-11 w-full", fieldErrors.districtId && "border-red-500 ring-red-500")}>
                                                 <SelectValue placeholder="Pilih Kecamatan" />
                                             </SelectTrigger>
                                             <SelectContent>
@@ -481,10 +539,13 @@ export default function AgentRegisterPage() {
                                         <Select
                                             name="villageId"
                                             value={formData.villageId}
-                                            onValueChange={(value) => handleChange({ target: { name: 'villageId', value } } as any)}
+                                            onValueChange={(value) => {
+                                                handleChange({ target: { name: 'villageId', value } } as any);
+                                                if (fieldErrors.villageId) setFieldErrors({...fieldErrors, villageId: false});
+                                            }}
                                             disabled={!formData.districtId}
                                         >
-                                            <SelectTrigger id="villageId" className="h-11 w-full">
+                                            <SelectTrigger id="villageId" className={cn("h-11 w-full", fieldErrors.villageId && "border-red-500 ring-red-500")}>
                                                 <SelectValue placeholder="Pilih Kelurahan" />
                                             </SelectTrigger>
                                             <SelectContent>
@@ -501,9 +562,12 @@ export default function AgentRegisterPage() {
                                         id="postalCode"
                                         name="postalCode"
                                         value={formData.postalCode}
-                                        onChange={handleChange}
+                                        onChange={(e) => {
+                                            handleChange(e);
+                                            if (fieldErrors.postalCode) setFieldErrors({...fieldErrors, postalCode: false});
+                                        }}
                                         placeholder="12xxx"
-                                        className="h-11"
+                                        className={cn("h-11", fieldErrors.postalCode && "border-red-500 focus-visible:ring-red-500")}
                                     />
                                 </div>
                             </div>

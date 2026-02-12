@@ -5,8 +5,8 @@ import type { NextRequest } from 'next/server'
 const routeRoles: Record<string, string> = {
   '/developer': 'developer',
   '/agent': 'agent',
-  '/hospital': 'hospital',
-  '/admin-agency': 'admin_agency',
+  '/hospital': 'hospital_admin',
+  '/admin-agency': 'agency_admin',
   '/insurance': 'insurance_admin',
 }
 

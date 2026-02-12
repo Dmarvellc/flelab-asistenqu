@@ -3,7 +3,8 @@
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, useCallback } from "react";
 import { DashboardLayout, DashboardSidebar, SidebarHeader, SidebarContent, SidebarFooter, NavItem, DashboardHeader } from "@/components/dashboard/dashboard-layout"
-import { LayoutDashboard, Users, FileText, LogOut, Loader2 } from "lucide-react"
+import { EmergencyButton } from "@/components/claims/emergency-button"
+import { LayoutDashboard, Users, FileText, LogOut, Loader2, Settings } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 
@@ -90,8 +91,11 @@ export default function AgentLayout({ children }: { children: React.ReactNode })
         <NavItem href="/agent/clients" icon={Users} active={pathname === "/agent/clients"}>
           Klien
         </NavItem>
-        <NavItem href="/agent/policies" icon={FileText} active={pathname === "/agent/policies"}>
-          Polis
+        <NavItem href="/agent/claims" icon={FileText} active={pathname === "/agent/claims"}>
+          Klaim
+        </NavItem>
+        <NavItem href="/agent/settings" icon={Settings} active={pathname === "/agent/settings"}>
+          Pengaturan
         </NavItem>
       </SidebarContent>
       <SidebarFooter>
@@ -110,6 +114,7 @@ export default function AgentLayout({ children }: { children: React.ReactNode })
   return (
     <DashboardLayout sidebar={sidebar} header={<DashboardHeader mobileSidebar={sidebar} />}>
       {children}
+      <EmergencyButton unitLabel="Tim Agen / Case Manager" />
     </DashboardLayout>
   )
 }

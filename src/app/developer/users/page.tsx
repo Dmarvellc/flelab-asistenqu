@@ -39,6 +39,7 @@ import { Label } from "@/components/ui/label";
 import { MoreHorizontal, ArrowUpDown, ChevronLeft, ChevronRight, Search, Trash2, Edit, UserPlus, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
+import { ActionModal } from "@/components/ui/action-modal";
 
 type User = {
     user_id: string;
@@ -63,6 +64,7 @@ export default function UsersPage() {
     const [currentUser, setCurrentUser] = useState<User | null>(null);
     const [editRole, setEditRole] = useState("");
     const [editStatus, setEditStatus] = useState("");
+    const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
 
     const fetchUsers = async () => {
         setLoading(true);
@@ -99,8 +101,6 @@ export default function UsersPage() {
     }, [search, page, sortBy, sortOrder]);
 
     const handleDelete = async (userId: string) => {
-        if (!confirm("Are you sure you want to delete this user? This action cannot be undone.")) return;
-
         try {
             const res = await fetch(`/api/users/${userId}`, { method: "DELETE" });
             if (res.ok) {
@@ -248,7 +248,7 @@ export default function UsersPage() {
                                                 <DropdownMenuItem onClick={() => handleEdit(user)}>
                                                     <Edit className="mr-2 h-4 w-4" /> Edit Details
                                                 </DropdownMenuItem>
-                                                <DropdownMenuItem onClick={() => handleDelete(user.user_id)} className="text-red-600 focus:text-red-600">
+                                                <DropdownMenuItem onClick={() => setDeleteTargetId(user.user_id)} className="text-red-600 focus:text-red-600">
                                                     <Trash2 className="mr-2 h-4 w-4" /> Delete User
                                                 </DropdownMenuItem>
                                             </DropdownMenuContent>
@@ -340,6 +340,22 @@ export default function UsersPage() {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+            <ActionModal
+                open={deleteTargetId !== null}
+                onOpenChange={(open) => {
+                    if (!open) setDeleteTargetId(null);
+                }}
+                title="Delete User"
+                description="Are you sure you want to delete this user? This action cannot be undone."
+                confirmText="Yes, Delete"
+                cancelText="Cancel"
+                destructive
+                onConfirm={async () => {
+                    if (!deleteTargetId) return;
+                    await handleDelete(deleteTargetId);
+                    setDeleteTargetId(null);
+                }}
+            />
         </div>
     );
 }
