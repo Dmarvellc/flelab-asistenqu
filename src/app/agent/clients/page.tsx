@@ -57,7 +57,7 @@ export default function AgentClientsPage() {
         fetchClients();
     }, []);
 
-    const filteredClients = clients.filter(client => 
+    const filteredClients = clients.filter(client =>
         client.full_name.toLowerCase().includes(search.toLowerCase()) ||
         client.latest_product?.toLowerCase().includes(search.toLowerCase())
     );
@@ -161,7 +161,9 @@ export default function AgentClientsPage() {
                                                 <DropdownMenuItem asChild>
                                                     <Link href={`/agent/clients/${client.client_id}`}>Lihat Detail</Link>
                                                 </DropdownMenuItem>
-                                                <DropdownMenuItem>Lihat Polis</DropdownMenuItem>
+                                                <DropdownMenuItem asChild>
+                                                    <Link href={`/agent/clients/${client.client_id}`}>Lihat Daftar Polis</Link>
+                                                </DropdownMenuItem>
                                             </DropdownMenuContent>
                                         </DropdownMenu>
                                     </TableCell>

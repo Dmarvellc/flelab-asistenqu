@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
 import { dbPool } from "@/lib/db";
 import { cookies } from "next/headers";
+import { mkdir, writeFile } from "fs/promises";
+import path from "path";
 
 export async function POST(req: Request) {
   const client = await dbPool.connect();
-  
+
   try {
     const cookieStore = await cookies();
     const userId = cookieStore.get("app_user_id")?.value;
@@ -32,6 +34,39 @@ export async function POST(req: Request) {
       policyFileBase64,
     } = body;
 
+    let policyUrl: string | null = null;
+
+    // Process Policy File if exists
+    if (policyFileBase64) {
+      try {
+        // Extract base64 data (format: "data:image/jpeg;base64,...")
+        const matches = policyFileBase64.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+
+        if (matches && matches.length === 3) {
+          const type = matches[1];
+          const buffer = Buffer.from(matches[2], 'base64');
+
+          // Determine extension
+          let ext = ".bin";
+          if (type.includes("jpeg") || type.includes("jpg")) ext = ".jpg";
+          else if (type.includes("png")) ext = ".png";
+          else if (type.includes("pdf")) ext = ".pdf";
+
+          const uploadsDir = path.join(process.cwd(), "public", "uploads", "policies");
+          await mkdir(uploadsDir, { recursive: true });
+
+          const fileName = `${Date.now()}-${crypto.randomUUID()}${ext}`;
+          const diskPath = path.join(uploadsDir, fileName);
+
+          await writeFile(diskPath, buffer);
+          policyUrl = `/uploads/policies/${fileName}`;
+        }
+      } catch (fileError) {
+        console.error("Failed to save policy file", fileError);
+        // Continue without file if needed, or fail - let's continue but log it
+      }
+    }
+
     await client.query("BEGIN");
 
     // 1. Ensure Agent Exists (using userId as agentId for simplicity in this demo)
@@ -51,7 +86,7 @@ export async function POST(req: Request) {
     // Check/Create Agent
     const agentRes = await client.query("SELECT agent_id FROM public.agent WHERE agent_id = $1", [userId]);
     let agentId = userId;
-    
+
     if (agentRes.rows.length === 0) {
       // Get user's name to use as agent name
       const userPersonRes = await client.query(`
@@ -60,7 +95,7 @@ export async function POST(req: Request) {
         JOIN public.person p ON upl.person_id = p.person_id
         WHERE upl.user_id = $1
       `, [userId]);
-      
+
       const agentName = userPersonRes.rows[0]?.full_name || "Agent " + userId.substring(0, 8);
 
       await client.query(
@@ -107,16 +142,18 @@ export async function POST(req: Request) {
          contract_product, 
          contract_startdate, 
          contract_duedate, 
-         status
+         status,
+         policy_url
        )
-       VALUES ($1, $2, $3, $4, $5, 'ACTIVE')
+       VALUES ($1, $2, $3, $4, $5, 'ACTIVE', $6)
        RETURNING contract_id`,
       [
-        clientId, 
+        clientId,
         policyNumber || `POL-${Date.now()}`, // Fallback if empty
-        productName, 
-        startDate || null, 
-        endDate || null
+        productName,
+        startDate || null,
+        endDate || null,
+        policyUrl
       ]
     );
     const contractId = contractRes.rows[0].contract_id;
@@ -126,18 +163,18 @@ export async function POST(req: Request) {
       `INSERT INTO public.contract_detail (contract_id, sum_insured, payment_type)
        VALUES ($1, $2, $3)`,
       [
-        contractId, 
-        parseFloat(sumInsured) || 0, 
+        contractId,
+        parseFloat(sumInsured) || 0,
         'MONTHLY' // Default or parse from AI
       ]
     );
 
     await client.query("COMMIT");
 
-    return NextResponse.json({ 
-      success: true, 
-      clientId, 
-      contractId 
+    return NextResponse.json({
+      success: true,
+      clientId,
+      contractId
     });
 
   } catch (error) {

@@ -5,7 +5,7 @@ import { cookies } from "next/headers";
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const client = await dbPool.connect();
   const { id } = await params;
-  
+
   try {
     const cookieStore = await cookies();
     const userId = cookieStore.get("app_user_id")?.value;
@@ -44,6 +44,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
         con.contract_startdate,
         con.contract_duedate,
         con.status,
+        con.policy_url,
         cd.sum_insured,
         cd.payment_type
       FROM public.contract con
@@ -52,7 +53,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
       ORDER BY con.created_at DESC
     `, [id]);
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       client: clientRes.rows[0],
       contracts: contractsRes.rows
     });

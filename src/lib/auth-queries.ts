@@ -102,10 +102,10 @@ export async function createActiveUser(params: {
 }) {
   const passwordHash = await bcrypt.hash(params.password, 10);
   const client = await dbPool.connect();
-  
+
   try {
     await client.query("BEGIN");
-    
+
     // Generate ID
     const idRes = await client.query("SELECT gen_random_uuid() as id");
     const userId = idRes.rows[0].id;
@@ -118,16 +118,16 @@ export async function createActiveUser(params: {
 
     // Insert into app_user
     const result = await client.query(
-        `insert into public.app_user (user_id, email, password_hash, role, status, approved_at, approved_by)
+      `insert into public.app_user (user_id, email, password_hash, role, status, approved_at, approved_by)
          values ($1, $2, $3, $4, 'ACTIVE', now(), $5)
          returning user_id, email, role, status`,
-        [
-          userId,
-          params.email.toLowerCase(),
-          passwordHash,
-          params.role,
-          params.approvedBy ?? null,
-        ]
+      [
+        userId,
+        params.email.toLowerCase(),
+        passwordHash,
+        params.role,
+        params.approvedBy ?? null,
+      ]
     );
 
     await client.query("COMMIT");
@@ -238,8 +238,32 @@ export async function getSystemStats() {
       roleStats,
       currentMonthUsers,
       growthPercentage: growthPercentage.toFixed(1),
+
     };
   } finally {
     client.release();
   }
+}
+
+export async function findUserWithProfile(userId: string) {
+  const result = await dbPool.query(
+    `select
+       u.user_id,
+       u.email,
+       u.role,
+       u.status,
+       u.created_at,
+       p.full_name,
+       p.id_card as nik,
+       p.phone_number,
+       p.address,
+       p.birth_date,
+       p.gender
+     from public.app_user u
+     left join public.user_person_link l on u.user_id = l.user_id
+     left join public.person p on l.person_id = p.person_id
+     where u.user_id = $1`,
+    [userId]
+  );
+  return result.rows[0];
 }

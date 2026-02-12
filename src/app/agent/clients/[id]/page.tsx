@@ -29,6 +29,7 @@ type Contract = {
     status: string;
     sum_insured: string;
     payment_type: string;
+    policy_url?: string;
 };
 
 export default function ClientDetailPage() {
@@ -137,7 +138,7 @@ export default function ClientDetailPage() {
                     <h3 className="text-lg font-semibold flex items-center gap-2">
                         <FileText className="w-5 h-5" /> Daftar Polis Asuransi
                     </h3>
-                    
+
                     {contracts.length === 0 ? (
                         <Card>
                             <CardContent className="flex flex-col items-center justify-center py-12 text-muted-foreground">
@@ -156,6 +157,16 @@ export default function ClientDetailPage() {
                                         </div>
                                         <Badge variant="outline">{contract.status}</Badge>
                                     </div>
+                                    {contract.policy_url && (
+                                        <div className="mt-2">
+                                            <Button variant="outline" size="sm" asChild>
+                                                <a href={contract.policy_url} target="_blank" rel="noopener noreferrer">
+                                                    <FileText className="mr-2 h-3 w-3" />
+                                                    Lihat Polis
+                                                </a>
+                                            </Button>
+                                        </div>
+                                    )}
                                 </CardHeader>
                                 <CardContent>
                                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
