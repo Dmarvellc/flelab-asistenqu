@@ -39,16 +39,26 @@ export async function registerUser(params: {
   try {
     await client.query("BEGIN");
 
-    // 1. Create User
+    // 1. Create User in auth.users FIRST (to satisfy FK constraints)
+    // We generate a UUID for the user ID so we can use it in both tables
+    const idRes = await client.query("SELECT gen_random_uuid() as id");
+    const userId = idRes.rows[0].id;
+
+    await client.query(`
+        INSERT INTO auth.users (id, email, encrypted_password, aud, role, created_at, updated_at)
+        VALUES ($1, $2, $3, 'authenticated', 'authenticated', NOW(), NOW())
+    `, [userId, params.email.toLowerCase(), passwordHash]);
+
+    // 2. Create User in public.app_user
     const userRes = await client.query(
-      `insert into public.app_user (email, password_hash, role, status)
-       values ($1, $2, $3, 'PENDING')
+      `insert into public.app_user (user_id, email, password_hash, role, status)
+       values ($1, $2, $3, $4, 'PENDING')
        returning user_id, email, role, status`,
-      [params.email.toLowerCase(), passwordHash, params.role]
+      [userId, params.email.toLowerCase(), passwordHash, params.role]
     );
     const user = userRes.rows[0];
 
-    // 2. Create Person (if details provided)
+    // 3. Create Person (if details provided)
     if (params.fullName) {
       const personRes = await client.query(
         `insert into public.person (full_name, id_card, phone_number, address, birth_date, gender)
@@ -65,7 +75,7 @@ export async function registerUser(params: {
       );
       const personId = personRes.rows[0].person_id;
 
-      // 3. Link User and Person
+      // 4. Link User and Person
       await client.query(
         `insert into public.user_person_link (user_id, person_id, relation_type)
          values ($1, $2, 'OWNER')`,
@@ -91,18 +101,43 @@ export async function createActiveUser(params: {
   approvedBy?: string | null;
 }) {
   const passwordHash = await bcrypt.hash(params.password, 10);
-  const result = await dbPool.query(
-    `insert into public.app_user (email, password_hash, role, status, approved_at, approved_by)
-     values ($1, $2, $3, 'ACTIVE', now(), $4)
-     returning user_id, email, role, status`,
-    [
-      params.email.toLowerCase(),
-      passwordHash,
-      params.role,
-      params.approvedBy ?? null,
-    ]
-  );
-  return result.rows[0] as AppUser;
+  const client = await dbPool.connect();
+  
+  try {
+    await client.query("BEGIN");
+    
+    // Generate ID
+    const idRes = await client.query("SELECT gen_random_uuid() as id");
+    const userId = idRes.rows[0].id;
+
+    // Insert into auth.users
+    await client.query(`
+        INSERT INTO auth.users (id, email, encrypted_password, aud, role, created_at, updated_at)
+        VALUES ($1, $2, $3, 'authenticated', 'authenticated', NOW(), NOW())
+    `, [userId, params.email.toLowerCase(), passwordHash]);
+
+    // Insert into app_user
+    const result = await client.query(
+        `insert into public.app_user (user_id, email, password_hash, role, status, approved_at, approved_by)
+         values ($1, $2, $3, $4, 'ACTIVE', now(), $5)
+         returning user_id, email, role, status`,
+        [
+          userId,
+          params.email.toLowerCase(),
+          passwordHash,
+          params.role,
+          params.approvedBy ?? null,
+        ]
+    );
+
+    await client.query("COMMIT");
+    return result.rows[0] as AppUser;
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
 }
 
 export async function approveUser(params: { userId: string; approvedBy?: string | null }) {
