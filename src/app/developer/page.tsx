@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Activity, Users, TrendingUp, ShieldCheck } from "lucide-react";
+import { Activity, Users } from "lucide-react";
+import { UserRoleChart } from "./_components/user-role-chart";
 
 export default function DeveloperDashboardPage() {
   const [stats, setStats] = useState<{
@@ -41,9 +42,9 @@ export default function DeveloperDashboardPage() {
         </p>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
         {/* Jumlah Pending Account */}
-        <Card>
+        <Card className="col-span-2">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
               Jumlah Pending Account
@@ -61,7 +62,7 @@ export default function DeveloperDashboardPage() {
         </Card>
 
         {/* Total Users (Analisa) */}
-        <Card>
+        <Card className="col-span-2">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
               Total Active Users
@@ -75,6 +76,23 @@ export default function DeveloperDashboardPage() {
             <p className="text-xs text-muted-foreground">
               Pengguna aktif saat ini
             </p>
+          </CardContent>
+        </Card>
+
+        {/* Role Analytics Graph */}
+        <Card className="col-span-3">
+          <CardHeader>
+            <CardTitle>User Role Analytics</CardTitle>
+            <CardDescription>
+              Distribution of users by role.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <div className="flex justify-center py-8">Loading...</div>
+            ) : (
+                <UserRoleChart data={stats?.roleStats || {}} />
+            )}
           </CardContent>
         </Card>
       </div>
