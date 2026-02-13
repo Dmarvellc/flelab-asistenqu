@@ -4,15 +4,17 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, useCallback } from "react";
 import { DashboardLayout, DashboardSidebar, SidebarHeader, SidebarContent, SidebarFooter, NavItem, DashboardHeader } from "@/components/dashboard/dashboard-layout"
 import { EmergencyButton } from "@/components/claims/emergency-button"
-import { LayoutDashboard, Users, FileText, LogOut, Loader2, Settings } from "lucide-react"
+import { LayoutDashboard, Users, FileText, LogOut, Loader2, Settings, ChevronLeft, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
+import { cn } from "@/lib/utils";
 
 export default function AgentLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [isChecking, setIsChecking] = useState(true);
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   // Normalize pathname to ensure robust comparison 
   const isPublicPage = pathname === "/agent/login" || pathname === "/agent/register";
@@ -76,43 +78,67 @@ export default function AgentLayout({ children }: { children: React.ReactNode })
     return <>{children}</>;
   }
 
-  const sidebar = (
+  // If verification page, render without sidebar/layout (but auth was checked)
+  // This allows the verification page to have its own full screen layout
+  if (pathname === "/agent/verification") {
+    return <>{children}</>;
+  }
+
+  const renderSidebar = (collapsed: boolean) => (
     <DashboardSidebar>
-      <SidebarHeader>
-        <Link href="/agent" className="flex items-center gap-2 font-bold text-lg tracking-wide text-white">
-          <span>Portal Agen</span>
-        </Link>
+      <SidebarHeader className="flex items-center justify-between">
+        {!collapsed && (
+          <Link href="/agent" className="flex items-center gap-2 font-bold text-lg tracking-wide text-white animate-in fade-in duration-300">
+            <span>Portal Agen</span>
+          </Link>
+        )}
+        <Button
+          variant="ghost"
+          size="icon"
+          className={cn("text-zinc-400 hover:text-white hover:bg-zinc-800", collapsed && "mx-auto")}
+          onClick={() => setIsCollapsed(!isCollapsed)}
+        >
+          {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+        </Button>
       </SidebarHeader>
       <SidebarContent>
         {/* Pass active prop explicitly */}
-        <NavItem href="/agent" icon={LayoutDashboard} active={pathname === "/agent"}>
+        <NavItem href="/agent" icon={LayoutDashboard} active={pathname === "/agent"} isCollapsed={collapsed}>
           Dasbor
         </NavItem>
-        <NavItem href="/agent/clients" icon={Users} active={pathname === "/agent/clients"}>
+        <NavItem href="/agent/clients" icon={Users} active={pathname === "/agent/clients"} isCollapsed={collapsed}>
           Klien
         </NavItem>
-        <NavItem href="/agent/claims" icon={FileText} active={pathname === "/agent/claims"}>
+        <NavItem href="/agent/claims" icon={FileText} active={pathname === "/agent/claims"} isCollapsed={collapsed}>
           Klaim
         </NavItem>
-        <NavItem href="/agent/settings" icon={Settings} active={pathname === "/agent/settings"}>
+        <NavItem href="/agent/settings" icon={Settings} active={pathname === "/agent/settings"} isCollapsed={collapsed}>
           Pengaturan
         </NavItem>
       </SidebarContent>
       <SidebarFooter>
         <Button
           variant="ghost"
-          className="w-full justify-start gap-2 text-zinc-400 hover:text-white hover:bg-zinc-900"
+          className={cn(
+            "w-full justify-start gap-2 text-zinc-400 hover:text-white hover:bg-zinc-900",
+            collapsed && "justify-center px-2"
+          )}
           onClick={handleLogout}
+          title={collapsed ? "Keluar" : undefined}
         >
-          <LogOut className="h-4 w-4" />
-          Keluar
+          <LogOut className="h-4 w-4 shrink-0" />
+          {!collapsed && <span className="truncate">Keluar</span>}
         </Button>
       </SidebarFooter>
     </DashboardSidebar>
-  )
+  );
 
   return (
-    <DashboardLayout sidebar={sidebar} header={<DashboardHeader mobileSidebar={sidebar} />}>
+    <DashboardLayout
+      sidebar={renderSidebar(isCollapsed)}
+      header={<DashboardHeader mobileSidebar={renderSidebar(false)} />}
+      isCollapsed={isCollapsed}
+    >
       {children}
       <EmergencyButton unitLabel="Tim Agen / Case Manager" />
     </DashboardLayout>

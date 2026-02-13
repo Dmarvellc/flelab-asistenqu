@@ -13,7 +13,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { AlertCircle, CheckCircle2, Loader2, AlertTriangle } from "lucide-react";
+import { AlertCircle, CheckCircle2, Loader2, AlertTriangle, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // --- Types for Address API ---
@@ -195,7 +195,7 @@ export default function AgentRegisterPage() {
         });
 
         setFieldErrors(newErrors);
-        
+
         if (!isValid) {
             setError("Mohon lengkapi kolom yang ditandai merah.");
         }
@@ -257,7 +257,7 @@ export default function AgentRegisterPage() {
                 return;
             }
 
-            setMessage("Pendaftaran berhasil! Akun Anda sedang ditinjau. Anda akan dialihkan...");
+            setMessage("Pendaftaran berhasil! Mengalihkan ke halaman verifikasi...");
 
             setTimeout(() => {
                 router.push("/agent/login");
@@ -317,7 +317,7 @@ export default function AgentRegisterPage() {
                                         value={formData.email}
                                         onChange={(e) => {
                                             handleChange(e);
-                                            if (fieldErrors.email) setFieldErrors({...fieldErrors, email: false});
+                                            if (fieldErrors.email) setFieldErrors({ ...fieldErrors, email: false });
                                         }}
                                         placeholder="nama@email.com"
                                         className={cn("h-11", fieldErrors.email && "border-red-500 focus-visible:ring-red-500")}
@@ -333,7 +333,7 @@ export default function AgentRegisterPage() {
                                         value={formData.password}
                                         onChange={(e) => {
                                             handleChange(e);
-                                            if (fieldErrors.password) setFieldErrors({...fieldErrors, password: false});
+                                            if (fieldErrors.password) setFieldErrors({ ...fieldErrors, password: false });
                                         }}
                                         placeholder="Minimal 8 karakter"
                                         className={cn("h-11", fieldErrors.password && "border-red-500 focus-visible:ring-red-500")}
@@ -355,7 +355,7 @@ export default function AgentRegisterPage() {
                                     value={formData.fullName}
                                     onChange={(e) => {
                                         handleChange(e);
-                                        if (fieldErrors.fullName) setFieldErrors({...fieldErrors, fullName: false});
+                                        if (fieldErrors.fullName) setFieldErrors({ ...fieldErrors, fullName: false });
                                     }}
                                     className={cn("h-11 font-medium", fieldErrors.fullName && "border-red-500 focus-visible:ring-red-500")}
                                 />
@@ -375,7 +375,7 @@ export default function AgentRegisterPage() {
                                         onChange={(e) => {
                                             const val = e.target.value.replace(/[^0-9]/g, '');
                                             if (val.length <= 16) handleChange({ ...e, target: { ...e.target, name: 'nik', value: val } });
-                                            if (fieldErrors.nik) setFieldErrors({...fieldErrors, nik: false});
+                                            if (fieldErrors.nik) setFieldErrors({ ...fieldErrors, nik: false });
                                         }}
                                         className={cn("h-11", (!nikValidation.valid || fieldErrors.nik) && "border-red-500 ring-red-500")}
                                         placeholder="16 Digit NIK"
@@ -391,7 +391,7 @@ export default function AgentRegisterPage() {
                                         value={formData.phoneNumber}
                                         onChange={(e) => {
                                             handleChange(e);
-                                            if (fieldErrors.phoneNumber) setFieldErrors({...fieldErrors, phoneNumber: false});
+                                            if (fieldErrors.phoneNumber) setFieldErrors({ ...fieldErrors, phoneNumber: false });
                                         }}
                                         className={cn("h-11", fieldErrors.phoneNumber && "border-red-500 focus-visible:ring-red-500")}
                                     />
@@ -409,7 +409,7 @@ export default function AgentRegisterPage() {
                                         value={formData.birthDate}
                                         onChange={(e) => {
                                             handleChange(e);
-                                            if (fieldErrors.birthDate) setFieldErrors({...fieldErrors, birthDate: false});
+                                            if (fieldErrors.birthDate) setFieldErrors({ ...fieldErrors, birthDate: false });
                                         }}
                                         className={cn("h-11", ((!nikValidation.valid && nikValidation.message?.includes("Tanggal")) || fieldErrors.birthDate) && "border-red-500")}
                                     />
@@ -422,7 +422,7 @@ export default function AgentRegisterPage() {
                                             value={formData.gender}
                                             onValueChange={(value) => {
                                                 handleChange({ target: { name: 'gender', value } } as any);
-                                                if (fieldErrors.gender) setFieldErrors({...fieldErrors, gender: false});
+                                                if (fieldErrors.gender) setFieldErrors({ ...fieldErrors, gender: false });
                                             }}
                                         >
                                             <SelectTrigger id="gender" className={cn("h-11 w-full", ((!nikValidation.valid && nikValidation.message?.includes("kelamin")) || fieldErrors.gender) && "border-red-500")}>
@@ -454,7 +454,7 @@ export default function AgentRegisterPage() {
                                     value={formData.addressStreet}
                                     onChange={(e) => {
                                         handleChange(e);
-                                        if (fieldErrors.addressStreet) setFieldErrors({...fieldErrors, addressStreet: false});
+                                        if (fieldErrors.addressStreet) setFieldErrors({ ...fieldErrors, addressStreet: false });
                                     }}
                                     placeholder="Contoh: Jl. Jendral Sudirman No. 10, RT 01 / RW 02"
                                     className={cn("h-11", fieldErrors.addressStreet && "border-red-500 focus-visible:ring-red-500")}
@@ -470,7 +470,7 @@ export default function AgentRegisterPage() {
                                             value={formData.provinceId}
                                             onValueChange={(value) => {
                                                 handleChange({ target: { name: 'provinceId', value } } as any);
-                                                if (fieldErrors.provinceId) setFieldErrors({...fieldErrors, provinceId: false});
+                                                if (fieldErrors.provinceId) setFieldErrors({ ...fieldErrors, provinceId: false });
                                             }}
                                         >
                                             <SelectTrigger id="provinceId" className={cn("h-11 w-full", fieldErrors.provinceId && "border-red-500 ring-red-500")}>
@@ -492,7 +492,7 @@ export default function AgentRegisterPage() {
                                             value={formData.regencyId}
                                             onValueChange={(value) => {
                                                 handleChange({ target: { name: 'regencyId', value } } as any);
-                                                if (fieldErrors.regencyId) setFieldErrors({...fieldErrors, regencyId: false});
+                                                if (fieldErrors.regencyId) setFieldErrors({ ...fieldErrors, regencyId: false });
                                             }}
                                             disabled={!formData.provinceId}
                                         >
@@ -518,7 +518,7 @@ export default function AgentRegisterPage() {
                                             value={formData.districtId}
                                             onValueChange={(value) => {
                                                 handleChange({ target: { name: 'districtId', value } } as any);
-                                                if (fieldErrors.districtId) setFieldErrors({...fieldErrors, districtId: false});
+                                                if (fieldErrors.districtId) setFieldErrors({ ...fieldErrors, districtId: false });
                                             }}
                                             disabled={!formData.regencyId}
                                         >
@@ -541,7 +541,7 @@ export default function AgentRegisterPage() {
                                             value={formData.villageId}
                                             onValueChange={(value) => {
                                                 handleChange({ target: { name: 'villageId', value } } as any);
-                                                if (fieldErrors.villageId) setFieldErrors({...fieldErrors, villageId: false});
+                                                if (fieldErrors.villageId) setFieldErrors({ ...fieldErrors, villageId: false });
                                             }}
                                             disabled={!formData.districtId}
                                         >
@@ -564,7 +564,7 @@ export default function AgentRegisterPage() {
                                         value={formData.postalCode}
                                         onChange={(e) => {
                                             handleChange(e);
-                                            if (fieldErrors.postalCode) setFieldErrors({...fieldErrors, postalCode: false});
+                                            if (fieldErrors.postalCode) setFieldErrors({ ...fieldErrors, postalCode: false });
                                         }}
                                         placeholder="12xxx"
                                         className={cn("h-11", fieldErrors.postalCode && "border-red-500 focus-visible:ring-red-500")}
@@ -580,7 +580,11 @@ export default function AgentRegisterPage() {
                                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                                         Memproses Pendaftaran...
                                     </>
-                                ) : "Kirim Pendaftaran"}
+                                ) : (
+                                    <>
+                                        Lanjut ke Verifikasi <ArrowRight className="ml-2 w-4 h-4" />
+                                    </>
+                                )}
                             </Button>
                         </div>
                     </form>
@@ -592,7 +596,7 @@ export default function AgentRegisterPage() {
                         </Link>
                     </p>
                 </div>
-            </div>
-        </div>
+            </div >
+        </div >
     );
 }

@@ -18,9 +18,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
     }
 
-    if (user.status !== "ACTIVE") {
-      return NextResponse.json({ error: "Account pending approval" }, { status: 403 });
-    }
+    // Allow PENDING users to login so they can complete verification
+    // if (user.status !== "ACTIVE" && user.status !== "PENDING") { ... } 
+    // actually just allow login, middleware will handle redirection
 
     const response = NextResponse.json({
       user: {
@@ -37,6 +37,11 @@ export async function POST(request: Request) {
       sameSite: "lax",
     });
     response.cookies.set("app_user_id", user.user_id, {
+      httpOnly: true,
+      path: "/",
+      sameSite: "lax",
+    });
+    response.cookies.set("user_status", user.status, {
       httpOnly: true,
       path: "/",
       sameSite: "lax",

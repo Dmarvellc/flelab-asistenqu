@@ -1,69 +1,37 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import { Home, ArrowLeft } from "lucide-react";
-import { LanguageProvider, useLanguage } from "@/lib/language-context";
 import { MarketingLayout } from "@/components/home/marketing-layout";
-
-function NotFoundContent() {
-    const router = useRouter();
-    const { t } = useLanguage();
-
-    return (
-        <div className="flex h-full w-full flex-col items-center justify-center bg-background text-foreground p-4 min-h-[60vh]">
-            <div className="relative flex max-w-md flex-col items-center justify-center space-y-6 text-center">
-                {/* Abstract Background Element */}
-                <div className="absolute inset-0 -z-10 flex items-center justify-center opacity-5 blur-3xl pointer-events-none">
-                    <div className="h-64 w-64 rounded-full bg-primary/50" />
-                </div>
-
-                {/* Text Content */}
-                <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-150 fill-mode-backwards">
-                    <div className="space-y-2 relative z-10">
-                        <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-                            {t("notFoundTitle")}
-                        </h2>
-                        <p className="text-muted-foreground text-base leading-relaxed max-w-[360px] mx-auto">
-                            {t("notFoundDesc")}
-                        </p>
-                    </div>
-                </div>
-
-                {/* Actions */}
-                <div className="flex flex-col w-full gap-3 sm:flex-row sm:justify-center animate-in fade-in slide-in-from-bottom-8 duration-700 delay-300 fill-mode-backwards">
-                    <Button asChild size="lg" className="w-full sm:w-auto font-medium transition-all active:scale-95 shadow-md hover:shadow-lg">
-                        <Link href="/">
-                            <Home className="mr-2 h-4 w-4" />
-                            {t("backHome")}
-                        </Link>
-                    </Button>
-                    <Button
-                        variant="outline"
-                        size="lg"
-                        onClick={() => router.back()}
-                        className="w-full sm:w-auto font-medium transition-all active:scale-95 hover:bg-muted/80"
-                    >
-                        <ArrowLeft className="mr-2 h-4 w-4" />
-                        {t("backPrev")}
-                    </Button>
-                </div>
-            </div>
-
-            {/* Footer text */}
-            <div className="mt-12 text-[10px] text-muted-foreground/40 font-mono tracking-widest uppercase">
-                Error Code: 404_PAGE_NOT_FOUND
-            </div>
-        </div>
-    );
-}
+import { ArrowLeft } from "lucide-react";
+import { LanguageProvider } from "@/lib/language-context";
 
 export default function NotFound() {
     return (
         <LanguageProvider>
             <MarketingLayout>
-                <NotFoundContent />
+                <div className="flex-1 flex flex-col items-center justify-center min-h-[calc(100vh-140px)] w-full p-6 mb-6 text-center animate-in fade-in duration-500">
+                    <div className="relative w-160 h-80 mb-6">
+                        <Image
+                            src="https://jzupwygwzatugbrmqjau.supabase.co/storage/v1/object/sign/image/m_404.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV82NWE4NDk3Zi1iNTdiLTQ1ZDMtOWI3ZC0yNDAxNzU4Njg1NTAiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJpbWFnZS9tXzQwNC5wbmciLCJpYXQiOjE3NzA4ODIzOTksImV4cCI6NDg5Mjk0NjM5OX0.8v0KDeykHJiS3TIceSk8PbM9lA_GvEdsPJG_V2i_wgM"
+                            alt="404 Mascot"
+                            fill
+                            className="object-contain drop-shadow-xl"
+                            priority
+                        />
+                    </div>
+
+                    <h1 className="text-3xl md:text-4xl font-bold tracking-tight mb-3 text-foreground">Waduh ga dapat apa-apa :(</h1>
+                    <p className="text-muted-foreground mb-8 text-lg font-medium">Sepertinya kamu di tempat yang salah</p>
+
+                    <Button asChild size="lg" className="rounded-full px-8 h-12 text-base shadow-lg hover:shadow-xl transition-all hover:scale-105 active:scale-95">
+                        <Link href="/">
+                            <ArrowLeft className="mr-2 h-5 w-5" />
+                            Kembali ke menu utama
+                        </Link>
+                    </Button>
+                </div>
             </MarketingLayout>
         </LanguageProvider>
     );

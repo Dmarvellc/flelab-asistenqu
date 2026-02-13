@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { findUserWithProfile } from "@/lib/auth-queries";
+import { findUserWithProfile, updateUserProfile } from "@/lib/auth-queries";
+import { saveBase64Image } from "@/lib/image-upload";
 
 export async function GET() {
     const cookieStore = await cookies();
@@ -21,6 +22,54 @@ export async function GET() {
         return NextResponse.json(user);
     } catch (error) {
         console.error("Failed to fetch profile", error);
+        return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    }
+}
+
+
+
+export async function PUT(request: Request) {
+    const cookieStore = await cookies();
+    const userId = cookieStore.get("app_user_id")?.value;
+
+    if (!userId) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    try {
+        const body = await request.json();
+
+        // Basic validation
+        if (!body.fullName || !body.phone) {
+            return NextResponse.json({ error: "Nama dan Telepon wajib diisi" }, { status: 400 });
+        }
+
+        let ktpImagePath = undefined;
+        if (body.ktp_image) {
+            ktpImagePath = await saveBase64Image(body.ktp_image, "ktp") || undefined;
+        }
+
+        let selfieImagePath = undefined;
+        if (body.selfie_image) {
+            selfieImagePath = await saveBase64Image(body.selfie_image, "selfie") || undefined;
+        }
+
+        await updateUserProfile(userId, {
+            fullName: body.fullName,
+            phone: body.phone,
+            address: body.address || "",
+            birthDate: body.birthDate,
+            gender: body.gender,
+            nik: body.nik || "",
+            ktpImagePath,
+            selfieImagePath
+        });
+
+        const updatedUser = await findUserWithProfile(userId);
+        return NextResponse.json(updatedUser);
+
+    } catch (error) {
+        console.error("Failed to update profile", error);
         return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
     }
 }

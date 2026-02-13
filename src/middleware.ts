@@ -39,6 +39,17 @@ export function middleware(request: NextRequest) {
     if (roleCookie !== requiredRole) {
       return NextResponse.redirect(new URL(`${matchedPrefix}/login`, request.url))
     }
+
+    // Special Case: Agent with PENDING status (Needs Verification)
+    const userStatus = request.cookies.get('user_status')?.value
+    if (requiredRole === 'agent' && userStatus === 'PENDING') {
+      const allowedPendingPaths = ['/agent/verification', '/agent/settings']
+      const isAllowedPath = allowedPendingPaths.some(p => path.startsWith(p))
+
+      if (!isAllowedPath) {
+        return NextResponse.redirect(new URL('/agent/verification', request.url))
+      }
+    }
   }
 
   return NextResponse.next()

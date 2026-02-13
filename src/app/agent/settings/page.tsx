@@ -1,11 +1,17 @@
 "use client";
 
 import { useEffect, useState } from "react";
-
-
-import { Loader2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Loader2, AlertCircle, RefreshCw, Edit2, Save, X } from "lucide-react";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { toast } from "@/hooks/use-toast";
+import Image from "next/image";
 
 interface UserProfile {
     user_id: string;
@@ -13,38 +19,133 @@ interface UserProfile {
     role: string;
     status: string;
     created_at: string;
-    full_name: string;
-    nik: string;
-    phone_number: string;
-    address: string;
-    birth_date: string;
-    gender: string;
+    full_name: string | null;
+    nik: string | null;
+    phone_number: string | null;
+    address: string | null;
+    birth_date: string | null; // ISO Date string
+    gender: string | null;
+    ktp_image_path: string | null;
+    selfie_image_path: string | null;
 }
 
 export default function AgentSettingsPage() {
+    const router = useRouter();
     const [profile, setProfile] = useState<UserProfile | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    useEffect(() => {
-        const fetchProfile = async () => {
-            try {
-                const res = await fetch("/api/agent/profile");
-                if (!res.ok) {
-                    throw new Error("Gagal mengambil data profil");
-                }
-                const data = await res.json();
-                setProfile(data);
-            } catch (err) {
-                console.error(err);
-                setError("Terjadi kesalahan saat memuat data profil.");
-            } finally {
-                setLoading(false);
-            }
-        };
+    // Edit Mode State
+    const [isEditing, setIsEditing] = useState(false);
+    const [editForm, setEditForm] = useState({
+        fullName: "",
+        phone: "",
+        nik: "",
+        address: "",
+        birthDate: "",
+        gender: "",
+    });
+    const [saving, setSaving] = useState(false);
 
+    const fetchProfile = async () => {
+        try {
+            setLoading(true);
+            setError(null);
+            const res = await fetch("/api/agent/profile");
+
+            if (res.status === 401) {
+                localStorage.removeItem("user");
+                router.push("/agent/login");
+                return;
+            }
+
+            if (!res.ok) {
+                const data = await res.json();
+                throw new Error(data.error || "Gagal mengambil data profil");
+            }
+
+            const data = await res.json();
+            setProfile(data);
+
+            // Initialize form with fetched data
+            setEditForm({
+                fullName: data.full_name || "",
+                phone: data.phone_number || "",
+                nik: data.nik || "",
+                address: data.address || "",
+                birthDate: data.birth_date ? data.birth_date.split('T')[0] : "",
+                gender: data.gender || "",
+            });
+
+        } catch (err: any) {
+            console.error("Profile fetch error:", err);
+            setError(err.message || "Terjadi kesalahan saat memuat data profil.");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
         fetchProfile();
     }, []);
+
+    const handleSave = async () => {
+        setSaving(true);
+        setError(null);
+        try {
+            const res = await fetch("/api/agent/profile", {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    fullName: editForm.fullName,
+                    phone: editForm.phone,
+                    nik: editForm.nik,
+                    address: editForm.address,
+                    birthDate: editForm.birthDate,
+                    gender: editForm.gender,
+                }),
+            });
+
+            if (!res.ok) {
+                const data = await res.json();
+                throw new Error(data.error || "Gagal menyimpan perubahan");
+            }
+
+            toast({
+                title: "Berhasil",
+                description: "Profil berhasil diperbarui.",
+                variant: "default",
+            });
+
+            // Refresh data
+            await fetchProfile();
+            setIsEditing(false);
+        } catch (err: any) {
+            console.error("Save error:", err);
+            setError(err.message || "Gagal menyimpan perubahan.");
+            toast({
+                title: "Gagal",
+                description: err.message || "Gagal menyimpan perubahan.",
+                variant: "destructive",
+            });
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const handleCancel = () => {
+        setIsEditing(false);
+        if (profile) {
+            setEditForm({
+                fullName: profile.full_name || "",
+                phone: profile.phone_number || "",
+                nik: profile.nik || "",
+                address: profile.address || "",
+                birthDate: profile.birth_date ? profile.birth_date.split('T')[0] : "",
+                gender: profile.gender || "",
+            });
+        }
+    };
 
     if (loading) {
         return (
@@ -54,102 +155,262 @@ export default function AgentSettingsPage() {
         );
     }
 
-    if (error) {
+    if (error && !profile) {
         return (
-            <div className="py-8 text-neutral-500">
-                <p>{error}</p>
+            <div className="flex h-[50vh] w-full flex-col items-center justify-center gap-4 text-center">
+                <div className="rounded-full bg-red-100 p-3 dark:bg-red-900/20">
+                    <AlertCircle className="h-6 w-6 text-red-600 dark:text-red-400" />
+                </div>
+                <div className="max-w-md space-y-2">
+                    <h3 className="font-semibold text-neutral-900 dark:text-neutral-100">Gagal memuat profil</h3>
+                    <p className="text-sm text-neutral-500">{error}</p>
+                </div>
+                <Button onClick={fetchProfile} variant="outline" className="gap-2">
+                    <RefreshCw className="h-4 w-4" />
+                    Coba Lagi
+                </Button>
             </div>
         );
     }
 
-    if (!profile) return null;
+    if (!profile) {
+        return (
+            <div className="flex h-[50vh] w-full items-center justify-center text-neutral-500">
+                Data profil tidak ditemukan.
+            </div>
+        );
+    }
 
     const formattedBirthDate = profile.birth_date
         ? format(new Date(profile.birth_date), "d MMMM yyyy", { locale: id })
         : "-";
 
+    const genderLabel = profile.gender === "MALE" || profile.gender === "LAKI-LAKI" ? "Laki-laki" :
+        profile.gender === "FEMALE" || profile.gender === "PEREMPUAN" ? "Perempuan" :
+            profile.gender || "-";
+
+    // Helper to format path
+    const getImagePath = (path: string | null) => {
+        if (!path) return null;
+        if (path.startsWith("public/")) return "/" + path.substring(7);
+        return path;
+    };
+
+    const ktpUrl = getImagePath(profile.ktp_image_path);
+    const selfieUrl = getImagePath(profile.selfie_image_path);
+
     return (
-        <div className="max-w-4xl space-y-12 pb-12">
+        <div className="max-w-4xl space-y-8 pb-12 animate-in fade-in duration-500">
             {/* Header Section */}
-            <div className="border-b border-neutral-200 pb-5 dark:border-neutral-800">
-                <h2 className="text-2xl font-semibold tracking-tight">Pengaturan</h2>
-                <p className="mt-1 text-sm text-neutral-500">
-                    Kelola informasi akun dan data diri Anda di sini.
-                </p>
+            <div className="flex items-center justify-between border-b border-neutral-200 pb-5 dark:border-neutral-800">
+                <div>
+                    <h2 className="text-2xl font-semibold tracking-tight">Pengaturan</h2>
+                    <p className="mt-1 text-sm text-neutral-500">
+                        Kelola informasi akun dan data diri Anda.
+                    </p>
+                </div>
+                {!isEditing && (
+                    <Button onClick={() => setIsEditing(true)} variant="outline" size="sm" className="gap-2">
+                        <Edit2 className="h-4 w-4" />
+                        Ubah Data
+                    </Button>
+                )}
             </div>
 
-
-
-            {/* Personal Details Section */}
+            {/* Main Form */}
             <div className="space-y-6">
                 <div className="flex items-center justify-between border-b border-neutral-200 pb-2 dark:border-neutral-800">
                     <h3 className="text-lg font-medium">Informasi Pribadi</h3>
+                    {isEditing && (
+                        <div className="flex gap-2">
+                            <Button onClick={handleCancel} variant="ghost" size="sm" disabled={saving}>
+                                <X className="h-4 w-4 mr-1" /> Batal
+                            </Button>
+                            <Button onClick={handleSave} size="sm" disabled={saving}>
+                                {saving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Save className="h-4 w-4 mr-1" />}
+                                Simpan
+                            </Button>
+                        </div>
+                    )}
                 </div>
 
-                <div className="grid grid-cols-1 gap-y-8 gap-x-12 md:grid-cols-2">
-                    <div className="space-y-1">
-                        <label className="text-xs font-medium uppercase tracking-wider text-neutral-500">
+                <div className="grid grid-cols-1 gap-y-6 gap-x-12 md:grid-cols-2">
+
+                    {/* Email (Read Only) */}
+                    <div className="space-y-2 md:col-span-2">
+                        <Label className="text-xs font-medium uppercase tracking-wider text-neutral-500">Email (Tidak dapat diubah)</Label>
+                        <Input value={profile.email} disabled className="bg-muted" />
+                    </div>
+
+                    {/* Full Name */}
+                    <div className="space-y-2">
+                        <Label htmlFor="fullName" className="text-xs font-medium uppercase tracking-wider text-neutral-500">
                             Nama Lengkap
-                        </label>
-                        <p className="font-medium text-neutral-900 dark:text-neutral-100">
-                            {profile.full_name || "-"}
-                        </p>
+                        </Label>
+                        {isEditing ? (
+                            <Input
+                                id="fullName"
+                                value={editForm.fullName}
+                                onChange={(e) => setEditForm({ ...editForm, fullName: e.target.value })}
+                                placeholder="Masukan nama lengkap"
+                            />
+                        ) : (
+                            <p className="font-medium text-neutral-900 dark:text-neutral-100 min-h-[40px] flex items-center border-b border-dashed border-neutral-200 dark:border-neutral-800">
+                                {profile.full_name || <span className="text-neutral-400 italic">Belum diisi</span>}
+                            </p>
+                        )}
                     </div>
 
-                    <div className="space-y-1">
-                        <label className="text-xs font-medium uppercase tracking-wider text-neutral-500">
-                            Email
-                        </label>
-                        <p className="font-medium text-neutral-900 dark:text-neutral-100">
-                            {profile.email}
-                        </p>
-                    </div>
-
-                    <div className="space-y-1">
-                        <label className="text-xs font-medium uppercase tracking-wider text-neutral-500">
+                    {/* Phone */}
+                    <div className="space-y-2">
+                        <Label htmlFor="phone" className="text-xs font-medium uppercase tracking-wider text-neutral-500">
                             Nomor Telepon
-                        </label>
-                        <p className="font-medium text-neutral-900 dark:text-neutral-100">
-                            {profile.phone_number || "-"}
-                        </p>
+                        </Label>
+                        {isEditing ? (
+                            <Input
+                                id="phone"
+                                value={editForm.phone}
+                                onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
+                                placeholder="+62..."
+                            />
+                        ) : (
+                            <p className="font-medium text-neutral-900 dark:text-neutral-100 min-h-[40px] flex items-center border-b border-dashed border-neutral-200 dark:border-neutral-800">
+                                {profile.phone_number || <span className="text-neutral-400 italic">Belum diisi</span>}
+                            </p>
+                        )}
                     </div>
 
-                    <div className="space-y-1">
-                        <label className="text-xs font-medium uppercase tracking-wider text-neutral-500">
+                    {/* NIK */}
+                    <div className="space-y-2">
+                        <Label htmlFor="nik" className="text-xs font-medium uppercase tracking-wider text-neutral-500">
                             NIK
-                        </label>
-                        <p className="font-medium text-neutral-900 dark:text-neutral-100 font-mono tracking-tight">
-                            {profile.nik || "-"}
-                        </p>
+                        </Label>
+                        {isEditing ? (
+                            <Input
+                                id="nik"
+                                value={editForm.nik}
+                                onChange={(e) => setEditForm({ ...editForm, nik: e.target.value })}
+                                placeholder="16 Digit NIK"
+                            />
+                        ) : (
+                            <p className="font-medium text-neutral-900 dark:text-neutral-100 font-mono tracking-tight min-h-[40px] flex items-center border-b border-dashed border-neutral-200 dark:border-neutral-800">
+                                {profile.nik || <span className="text-neutral-400 italic">Belum diisi</span>}
+                            </p>
+                        )}
                     </div>
 
-                    <div className="space-y-1">
-                        <label className="text-xs font-medium uppercase tracking-wider text-neutral-500">
+                    {/* Birth Date */}
+                    <div className="space-y-2">
+                        <Label htmlFor="birthDate" className="text-xs font-medium uppercase tracking-wider text-neutral-500">
                             Tanggal Lahir
-                        </label>
-                        <p className="font-medium text-neutral-900 dark:text-neutral-100">
-                            {formattedBirthDate}
-                        </p>
+                        </Label>
+                        {isEditing ? (
+                            <Input
+                                id="birthDate"
+                                type="date"
+                                value={editForm.birthDate}
+                                onChange={(e) => setEditForm({ ...editForm, birthDate: e.target.value })}
+                            />
+                        ) : (
+                            <p className="font-medium text-neutral-900 dark:text-neutral-100 min-h-[40px] flex items-center border-b border-dashed border-neutral-200 dark:border-neutral-800">
+                                {formattedBirthDate}
+                            </p>
+                        )}
                     </div>
 
-                    <div className="space-y-1">
-                        <label className="text-xs font-medium uppercase tracking-wider text-neutral-500">
+                    {/* Gender */}
+                    <div className="space-y-2">
+                        <Label htmlFor="gender" className="text-xs font-medium uppercase tracking-wider text-neutral-500">
                             Jenis Kelamin
-                        </label>
-                        <p className="font-medium text-neutral-900 dark:text-neutral-100">
-                            {profile.gender === "MALE" ? "Laki-laki" :
-                                profile.gender === "FEMALE" ? "Perempuan" :
-                                    profile.gender || "-"}
-                        </p>
+                        </Label>
+                        {isEditing ? (
+                            <Select value={editForm.gender} onValueChange={(val) => setEditForm({ ...editForm, gender: val })}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Pilih Jenis Kelamin" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="LAKI-LAKI">Laki-laki</SelectItem>
+                                    <SelectItem value="PEREMPUAN">Perempuan</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        ) : (
+                            <p className="font-medium text-neutral-900 dark:text-neutral-100 min-h-[40px] flex items-center border-b border-dashed border-neutral-200 dark:border-neutral-800">
+                                {genderLabel}
+                            </p>
+                        )}
                     </div>
 
-                    <div className="col-span-1 md:col-span-2 space-y-1">
-                        <label className="text-xs font-medium uppercase tracking-wider text-neutral-500">
+                    {/* Address */}
+                    <div className="col-span-1 md:col-span-2 space-y-2">
+                        <Label htmlFor="address" className="text-xs font-medium uppercase tracking-wider text-neutral-500">
                             Alamat
-                        </label>
-                        <p className="font-medium text-neutral-900 dark:text-neutral-100 leading-relaxed max-w-2xl">
-                            {profile.address || "-"}
-                        </p>
+                        </Label>
+                        {isEditing ? (
+                            <Textarea
+                                id="address"
+                                value={editForm.address}
+                                onChange={(e) => setEditForm({ ...editForm, address: e.target.value })}
+                                placeholder="Alamat lengkap"
+                                className="min-h-[80px]"
+                            />
+                        ) : (
+                            <p className="font-medium text-neutral-900 dark:text-neutral-100 leading-relaxed max-w-2xl min-h-[40px] flex items-center border-b border-dashed border-neutral-200 dark:border-neutral-800">
+                                {profile.address || <span className="text-neutral-400 italic">Belum diisi</span>}
+                            </p>
+                        )}
+                    </div>
+                </div>
+            </div>
+
+            {/* Verification Documents Section (Always Read Only) */}
+            <div className="space-y-6">
+                <div className="flex items-center justify-between border-b border-neutral-200 pb-2 dark:border-neutral-800">
+                    <h3 className="text-lg font-medium">Dokumen Verifikasi</h3>
+                </div>
+
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                    {/* KTP Image */}
+                    <div className="space-y-2">
+                        <Label className="text-xs font-medium uppercase tracking-wider text-neutral-500">
+                            Foto KTP
+                        </Label>
+                        <div className="border rounded-lg overflow-hidden bg-muted/20 aspect-video relative flex items-center justify-center">
+                            {ktpUrl ? (
+                                <div className="relative w-full h-full">
+                                    <Image
+                                        src={ktpUrl}
+                                        alt="Foto KTP"
+                                        fill
+                                        className="object-cover hover:scale-105 transition-transform duration-300 cursor-pointer"
+                                        onClick={() => window.open(ktpUrl, '_blank')}
+                                    />
+                                </div>
+                            ) : (
+                                <p className="text-sm text-neutral-400 italic">Belum diupload</p>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Selfie Image */}
+                    <div className="space-y-2">
+                        <Label className="text-xs font-medium uppercase tracking-wider text-neutral-500">
+                            Foto Selfie dengan KTP
+                        </Label>
+                        <div className="border rounded-lg overflow-hidden bg-muted/20 aspect-video relative flex items-center justify-center">
+                            {selfieUrl ? (
+                                <div className="relative w-full h-full">
+                                    <Image
+                                        src={selfieUrl}
+                                        alt="Foto Selfie"
+                                        fill
+                                        className="object-cover hover:scale-105 transition-transform duration-300 cursor-pointer"
+                                        onClick={() => window.open(selfieUrl, '_blank')}
+                                    />
+                                </div>
+                            ) : (
+                                <p className="text-sm text-neutral-400 italic">Belum diupload</p>
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>

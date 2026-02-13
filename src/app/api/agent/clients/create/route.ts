@@ -107,10 +107,10 @@ export async function POST(req: Request) {
 
     // 2. Create Person (Client)
     const personRes = await client.query(
-      `INSERT INTO public.person (full_name, id_card, phone_number, address, birth_date, gender)
-       VALUES ($1, $2, $3, $4, $5, $6)
+      `INSERT INTO public.person (full_name, id_card, phone_number, address, birth_date, gender, email)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
        RETURNING person_id`,
-      [fullName, nik, phoneNumber, address, birthDate || null, gender]
+      [fullName, nik, phoneNumber, address, birthDate || null, gender, email]
     );
     const personId = personRes.rows[0].person_id;
 
@@ -143,9 +143,10 @@ export async function POST(req: Request) {
          contract_startdate, 
          contract_duedate, 
          status,
-         policy_url
+         policy_url,
+         insurance_company_name
        )
-       VALUES ($1, $2, $3, $4, $5, 'ACTIVE', $6)
+       VALUES ($1, $2, $3, $4, $5, 'ACTIVE', $6, $7)
        RETURNING contract_id`,
       [
         clientId,
@@ -153,19 +154,21 @@ export async function POST(req: Request) {
         productName,
         startDate || null,
         endDate || null,
-        policyUrl
+        policyUrl,
+        insuranceCompany
       ]
     );
     const contractId = contractRes.rows[0].contract_id;
 
     // 5. Create Contract Detail
     await client.query(
-      `INSERT INTO public.contract_detail (contract_id, sum_insured, payment_type)
-       VALUES ($1, $2, $3)`,
+      `INSERT INTO public.contract_detail (contract_id, sum_insured, payment_type, premium_amount)
+       VALUES ($1, $2, $3, $4)`,
       [
         contractId,
         parseFloat(sumInsured) || 0,
-        'MONTHLY' // Default or parse from AI
+        'MONTHLY', // Default or parse from AI
+        parseFloat(premiumAmount) || 0
       ]
     );
 

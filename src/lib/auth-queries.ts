@@ -20,6 +20,8 @@ export type PendingUser = {
   address?: string;
   birth_date?: string;
   gender?: string;
+  ktp_image_path?: string;
+  selfie_image_path?: string;
 };
 
 export async function registerUser(params: {
@@ -32,6 +34,8 @@ export async function registerUser(params: {
   address?: string;
   birthDate?: string;
   gender?: string;
+  ktpImagePath?: string;
+  selfieImagePath?: string;
 }) {
   const passwordHash = await bcrypt.hash(params.password, 10);
   const client = await dbPool.connect();
@@ -59,10 +63,11 @@ export async function registerUser(params: {
     const user = userRes.rows[0];
 
     // 3. Create Person (if details provided)
+    let personId = null;
     if (params.fullName) {
       const personRes = await client.query(
-        `insert into public.person (full_name, id_card, phone_number, address, birth_date, gender)
-         values ($1, $2, $3, $4, $5, $6)
+        `insert into public.person (full_name, id_card, phone_number, address, birth_date, gender, ktp_image_path, selfie_image_path)
+         values ($1, $2, $3, $4, $5, $6, $7, $8)
          returning person_id`,
         [
           params.fullName,
@@ -71,9 +76,11 @@ export async function registerUser(params: {
           params.address,
           params.birthDate || null,
           params.gender,
+          params.ktpImagePath || null,
+          params.selfieImagePath || null,
         ]
       );
-      const personId = personRes.rows[0].person_id;
+      personId = personRes.rows[0].person_id;
 
       // 4. Link User and Person
       await client.query(
@@ -81,7 +88,36 @@ export async function registerUser(params: {
          values ($1, $2, 'OWNER')`,
         [user.user_id, personId]
       );
+    }
 
+    // 5. Create Agent Record if role is 'agent' (FIX: Ensure agent data enters database)
+    if (params.role === 'agent' && personId) {
+      // We need an insurance_id. Let's find or create a default one.
+      let insuranceId;
+      const insRes = await client.query("SELECT insurance_id FROM public.insurance LIMIT 1");
+      if (insRes.rows.length > 0) {
+        insuranceId = insRes.rows[0].insurance_id;
+      } else {
+        const newIns = await client.query("INSERT INTO public.insurance (insurance_name) VALUES ('Independent') RETURNING insurance_id");
+        insuranceId = newIns.rows[0].insurance_id;
+      }
+
+      // Use user_id as agent_id for consistency
+      // Note: We are using user_id as agent_id. This is a design choice to allow easy lookup.
+      try {
+        await client.query(
+          `INSERT INTO public.agent (agent_id, agent_name, insurance_id, status, person_id)
+                 VALUES ($1, $2, $3, 'ACTIVE', $4)`,
+          [userId, params.fullName, insuranceId, personId]
+        );
+      } catch (e) {
+        // If the person_id column doesn't exist yet (migration didn't run), fallback to old insert without person_id
+        await client.query(
+          `INSERT INTO public.agent (agent_id, agent_name, insurance_id, status)
+                 VALUES ($1, $2, $3, 'ACTIVE')`,
+          [userId, params.fullName, insuranceId]
+        );
+      }
     }
 
     await client.query("COMMIT");
@@ -175,7 +211,9 @@ export async function listPendingUsers(): Promise<PendingUser[]> {
        p.phone_number,
        p.address,
        p.birth_date,
-       p.gender
+       p.gender,
+       p.ktp_image_path,
+       p.selfie_image_path
      from public.app_user u
      left join public.user_person_link l on u.user_id = l.user_id
      left join public.person p on l.person_id = p.person_id
@@ -258,7 +296,9 @@ export async function findUserWithProfile(userId: string) {
        p.phone_number,
        p.address,
        p.birth_date,
-       p.gender
+       p.gender,
+       p.ktp_image_path,
+       p.selfie_image_path
      from public.app_user u
      left join public.user_person_link l on u.user_id = l.user_id
      left join public.person p on l.person_id = p.person_id
@@ -266,4 +306,65 @@ export async function findUserWithProfile(userId: string) {
     [userId]
   );
   return result.rows[0];
+}
+
+export async function updateUserProfile(userId: string, data: {
+  fullName: string;
+  phone: string;
+  address: string;
+  birthDate: string;
+  gender: string;
+  nik: string;
+  ktpImagePath?: string | null;
+  selfieImagePath?: string | null;
+}) {
+  const client = await dbPool.connect();
+  try {
+    await client.query("BEGIN");
+
+    // Check if link exists
+    const linkRes = await client.query(
+      "select person_id from public.user_person_link where user_id = $1",
+      [userId]
+    );
+
+    let personId;
+
+    if (linkRes.rows.length === 0) {
+      // Create Person
+      const personRes = await client.query(
+        `insert into public.person (full_name, id_card, phone_number, address, birth_date, gender, ktp_image_path, selfie_image_path)
+         values ($1, $2, $3, $4, $5, $6, $7, $8)
+         returning person_id`,
+        [data.fullName, data.nik, data.phone, data.address, data.birthDate || null, data.gender, data.ktpImagePath || null, data.selfieImagePath || null]
+      );
+      personId = personRes.rows[0].person_id;
+
+      // Link
+      await client.query(
+        `insert into public.user_person_link (user_id, person_id, relation_type)
+         values ($1, $2, 'OWNER')`,
+        [userId, personId]
+      );
+    } else {
+      personId = linkRes.rows[0].person_id;
+      // Update Person
+      await client.query(
+        `update public.person
+         set full_name = $1, id_card = $2, phone_number = $3, address = $4, birth_date = $5, gender = $6,
+             ktp_image_path = coalesce($7, ktp_image_path),
+             selfie_image_path = coalesce($8, selfie_image_path)
+         where person_id = $9`,
+        [data.fullName, data.nik, data.phone, data.address, data.birthDate || null, data.gender, data.ktpImagePath || null, data.selfieImagePath || null, personId]
+      );
+    }
+
+    await client.query("COMMIT");
+    return true;
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
 }

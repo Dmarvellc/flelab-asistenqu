@@ -32,9 +32,9 @@ const translations = {
         solution: "Empowering operations and analytics with a premium, multi-dashboard workspace.",
 
         // Not Found
-        notFoundTitle: "Page Not Found",
-        notFoundDesc: "Sorry, the page you are looking for could not be found or has been moved.",
-        backHome: "Back to Home",
+        notFoundTitle: "Ouch, found nothing :(",
+        notFoundDesc: "Looks like you're in the wrong place",
+        backHome: "Back to main menu",
         backPrev: "Previous Page"
     },
     id: {
@@ -57,10 +57,10 @@ const translations = {
         copyright: "Hak cipta dilindungi undang-undang.",
         solution: "Memberdayakan operasi dan analitik dengan ruang kerja multi-dashboard premium.",
 
-        // Not Found - keeping the simple message requested
-        notFoundTitle: "Halaman Tidak Ditemukan",
-        notFoundDesc: "Maaf, halaman yang Anda cari tidak dapat ditemukan atau telah dipindahkan.",
-        backHome: "Kembali ke Beranda",
+        // Not Found
+        notFoundTitle: "Waduh ga dapat apa-apa :(",
+        notFoundDesc: "Sepertinya kamu ketempat yang salah",
+        backHome: "Kembali ke menu utama",
         backPrev: "Halaman Sebelumnya"
     }
 };
