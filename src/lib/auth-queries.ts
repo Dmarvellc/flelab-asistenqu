@@ -99,6 +99,14 @@ export async function createActiveUser(params: {
   password: string;
   role: string;
   approvedBy?: string | null;
+  profile?: {
+    fullName?: string;
+    nik?: string;
+    phoneNumber?: string;
+    address?: string;
+    birthDate?: string;
+    gender?: string;
+  };
 }) {
   const passwordHash = await bcrypt.hash(params.password, 10);
   const client = await dbPool.connect();
@@ -129,6 +137,31 @@ export async function createActiveUser(params: {
         params.approvedBy ?? null,
       ]
     );
+
+    // Create Person (if profile details provided)
+    if (params.profile && (params.profile.fullName || params.profile.nik)) {
+      const personRes = await client.query(
+        `insert into public.person (full_name, id_card, phone_number, address, birth_date, gender)
+         values ($1, $2, $3, $4, $5, $6)
+         returning person_id`,
+        [
+          params.profile.fullName,
+          params.profile.nik,
+          params.profile.phoneNumber,
+          params.profile.address,
+          params.profile.birthDate || null,
+          params.profile.gender,
+        ]
+      );
+      const personId = personRes.rows[0].person_id;
+
+      // Link User and Person
+      await client.query(
+        `insert into public.user_person_link (user_id, person_id, relation_type)
+         values ($1, $2, 'OWNER')`,
+        [userId, personId]
+      );
+    }
 
     await client.query("COMMIT");
     return result.rows[0] as AppUser;
