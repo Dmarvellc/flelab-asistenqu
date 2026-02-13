@@ -1,43 +1,45 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-
-// Map of URL prefixes to required roles
-const routeRoles: Record<string, string> = {
-  '/developer': 'developer',
-  '/agent': 'agent',
-  '/hospital': 'hospital_admin',
-  '/admin-agency': 'agency_admin',
-  '/insurance': 'insurance_admin',
-}
+import { getAllowedRolesForPath, Role } from './lib/rbac'
 
 export function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname
   const roleCookie = request.cookies.get('rbac_role')?.value
 
-  // Find if current path matches any role prefix
-  const matchedPrefix = Object.keys(routeRoles).find(prefix => path.startsWith(prefix))
+  // Check if current path requires specific roles
+  const allowedRoles = getAllowedRolesForPath(path)
 
-  if (matchedPrefix) {
-    const requiredRole = routeRoles[matchedPrefix]
-    const isLoginPage = path === `${matchedPrefix}/login`
-    const isRegisterPage = path === `${matchedPrefix}/register`
+  if (allowedRoles) {
+    const isLoginPage = path.endsWith('/login')
+    const isRegisterPage = path.endsWith('/register')
     // Allow public access to login and register pages
     const isPublicPage = isLoginPage || isRegisterPage
 
     if (isPublicPage) {
-      // If user is already logged in with the correct role, redirect to dashboard
-      // Only redirect if they are on the login page specifically to avoid redirect loops or annoyance
-      if (isLoginPage && roleCookie === requiredRole) {
-        return NextResponse.redirect(new URL(matchedPrefix, request.url))
+      // If user is already logged in with an allowed role, redirect to dashboard
+      // We need to find the base prefix to redirect to
+      // Simple heuristic: remove /login or /register from path
+      if (roleCookie && allowedRoles.includes(roleCookie as Role)) {
+         const dashboardPath = path.replace(/\/login$|\/register$/, '')
+         return NextResponse.redirect(new URL(dashboardPath, request.url))
       }
       // Otherwise, allow access
       return NextResponse.next()
     }
 
     // Case 2: User is on a protected page
-    // If user does not have the correct role, redirect to login
-    if (roleCookie !== requiredRole) {
-      return NextResponse.redirect(new URL(`${matchedPrefix}/login`, request.url))
+    // If user does not have an allowed role, redirect to login
+    // We need to find the login path. 
+    // Heuristic: If path is /admin-agency/dashboard, login is /admin-agency/login[
+    
+    if (!roleCookie || !allowedRoles.includes(roleCookie as Role)) {
+      // Construct login URL. 
+      // Getting the module root is tricky without the map.
+      // But we can assume standard structure: /{module}/login
+      const segments = path.split('/').filter(Boolean);
+      const moduleRoot = segments.length > 0 ? `/${segments[0]}` : '/';
+      
+      return NextResponse.redirect(new URL(`${moduleRoot}/login`, request.url))
     }
   }
 
