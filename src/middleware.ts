@@ -44,7 +44,7 @@ export function middleware(request: NextRequest) {
 
     // Special Case: Agent with PENDING status (Needs Verification)
     const userStatus = request.cookies.get('user_status')?.value
-    if (requiredRole === 'agent' && userStatus === 'PENDING') {
+    if (roleCookie === 'agent' && userStatus === 'PENDING') {
       const allowedPendingPaths = ['/agent/verification', '/agent/settings']
       const isAllowedPath = allowedPendingPaths.some(p => path.startsWith(p))
 

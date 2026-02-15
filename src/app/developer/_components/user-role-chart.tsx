@@ -40,7 +40,7 @@ export function UserRoleChart({ data }: { data: Record<string, number> }) {
               innerRadius={45}
               outerRadius={65}
               paddingAngle={2}
-              label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+              label={({ name, value }) => `${name}: ${value}`}
               labelLine={true}
             >
                 {chartData.map((entry, index) => (
@@ -48,7 +48,7 @@ export function UserRoleChart({ data }: { data: Record<string, number> }) {
                 ))}
             </Pie>
             <Tooltip 
-                formatter={(value: number) => [value, "Users"]}
+                formatter={(value: number | undefined) => [value, "Users"]}
                 contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
             />
             <Legend verticalAlign="bottom" height={36}/>

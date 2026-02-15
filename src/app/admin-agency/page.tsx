@@ -1,4 +1,5 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { ClaimsList } from "@/components/dashboard/claims-list"
 
 export default function AdminAgencyDashboardPage() {
   return (
@@ -38,6 +39,10 @@ export default function AdminAgencyDashboardPage() {
             <div className="text-3xl font-bold">0</div>
           </CardContent>
         </Card>
+      </div>
+      
+      <div className="grid gap-6">
+        <ClaimsList role="admin_agency" />
       </div>
     </div>
   );

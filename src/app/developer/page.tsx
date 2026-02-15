@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Activity, Users } from "lucide-react";
 import { UserRoleChart } from "./_components/user-role-chart";
+import { ClaimsList } from "@/components/dashboard/claims-list";
 
 export default function DeveloperDashboardPage() {
   const [stats, setStats] = useState<{
@@ -95,6 +96,10 @@ export default function DeveloperDashboardPage() {
             )}
           </CardContent>
         </Card>
+      </div>
+      
+      <div className="grid gap-6">
+        <ClaimsList role="developer" />
       </div>
     </div>
   );

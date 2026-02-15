@@ -1,6 +1,19 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { ClaimsList } from "@/components/dashboard/claims-list"
+import { cookies } from "next/headers"
+import { getHospitalClaims, getHospitalIdByUserId } from "@/services/claims"
 
-export default function HospitalDashboardPage() {
+export default async function HospitalDashboardPage() {
+  const cookieStore = await cookies()
+  const userId = cookieStore.get("app_user_id")?.value || ""
+  const hospitalId = await getHospitalIdByUserId(userId)
+  const claims = await getHospitalClaims(hospitalId)
+  
+  // Filter for "On Progress" claims roughly
+  const activeClaims = claims.filter(c => 
+    ['SUBMITTED', 'INFO_REQUESTED', 'INFO_SUBMITTED'].includes(c.status)
+  )
+
   return (
     <div className="flex flex-col gap-6">
       <div>
@@ -26,7 +39,7 @@ export default function HospitalDashboardPage() {
             <CardDescription>Claims awaiting processing</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">0</div>
+            <div className="text-3xl font-bold">{activeClaims.length}</div>
           </CardContent>
         </Card>
         <Card>
@@ -38,6 +51,10 @@ export default function HospitalDashboardPage() {
             <div className="text-3xl font-bold">0</div>
           </CardContent>
         </Card>
+      </div>
+      
+      <div className="grid gap-6">
+        <ClaimsList role="hospital" claims={activeClaims} />
       </div>
     </div>
   );

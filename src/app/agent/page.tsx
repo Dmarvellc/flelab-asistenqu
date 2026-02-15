@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Plus, Users, FileText, Activity } from "lucide-react"
 import Link from "next/link"
+import { ClaimsList } from "@/components/dashboard/claims-list"
 
 export default function AgentDashboardPage() {
   const [metrics, setMetrics] = useState({
@@ -125,6 +126,10 @@ export default function AgentDashboardPage() {
             </p>
           </CardContent>
         </Card>
+      </div>
+      
+      <div className="grid gap-6">
+        <ClaimsList role="agent" />
       </div>
     </div>
   );

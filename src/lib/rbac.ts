@@ -21,7 +21,7 @@ const routeRoleMap: Array<{ prefix: string; roles: Role[] }> = [
   },
   {
     prefix: "/agent",
-    roles: ["super_admin", "agent_manager"],
+    roles: ["super_admin", "agent_manager", "agent"],
   },
   {
     prefix: "/agent-portal",
