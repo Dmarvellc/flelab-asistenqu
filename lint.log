@@ -1,0 +1,259 @@
+﻿
+> flelab-asistenqu@0.1.0 lint
+> eslint
+
+
+C:\Users\alber\OneDrive\Documents\flelab-asistenqu\scripts\create-developer.js
+  1:1   error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+  2:16  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+  3:18  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+
+C:\Users\alber\OneDrive\Documents\flelab-asistenqu\scripts\init-db.js
+  1:1   error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+  2:18  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+  3:12  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+  4:14  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+
+C:\Users\alber\OneDrive\Documents\flelab-asistenqu\src\app\admin-agency\login\page.tsx
+  3:8  warning  'Link' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\alber\OneDrive\Documents\flelab-asistenqu\src\app\agent\claims\[id]\page.tsx
+    8:82  warning  'X' is defined but never used              @typescript-eslint/no-unused-vars
+   26:5   warning  'DialogTrigger' is defined but never used  @typescript-eslint/no-unused-vars
+   93:63  error    Unexpected any. Specify a different type   @typescript-eslint/no-explicit-any
+  293:51  error    Unexpected any. Specify a different type   @typescript-eslint/no-explicit-any
+
+C:\Users\alber\OneDrive\Documents\flelab-asistenqu\src\app\agent\clients\new\page.tsx
+  41:12  warning  'previewUrl' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\alber\OneDrive\Documents\flelab-asistenqu\src\app\agent\clients\page.tsx
+  15:10  warning  'Card' is defined but never used             @typescript-eslint/no-unused-vars
+  15:16  warning  'CardContent' is defined but never used      @typescript-eslint/no-unused-vars
+  15:29  warning  'CardDescription' is defined but never used  @typescript-eslint/no-unused-vars
+  15:46  warning  'CardHeader' is defined but never used       @typescript-eslint/no-unused-vars
+  15:58  warning  'CardTitle' is defined but never used        @typescript-eslint/no-unused-vars
+  16:30  warning  'FileText' is defined but never used         @typescript-eslint/no-unused-vars
+
+C:\Users\alber\OneDrive\Documents\flelab-asistenqu\src\app\agent\layout.tsx
+  37:7  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+C:\Users\alber\OneDrive\Documents\flelab-asistenqu\src\app\agent\layout.tsx:37:7
+  35 |     // 1. If public page, always allow access immediately
+  36 |     if (isPublicPage) {
+> 37 |       setIsAuthorized(true);
+     |       ^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  38 |       // We set isChecking to false to unblock UI
+  39 |       setIsChecking(false);
+  40 |       return;  react-hooks/set-state-in-effect
+
+C:\Users\alber\OneDrive\Documents\flelab-asistenqu\src\app\agent\register\page.tsx
+  424:103  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  472:107  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  494:106  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  520:107  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  543:106  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\alber\OneDrive\Documents\flelab-asistenqu\src\app\agent\settings\page.tsx
+   80:23  error    Unexpected any. Specify a different type                                                                         @typescript-eslint/no-explicit-any
+   90:8   warning  React Hook useEffect has a missing dependency: 'fetchProfile'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  123:23  error    Unexpected any. Specify a different type                                                                         @typescript-eslint/no-explicit-any
+
+C:\Users\alber\OneDrive\Documents\flelab-asistenqu\src\app\agent\verification\page.tsx
+    6:27  warning  'CheckCircle2' is defined but never used                                                                         @typescript-eslint/no-unused-vars
+    9:10  warning  'cn' is defined but never used                                                                                   @typescript-eslint/no-unused-vars
+   89:8   warning  React Hook useEffect has a missing dependency: 'fetchProfile'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  160:11  warning  'getImagePath' is assigned a value but never used                                                                @typescript-eslint/no-unused-vars
+  172:18  warning  'e' is defined but never used                                                                                    @typescript-eslint/no-unused-vars
+
+C:\Users\alber\OneDrive\Documents\flelab-asistenqu\src\app\api\agent\claims\[id]\documents\route.ts
+  104:19  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\alber\OneDrive\Documents\flelab-asistenqu\src\app\api\agent\claims\route.ts
+  7:27  warning  'req' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\alber\OneDrive\Documents\flelab-asistenqu\src\app\api\agent\clients\create\route.ts
+  88:9  error  'agentId' is never reassigned. Use 'const' instead  prefer-const
+
+C:\Users\alber\OneDrive\Documents\flelab-asistenqu\src\app\api\agent\clients\route.ts
+  5:27  warning  'req' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\alber\OneDrive\Documents\flelab-asistenqu\src\app\api\agent\metrics\route.ts
+  5:27  warning  'req' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\alber\OneDrive\Documents\flelab-asistenqu\src\app\api\developer\create\route.ts
+  36:9  warning  'extendedCreatableRoles' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\alber\OneDrive\Documents\flelab-asistenqu\src\app\api\hospital\claims\route.ts
+  6:27  warning  'req' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\alber\OneDrive\Documents\flelab-asistenqu\src\app\api\setup\migration-contract\route.ts
+  9:21  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\alber\OneDrive\Documents\flelab-asistenqu\src\app\api\users\[id]\route.ts
+  17:14  warning  'error' is defined but never used         @typescript-eslint/no-unused-vars
+  32:23  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\alber\OneDrive\Documents\flelab-asistenqu\src\app\api\users\route.ts
+  21:28  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\alber\OneDrive\Documents\flelab-asistenqu\src\app\api\wilayah\districts\route.ts
+  12:61  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\alber\OneDrive\Documents\flelab-asistenqu\src\app\api\wilayah\regencies\route.ts
+  13:60  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\alber\OneDrive\Documents\flelab-asistenqu\src\app\api\wilayah\villages\route.ts
+  12:59  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\alber\OneDrive\Documents\flelab-asistenqu\src\app\developer\_components\activity-feed.tsx
+  22:24  error  `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`  react/no-unescaped-entities
+  22:30  error  `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`  react/no-unescaped-entities
+
+C:\Users\alber\OneDrive\Documents\flelab-asistenqu\src\app\developer\_components\user-management.tsx
+  29:10  warning  'Badge' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\alber\OneDrive\Documents\flelab-asistenqu\src\app\developer\layout.tsx
+  33:7  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+C:\Users\alber\OneDrive\Documents\flelab-asistenqu\src\app\developer\layout.tsx:33:7
+  31 |     // 1. If public page, always allow access immediately
+  32 |     if (isPublicPage) {
+> 33 |       setIsAuthorized(true);
+     |       ^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  34 |       setIsChecking(false);
+  35 |       return;
+  36 |     }  react-hooks/set-state-in-effect
+
+C:\Users\alber\OneDrive\Documents\flelab-asistenqu\src\app\developer\pending\page.tsx
+   19:5   warning  'DialogFooter' is defined but never used                                                                         @typescript-eslint/no-unused-vars
+   22:5   warning  'DialogTrigger' is defined but never used                                                                        @typescript-eslint/no-unused-vars
+   24:10  warning  'Card' is defined but never used                                                                                 @typescript-eslint/no-unused-vars
+   24:16  warning  'CardContent' is defined but never used                                                                          @typescript-eslint/no-unused-vars
+   24:29  warning  'CardDescription' is defined but never used                                                                      @typescript-eslint/no-unused-vars
+   24:46  warning  'CardHeader' is defined but never used                                                                           @typescript-eslint/no-unused-vars
+   24:58  warning  'CardTitle' is defined but never used                                                                            @typescript-eslint/no-unused-vars
+   25:24  warning  'UserCheck' is defined but never used                                                                            @typescript-eslint/no-unused-vars
+   25:49  warning  'AlertCircle' is defined but never used                                                                          @typescript-eslint/no-unused-vars
+   80:8   warning  React Hook useEffect has a missing dependency: 'fetchPending'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  221:44  error    `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`                                                  react/no-unescaped-entities
+
+C:\Users\alber\OneDrive\Documents\flelab-asistenqu\src\app\developer\users\page.tsx
+  101:8   warning  React Hook useEffect has a missing dependency: 'fetchUsers'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  295:53  error    `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`                                                react/no-unescaped-entities
+  295:97  error    `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`                                                react/no-unescaped-entities
+
+C:\Users\alber\OneDrive\Documents\flelab-asistenqu\src\app\hospital\claims\[id]\page.tsx
+   95:36  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  192:67  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\alber\OneDrive\Documents\flelab-asistenqu\src\app\hospital\page.tsx
+  48:35  error  `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`  react/no-unescaped-entities
+
+C:\Users\alber\OneDrive\Documents\flelab-asistenqu\src\components\animate-ui\primitives\animate\slot.tsx
+  86:6  error  Error: Cannot create components during render
+
+Components created during render will reset their state each time they are created. Declare components outside of render.
+
+C:\Users\alber\OneDrive\Documents\flelab-asistenqu\src\components\animate-ui\primitives\animate\slot.tsx:86:6
+  84 |
+  85 |   return (
+> 86 |     <Base {...mergedProps} ref={mergeRefs(childRef as React.Ref<T>, ref)} />
+     |      ^^^^ This component is created during render
+  87 |   );
+  88 | }
+  89 |
+
+C:\Users\alber\OneDrive\Documents\flelab-asistenqu\src\components\animate-ui\primitives\animate\slot.tsx:75:11
+  73 |       isAlreadyMotion
+  74 |         ? (children.type as React.ElementType)
+> 75 |         : motion.create(children.type as React.ElementType),
+     |           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ The component is created during render here
+  76 |     [isAlreadyMotion, children.type],
+  77 |   );
+  78 |  react-hooks/static-components
+
+C:\Users\alber\OneDrive\Documents\flelab-asistenqu\src\components\dashboard\claims-list.tsx
+   7:3   warning  'Card' is defined but never used             @typescript-eslint/no-unused-vars
+   8:3   warning  'CardContent' is defined but never used      @typescript-eslint/no-unused-vars
+   9:3   warning  'CardDescription' is defined but never used  @typescript-eslint/no-unused-vars
+  10:3   warning  'CardHeader' is defined but never used       @typescript-eslint/no-unused-vars
+  11:3   warning  'CardTitle' is defined but never used        @typescript-eslint/no-unused-vars
+  21:30  warning  'role' is defined but never used             @typescript-eslint/no-unused-vars
+
+C:\Users\alber\OneDrive\Documents\flelab-asistenqu\src\components\dashboard\dashboard-layout.tsx
+   8:10  warning  'ScrollArea' is defined but never used  @typescript-eslint/no-unused-vars
+  51:57  warning  'mobile' is defined but never used      @typescript-eslint/no-unused-vars
+
+C:\Users\alber\OneDrive\Documents\flelab-asistenqu\src\components\home\marketing-layout.tsx
+  3:10  warning  'useLanguage' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\alber\OneDrive\Documents\flelab-asistenqu\src\components\ui\fullscreen-camera.tsx
+    5:24  warning  'Camera' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           @typescript-eslint/no-unused-vars
+   23:37  error    Compilation Skipped: Existing memoization could not be preserved
+
+React Compiler has skipped optimizing this component because the existing manual memoization could not be preserved. The inferred dependencies did not match the manually specified dependencies, which could cause the value to change more or less frequently than expected. The inferred dependency was `stream`, but the source dependencies were [facingMode]. Inferred different dependency than source.
+
+C:\Users\alber\OneDrive\Documents\flelab-asistenqu\src\components\ui\fullscreen-camera.tsx:23:37
+  21 |     const [error, setError] = useState<string | null>(null);
+  22 |
+> 23 |     const startCamera = useCallback(async () => {
+     |                                     ^^^^^^^^^^^^^
+> 24 |         try {
+     | ^^^^^^^^^^^^^
+> 25 |             if (stream) {
+     ΓÇª
+     | ^^^^^^^^^^^^^
+> 52 |         }
+     | ^^^^^^^^^^^^^
+> 53 |     }, [facingMode]);
+     | ^^^^^^ Could not preserve existing manual memoization
+  54 |
+  55 |     useEffect(() => {
+  56 |         startCamera();                     react-hooks/preserve-manual-memoization
+   53:8   warning  React Hook useCallback has a missing dependency: 'stream'. Either include it or remove the dependency array                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  react-hooks/exhaustive-deps
+   56:9   error    Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+C:\Users\alber\OneDrive\Documents\flelab-asistenqu\src\components\ui\fullscreen-camera.tsx:56:9
+  54 |
+  55 |     useEffect(() => {
+> 56 |         startCamera();
+     |         ^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  57 |         return () => {
+  58 |             if (stream) {
+  59 |                 stream.getTracks().forEach(track => track.stop());  react-hooks/set-state-in-effect
+   62:8   warning  React Hook useEffect has a missing dependency: 'stream'. Either include it or remove the dependency array                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    react-hooks/exhaustive-deps
+  142:21  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      @next/next/no-img-element
+
+C:\Users\alber\OneDrive\Documents\flelab-asistenqu\src\components\ui\input.tsx
+  4:18  error  An interface declaring no members is equivalent to its supertype  @typescript-eslint/no-empty-object-type
+
+C:\Users\alber\OneDrive\Documents\flelab-asistenqu\src\hooks\use-toast.ts
+  21:7  warning  'actionTypes' is assigned a value but only used as a type  @typescript-eslint/no-unused-vars
+
+C:\Users\alber\OneDrive\Documents\flelab-asistenqu\src\lib\auth-queries.ts
+  113:16  warning  'e' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\alber\OneDrive\Documents\flelab-asistenqu\src\lib\language-context.tsx
+  74:9  error  Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free  @typescript-eslint/ban-ts-comment
+
+Γ£û 88 problems (39 errors, 49 warnings)
+  1 error and 0 warnings potentially fixable with the `--fix` option.
+

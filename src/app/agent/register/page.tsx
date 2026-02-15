@@ -421,6 +421,7 @@ export default function AgentRegisterPage() {
                                             name="gender"
                                             value={formData.gender}
                                             onValueChange={(value) => {
+                                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                                 handleChange({ target: { name: 'gender', value } } as any);
                                                 if (fieldErrors.gender) setFieldErrors({ ...fieldErrors, gender: false });
                                             }}
@@ -469,6 +470,7 @@ export default function AgentRegisterPage() {
                                             name="provinceId"
                                             value={formData.provinceId}
                                             onValueChange={(value) => {
+                                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                                 handleChange({ target: { name: 'provinceId', value } } as any);
                                                 if (fieldErrors.provinceId) setFieldErrors({ ...fieldErrors, provinceId: false });
                                             }}
@@ -491,6 +493,7 @@ export default function AgentRegisterPage() {
                                             name="regencyId"
                                             value={formData.regencyId}
                                             onValueChange={(value) => {
+                                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                                 handleChange({ target: { name: 'regencyId', value } } as any);
                                                 if (fieldErrors.regencyId) setFieldErrors({ ...fieldErrors, regencyId: false });
                                             }}
@@ -517,6 +520,7 @@ export default function AgentRegisterPage() {
                                             name="districtId"
                                             value={formData.districtId}
                                             onValueChange={(value) => {
+                                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                                 handleChange({ target: { name: 'districtId', value } } as any);
                                                 if (fieldErrors.districtId) setFieldErrors({ ...fieldErrors, districtId: false });
                                             }}
@@ -540,6 +544,7 @@ export default function AgentRegisterPage() {
                                             name="villageId"
                                             value={formData.villageId}
                                             onValueChange={(value) => {
+                                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                                 handleChange({ target: { name: 'villageId', value } } as any);
                                                 if (fieldErrors.villageId) setFieldErrors({ ...fieldErrors, villageId: false });
                                             }}

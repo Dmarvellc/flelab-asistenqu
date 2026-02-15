@@ -1,37 +1,23 @@
-"use client";
-
-import { useEffect, useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Plus, Users, FileText, Activity } from "lucide-react"
 import Link from "next/link"
 import { ClaimsList } from "@/components/dashboard/claims-list"
+import { cookies } from "next/headers"
+import { getAgentClaims, getAgentIdByUserId } from "@/services/claims"
+import { getAgentMetrics } from "@/services/agent-metrics"
 
-export default function AgentDashboardPage() {
-  const [metrics, setMetrics] = useState({
-    activeClients: 0,
-    pendingContracts: 0,
-    points: 0,
-    totalClaims: 0
-  });
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchMetrics = async () => {
-      try {
-        const res = await fetch("/api/agent/metrics");
-        if (res.ok) {
-          const data = await res.json();
-          setMetrics(data);
-        }
-      } catch (error) {
-        console.error("Failed to fetch metrics", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchMetrics();
-  }, []);
+export default async function AgentDashboardPage() {
+  const cookieStore = await cookies()
+  const userId = cookieStore.get("app_user_id")?.value || ""
+  
+  // Fetch data in parallel
+  const [agentId, metrics] = await Promise.all([
+    getAgentIdByUserId(userId),
+    getAgentMetrics(userId) // metrics service uses userId to query
+  ]);
+  
+  const claims = agentId ? await getAgentClaims(agentId) : [];
 
   return (
     <div className="flex flex-col gap-6">
@@ -67,7 +53,7 @@ export default function AgentDashboardPage() {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{loading ? "..." : metrics.activeClients}</div>
+            <div className="text-2xl font-bold">{metrics.activeClients}</div>
             <p className="text-xs text-muted-foreground">
               Total nasabah yang Anda kelola
             </p>
@@ -81,7 +67,7 @@ export default function AgentDashboardPage() {
             <FileText className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{loading ? "..." : metrics.pendingContracts}</div>
+            <div className="text-2xl font-bold">{metrics.pendingContracts}</div>
             <p className="text-xs text-muted-foreground">
               Menunggu persetujuan
             </p>
@@ -95,7 +81,7 @@ export default function AgentDashboardPage() {
             <Activity className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{loading ? "..." : metrics.totalClaims}</div>
+            <div className="text-2xl font-bold">{metrics.totalClaims}</div>
             <p className="text-xs text-muted-foreground">
               Semua klaim yang diajukan
             </p>
@@ -120,7 +106,7 @@ export default function AgentDashboardPage() {
             </svg>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{loading ? "..." : metrics.points}</div>
+            <div className="text-2xl font-bold">{metrics.points}</div>
             <p className="text-xs text-muted-foreground">
               Poin yang dapat ditukar
             </p>
@@ -129,7 +115,7 @@ export default function AgentDashboardPage() {
       </div>
       
       <div className="grid gap-6">
-        <ClaimsList role="agent" />
+        <ClaimsList role="agent" claims={claims} />
       </div>
     </div>
   );

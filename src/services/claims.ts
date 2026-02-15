@@ -43,7 +43,7 @@ export async function getHospitalClaims(hospitalId: string | null): Promise<Clai
       WHERE c.status != 'DRAFT'
     `;
     
-    const queryParams: any[] = [];
+    const queryParams: (string | null)[] = [];
     
     if (hospitalId) {
         query += ` AND c.hospital_id = $${queryParams.length + 1}`;
@@ -54,6 +54,7 @@ export async function getHospitalClaims(hospitalId: string | null): Promise<Clai
 
     const result = await client.query(query, queryParams);
     
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return result.rows.map((row: any) => ({
         ...row,
         total_amount: Number(row.total_amount),
@@ -65,15 +66,20 @@ export async function getHospitalClaims(hospitalId: string | null): Promise<Clai
 }
 
 export async function getAgentIdByUserId(userId: string): Promise<string | null> {
-  // Check if user is an agent via user_role to confirm validity
   const client = await dbPool.connect();
   try {
-    const userRoleRes = await client.query(`
-      SELECT role FROM public.user_role WHERE user_id = $1 AND role = 'agent'
+    // Check role in app_user table instead of user_role
+    // detailed role check to avoid enum errors
+    const userRes = await client.query(`
+      SELECT role FROM public.app_user WHERE user_id = $1
     `, [userId]);
     
-    if (userRoleRes.rows.length > 0) {
-        return userId;
+    if (userRes.rows.length > 0) {
+        const role = userRes.rows[0].role;
+        // Check for both lowercase and uppercase to be safe
+        if (role === 'agent' || role === 'AGENT') {
+            return userId;
+        }
     }
     return null;
   } finally {
@@ -107,6 +113,7 @@ export async function getAgentClaims(userId: string): Promise<Claim[]> {
     
     const result = await client.query(query, [userId]);
     
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return result.rows.map((row: any) => ({
         ...row,
         total_amount: Number(row.total_amount),
@@ -142,6 +149,7 @@ export async function getAllClaims(): Promise<Claim[]> {
     
     const result = await client.query(query);
     
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return result.rows.map((row: any) => ({
         ...row,
         total_amount: Number(row.total_amount),

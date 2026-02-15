@@ -1,13 +1,21 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ClaimsList } from "@/components/dashboard/claims-list"
+import { getAllClaims } from "@/services/claims"
 
-export default function AdminAgencyDashboardPage() {
+export default async function AdminAgencyDashboardPage() {
+  const claims = await getAllClaims()
+  
+  // Mock metrics for now as there is no service yet for admin metrics
+  const agentsCount = 120
+  const hospitalsCount = 45
+  const policiesCount = 1250
+
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h2 className="text-3xl font-bold tracking-tight">Agency Administration</h2>
+        <h2 className="text-3xl font-bold tracking-tight">Admin Agency Dashboard</h2>
         <p className="text-muted-foreground">
-          Oversee agency operations and insurance networks.
+          Overview of agency performance and claims.
         </p>
       </div>
 
@@ -15,34 +23,34 @@ export default function AdminAgencyDashboardPage() {
         <Card>
           <CardHeader>
             <CardTitle>Total Agents</CardTitle>
-            <CardDescription>Registered agents in network</CardDescription>
+            <CardDescription>Active agents across regions</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">0</div>
+            <div className="text-3xl font-bold">{agentsCount}</div>
           </CardContent>
         </Card>
         <Card>
           <CardHeader>
             <CardTitle>Partner Hospitals</CardTitle>
-            <CardDescription>Active hospital partnerships</CardDescription>
+            <CardDescription>Verified healthcare providers</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">0</div>
+            <div className="text-3xl font-bold">{hospitalsCount}</div>
           </CardContent>
         </Card>
         <Card>
           <CardHeader>
-            <CardTitle>Total Policies</CardTitle>
-            <CardDescription>Active insurance policies</CardDescription>
+            <CardTitle>Active Policies</CardTitle>
+            <CardDescription>Total insurance policies issued</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">0</div>
+            <div className="text-3xl font-bold">{policiesCount}</div>
           </CardContent>
         </Card>
       </div>
       
       <div className="grid gap-6">
-        <ClaimsList role="admin_agency" />
+        <ClaimsList role="admin_agency" claims={claims} />
       </div>
     </div>
   );

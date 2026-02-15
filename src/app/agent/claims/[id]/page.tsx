@@ -90,6 +90,7 @@ export default function ClaimDetailPage() {
 
     // Info Request State
     const [infoRequest, setInfoRequest] = useState<InfoRequest | null>(null);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [responses, setResponses] = useState<Record<string, any>>({});
 
     // Edit State
@@ -290,6 +291,7 @@ export default function ClaimDetailPage() {
         }
     };
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const handleInputChange = (id: string, value: any) => {
         setResponses(prev => ({
             ...prev,

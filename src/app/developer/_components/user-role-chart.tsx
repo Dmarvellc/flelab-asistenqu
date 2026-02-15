@@ -16,9 +16,8 @@ const ROLE_COLORS: Record<string, string> = {
 const DEFAULT_COLOR = "#64748b" // Slate
 
 export function UserRoleChart({ data }: { data: Record<string, number> }) {
-  // Convert object to array for Recharts
   const chartData = Object.entries(data).map(([role, count]) => ({
-    name: role.replace('_', ' '), // Format role name
+    name: (role || '').replace('_', ' '), // Format role name, ensure string
     count,
     fill: ROLE_COLORS[role] || DEFAULT_COLOR,
   }));
