@@ -8,6 +8,7 @@ import { LayoutDashboard, Users, FileText, LogOut, Loader2, Settings, ChevronLef
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { cn } from "@/lib/utils";
+import { Notifications } from "@/components/dashboard/notifications";
 
 export default function AgentLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -136,7 +137,11 @@ export default function AgentLayout({ children }: { children: React.ReactNode })
   return (
     <DashboardLayout
       sidebar={renderSidebar(isCollapsed)}
-      header={<DashboardHeader mobileSidebar={renderSidebar(false)} />}
+      header={
+        <DashboardHeader mobileSidebar={renderSidebar(false)}>
+          <Notifications role="agent" />
+        </DashboardHeader>
+      }
       isCollapsed={isCollapsed}
     >
       {children}

@@ -7,6 +7,8 @@ import { LayoutDashboard, Activity, Users, LogOut, FileText } from "lucide-react
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 
+import { Notifications } from "@/components/dashboard/notifications";
+
 export default function HospitalLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isLoginPage = pathname === "/hospital/login";
@@ -48,7 +50,11 @@ export default function HospitalLayout({ children }: { children: React.ReactNode
   )
 
   return (
-    <DashboardLayout sidebar={sidebar} header={<DashboardHeader mobileSidebar={sidebar} />}>
+    <DashboardLayout sidebar={sidebar} header={
+        <DashboardHeader mobileSidebar={sidebar}>
+            <Notifications role="hospital" />
+        </DashboardHeader>
+    }>
       {children}
       <EmergencyButton unitLabel="Tim Rumah Sakit" />
     </DashboardLayout>

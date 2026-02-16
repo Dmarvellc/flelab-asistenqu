@@ -2,13 +2,29 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { ClaimsList } from "@/components/dashboard/claims-list"
 import { getAllClaims } from "@/services/claims"
 
+
+import { dbPool } from "@/lib/db";
+
 export default async function AdminAgencyDashboardPage() {
   const claims = await getAllClaims()
   
-  // Mock metrics for now as there is no service yet for admin metrics
-  const agentsCount = 120
-  const hospitalsCount = 45
-  const policiesCount = 1250
+  const client = await dbPool.connect();
+  let agentsCount = 0;
+  let hospitalsCount = 0;
+  let policiesCount = 0;
+  
+  try {
+    const agentsRes = await client.query("SELECT COUNT(*) FROM public.app_user WHERE role = 'agent'");
+    agentsCount = parseInt(agentsRes.rows[0].count);
+    
+    const hospitalsRes = await client.query("SELECT COUNT(*) FROM public.app_user WHERE role = 'hospital_admin'");
+    hospitalsCount = parseInt(hospitalsRes.rows[0].count);
+    
+    const policiesRes = await client.query("SELECT COUNT(*) FROM public.client");
+    policiesCount = parseInt(policiesRes.rows[0].count);
+  } finally {
+    client.release();
+  }
 
   return (
     <div className="flex flex-col gap-6">

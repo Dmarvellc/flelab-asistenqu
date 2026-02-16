@@ -6,6 +6,7 @@ import { ClaimsList } from "@/components/dashboard/claims-list"
 import { cookies } from "next/headers"
 import { getAgentClaims, getAgentIdByUserId } from "@/services/claims"
 import { getAgentMetrics } from "@/services/agent-metrics"
+import { AgentRequestsList } from "@/components/dashboard/agent-requests-list"
 
 export default async function AgentDashboardPage() {
   const cookieStore = await cookies()
@@ -43,6 +44,8 @@ export default async function AgentDashboardPage() {
             </Link>
         </div>
       </div>
+
+      <AgentRequestsList />
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         <Card>
