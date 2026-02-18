@@ -22,27 +22,34 @@ export function Notifications({ role = 'agent' }: { role?: 'agent' | 'hospital' 
     const fetchNotifications = async () => {
       try {
         // Determine endpoint based on role
-        const endpoint = role === 'agent' 
-          ? "/api/agent/requests" 
+        const endpoint = role === 'agent'
+          ? "/api/agent/requests"
           : "/api/hospital/patients/request";
-          
+
         const res = await fetch(endpoint);
-        const data = await res.json();
-        
+
+        let data;
+        try {
+          const text = await res.text();
+          data = text ? JSON.parse(text) : {};
+        } catch (e) {
+          console.error("JSON Parse error:", e);
+          return;
+        }
         if (res.ok) {
           let relevantRequests = [];
-          
+
           if (role === 'agent') {
             // Agent sees PENDING requests
             relevantRequests = data.requests.filter((r: any) => r.status === 'PENDING');
           } else {
             // Hospital sees APPROVED or REJECTED requests (updates)
             // Ideally we should have an 'is_read' flag, but for now show recent non-pending ones
-            relevantRequests = data.requests.filter((r: any) => 
+            relevantRequests = data.requests.filter((r: any) =>
               r.status === 'APPROVED' || r.status === 'REJECTED' || r.status === 'COMPLETED'
             );
           }
-          
+
           setRequests(relevantRequests.slice(0, 5)); // Show max 5
           setCount(relevantRequests.length);
         }
@@ -50,7 +57,7 @@ export function Notifications({ role = 'agent' }: { role?: 'agent' | 'hospital' 
         console.error("Failed to fetch notifications", error);
       }
     };
-    
+
     fetchNotifications();
     // Poll every 30 seconds
     const interval = setInterval(fetchNotifications, 30000);
@@ -86,14 +93,14 @@ export function Notifications({ role = 'agent' }: { role?: 'agent' | 'hospital' 
                 </div>
                 <div className="text-xs text-muted-foreground line-clamp-2">{req.additional_data_request}</div>
                 <div className="flex gap-2 mt-1">
-                    <Badge variant="outline" className={
-                        req.status === 'PENDING' ? 'text-yellow-600 border-yellow-200 bg-yellow-50' :
-                        req.status === 'APPROVED' ? 'text-blue-600 border-blue-200 bg-blue-50' :
+                  <Badge variant="outline" className={
+                    req.status === 'PENDING' ? 'text-yellow-600 border-yellow-200 bg-yellow-50' :
+                      req.status === 'APPROVED' ? 'text-blue-600 border-blue-200 bg-blue-50' :
                         req.status === 'REJECTED' ? 'text-red-600 border-red-200 bg-red-50' :
-                        'text-green-600 border-green-200 bg-green-50'
-                    }>
-                        {req.status}
-                    </Badge>
+                          'text-green-600 border-green-200 bg-green-50'
+                  }>
+                    {req.status}
+                  </Badge>
                 </div>
               </Link>
             </DropdownMenuItem>
@@ -101,7 +108,7 @@ export function Notifications({ role = 'agent' }: { role?: 'agent' | 'hospital' 
         )}
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
-            <Link href={role === 'agent' ? "/agent" : "/hospital/patients"} className="w-full text-center cursor-pointer">Lihat Semua</Link>
+          <Link href={role === 'agent' ? "/agent" : "/hospital/patients"} className="w-full text-center cursor-pointer">Lihat Semua</Link>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
