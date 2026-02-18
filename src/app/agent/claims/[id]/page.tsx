@@ -40,6 +40,7 @@ type ClaimDetail = {
     claim_id: string;
     claim_date: string;
     status: string;
+    stage: string;
     total_amount: number;
     notes: string;
     client_name: string;
@@ -154,18 +155,23 @@ export default function ClaimDetailPage() {
             return;
         }
 
+        const action = claim?.stage === 'PENDING_AGENT' ? 'SUBMIT_TO_AGENCY' : 'SEND_TO_HOSPITAL';
+
         setSubmitting(true);
         try {
-            const res = await fetch(`/api/agent/claims/${params.id}`, {
-                method: "PATCH",
+            const res = await fetch(`/api/claims/${params.id}/workflow`, {
+                method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ status: "SUBMITTED" }),
+                body: JSON.stringify({
+                    action: action,
+                    notes: "Diajukan oleh Agen"
+                }),
             });
 
             if (res.ok) {
                 const data = await res.json();
-                setClaim(prev => prev ? { ...prev, status: data.claim.status } : null);
-                openNotice("Berhasil", "Klaim berhasil diajukan.");
+                setClaim(prev => prev ? { ...prev, status: data.newStatus, stage: data.newStage } : null);
+                openNotice("Berhasil", action === 'SUBMIT_TO_AGENCY' ? "Klaim berhasil diajukan ke Agensi." : "Klaim berhasil dikirim ke Rumah Sakit.");
             } else {
                 const err = await res.json().catch(() => null);
                 openNotice("Gagal", err?.error || "Gagal mengajukan klaim.");
@@ -399,9 +405,10 @@ export default function ClaimDetailPage() {
                                 }}
                                 disabled={submitting}
                                 variant="default"
+                                className={claim?.stage === 'PENDING_AGENT' ? "bg-green-600 hover:bg-green-700" : ""}
                             >
                                 {submitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
-                                Ajukan Klaim
+                                {claim?.stage === 'PENDING_AGENT' ? "Ajukan Final ke Agensi" : "Lengkapi & Kirim ke RS"}
                             </Button>
 
                             <DropdownMenu>
@@ -606,9 +613,9 @@ export default function ClaimDetailPage() {
                 onOpenChange={(open) => {
                     if (!open) setPendingAction(null);
                 }}
-                title="Ajukan Klaim"
-                description="Apakah Anda yakin ingin mengajukan klaim ini ke Rumah Sakit?"
-                confirmText="Ya, Ajukan"
+                title={claim?.stage === 'PENDING_AGENT' ? "Ajukan ke Agensi" : "Kirim ke Rumah Sakit"}
+                description={claim?.stage === 'PENDING_AGENT' ? "Apakah semua data dari RS sudah lengkap dan siap diajukan ke Agensi?" : "Apakah Anda yakin ingin mengirim klaim ini ke Rumah Sakit untuk dilengkapi?"}
+                confirmText={claim?.stage === 'PENDING_AGENT' ? "Ya, Ajukan" : "Ya, Kirim ke RS"}
                 cancelText="Batal"
                 onConfirm={executeSubmitClaim}
                 loading={submitting}

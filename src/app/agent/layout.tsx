@@ -4,7 +4,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, useCallback } from "react";
 import { DashboardLayout, DashboardSidebar, SidebarHeader, SidebarContent, SidebarFooter, NavItem, DashboardHeader } from "@/components/dashboard/dashboard-layout"
 import { EmergencyButton } from "@/components/claims/emergency-button"
-import { LayoutDashboard, Users, FileText, LogOut, Loader2, Settings, ChevronLeft, ChevronRight } from "lucide-react"
+import { LayoutDashboard, Users, FileText, LogOut, Loader2, Settings, ChevronLeft, ChevronRight, ClipboardList } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { cn } from "@/lib/utils";
@@ -23,7 +23,7 @@ export default function AgentLayout({ children }: { children: React.ReactNode })
   // Use useCallback because handleLogout is a dependency of useEffect
   const handleLogout = useCallback(async () => {
     try {
-      await fetch("/api/auth/logout", { method: "POST" });
+      await fetch("/api/auth/logout?from=agent", { method: "POST" });
     } catch (e) {
       console.error("Logout failed", e);
     }
@@ -112,6 +112,9 @@ export default function AgentLayout({ children }: { children: React.ReactNode })
         </NavItem>
         <NavItem href="/agent/claims" icon={FileText} active={pathname === "/agent/claims"} isCollapsed={collapsed}>
           Klaim
+        </NavItem>
+        <NavItem href="/agent/requests" icon={ClipboardList} active={pathname === "/agent/requests" || pathname.startsWith("/agent/requests/")} isCollapsed={collapsed}>
+          Permintaan
         </NavItem>
         <NavItem href="/agent/settings" icon={Settings} active={pathname === "/agent/settings"} isCollapsed={collapsed}>
           Pengaturan

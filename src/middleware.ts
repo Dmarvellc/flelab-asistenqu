@@ -4,7 +4,7 @@ import { getAllowedRolesForPath, Role } from './lib/rbac'
 
 export function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname
-  const roleCookie = request.cookies.get('rbac_role')?.value
+  const params = request.nextUrl.searchParams
 
   // Check if current path requires specific roles
   const allowedRoles = getAllowedRolesForPath(path)
@@ -12,38 +12,80 @@ export function middleware(request: NextRequest) {
   if (allowedRoles) {
     const isLoginPage = path.endsWith('/login')
     const isRegisterPage = path.endsWith('/register')
-    // Allow public access to login and register pages
     const isPublicPage = isLoginPage || isRegisterPage
+
+    // Helper to find valid role from cookies
+    let roleCookie: string | undefined;
+    let userStatus: string | undefined;
+
+    // Check cookies based on what roles are allowed (Context-aware check)
+    // 1. Super Admin (Global)
+    if (request.cookies.get('session_super_admin_role')?.value === 'super_admin') {
+      roleCookie = 'super_admin';
+      userStatus = request.cookies.get('session_super_admin_status')?.value;
+    }
+    // 2. Agent Context
+    else if (allowedRoles.includes('agent') || allowedRoles.includes('agent_manager')) {
+      const r = request.cookies.get('session_agent_role')?.value;
+      if (r && ['agent', 'agent_manager'].includes(r)) {
+        roleCookie = r;
+        userStatus = request.cookies.get('session_agent_status')?.value;
+      }
+    }
+    // 3. Hospital Context
+    else if (allowedRoles.includes('hospital_admin')) {
+      const r = request.cookies.get('session_hospital_role')?.value;
+      if (r === 'hospital_admin') {
+        roleCookie = r;
+        userStatus = request.cookies.get('session_hospital_status')?.value;
+      }
+    }
+    // 4. Developer Context
+    else if (allowedRoles.includes('developer')) {
+      const r = request.cookies.get('session_developer_role')?.value;
+      if (r === 'developer') {
+        roleCookie = r;
+        userStatus = request.cookies.get('session_developer_status')?.value;
+      }
+    }
+    // 5. Admin Agency Context
+    else if (allowedRoles.includes('admin_agency') || allowedRoles.includes('insurance_admin')) {
+      const r = request.cookies.get('session_admin_agency_role')?.value;
+      if (r && ['admin_agency', 'insurance_admin'].includes(r)) {
+        roleCookie = r;
+        userStatus = request.cookies.get('session_admin_agency_status')?.value;
+      }
+    }
+
+    // Also check generic/legacy rbac_role just in case (optional, but good for transition)
+    if (!roleCookie && request.cookies.get('rbac_role')?.value) {
+      // We only honor this if it matches an allowed role, to prevent crossover
+      const legacy = request.cookies.get('rbac_role')?.value;
+      if (legacy && allowedRoles.includes(legacy as Role)) {
+        roleCookie = legacy;
+        userStatus = request.cookies.get('user_status')?.value;
+      }
+    }
+
 
     if (isPublicPage) {
       // If user is already logged in with an allowed role, redirect to dashboard
-      // We need to find the base prefix to redirect to
-      // Simple heuristic: remove /login or /register from path
       if (roleCookie && allowedRoles.includes(roleCookie as Role)) {
-         const dashboardPath = path.replace(/\/login$|\/register$/, '')
-         return NextResponse.redirect(new URL(dashboardPath, request.url))
+        const dashboardPath = path.replace(/\/login$|\/register$/, '')
+        return NextResponse.redirect(new URL(dashboardPath, request.url))
       }
-      // Otherwise, allow access
       return NextResponse.next()
     }
 
-    // Case 2: User is on a protected page
-    // If user does not have an allowed role, redirect to login
-    // We need to find the login path. 
-    // Heuristic: If path is /admin-agency/dashboard, login is /admin-agency/login[
-    
+    // Protected Page Logic
     if (!roleCookie || !allowedRoles.includes(roleCookie as Role)) {
-      // Construct login URL. 
-      // Getting the module root is tricky without the map.
-      // But we can assume standard structure: /{module}/login
+      // Redirect to login
       const segments = path.split('/').filter(Boolean);
       const moduleRoot = segments.length > 0 ? `/${segments[0]}` : '/';
-      
       return NextResponse.redirect(new URL(`${moduleRoot}/login`, request.url))
     }
 
-    // Special Case: Agent with PENDING status (Needs Verification)
-    const userStatus = request.cookies.get('user_status')?.value
+    // Special Case: Agent with PENDING status
     if (roleCookie === 'agent' && userStatus === 'PENDING') {
       const allowedPendingPaths = ['/agent/verification', '/agent/settings']
       const isAllowedPath = allowedPendingPaths.some(p => path.startsWith(p))

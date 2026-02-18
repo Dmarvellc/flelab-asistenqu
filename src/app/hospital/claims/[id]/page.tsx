@@ -35,6 +35,7 @@ type ClaimDetail = {
     status: string;
     total_amount: number;
     notes: string;
+    stage: string;
     client_name: string;
     gender: string;
     birth_date: string;
@@ -153,31 +154,36 @@ export default function HospitalClaimDetailPage() {
         fetchClaim();
     }, [params.id]);
 
-    const handleUpdateStatus = async (status: 'APPROVED' | 'REJECTED') => {
+    const handleWorkflowAction = async (action: 'SEND_TO_AGENT' | 'REJECT') => {
         setProcessing(true);
         try {
-            const res = await fetch(`/api/hospital/claims/${params.id}`, {
-                method: "PATCH",
+            const res = await fetch(`/api/claims/${params.id}/workflow`, {
+                method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ status }),
+                body: JSON.stringify({
+                    action: action,
+                    notes: action === 'REJECT' ? "Ditolak oleh Rumah Sakit" : "Data dilengkapi oleh Rumah Sakit"
+                }),
             });
 
             if (res.ok) {
                 const data = await res.json();
-                setClaim(prev => prev ? { ...prev, status: data.claim.status } : null);
-                openNotice("Berhasil", "Status klaim berhasil diperbarui.");
+                setClaim(prev => prev ? { ...prev, status: data.newStatus, stage: data.newStage } : null);
+                openNotice("Berhasil", action === 'SEND_TO_AGENT' ? "Klaim berhasil dikirim kembali ke Agen." : "Klaim ditolak.");
             } else {
                 const errorBody = await res.json().catch(() => null);
-                openNotice("Gagal", errorBody?.error || "Gagal memperbarui status klaim.");
+                openNotice("Gagal", errorBody?.error || "Gagal memproses klaim.");
             }
         } catch (error) {
-            console.error("Error updating claim", error);
-            openNotice("Kesalahan Sistem", "Terjadi kesalahan saat memperbarui status klaim.");
+            console.error("Error processing claim", error);
+            openNotice("Kesalahan Sistem", "Terjadi kesalahan saat memproses klaim.");
         } finally {
             setProcessing(false);
             setPendingStatus(null);
         }
     };
+
+
 
     const addField = () => {
         setRequestFields([...requestFields, {
@@ -484,10 +490,10 @@ export default function HospitalClaimDetailPage() {
                                                 setPendingStatus('APPROVED');
                                             }}
                                             disabled={processing || !canApprove}
-                                            className="flex-1 bg-green-600 hover:bg-green-700 text-white relative z-10"
+                                            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white relative z-10"
                                         >
-                                            {processing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Check className="mr-2 h-4 w-4" />}
-                                            Setujui
+                                            {processing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+                                            Lengkapi & Kirim ke Agen
                                         </Button>
                                         <Button
                                             onClick={() => setPendingStatus('REJECTED')}
@@ -679,17 +685,18 @@ export default function HospitalClaimDetailPage() {
                 onOpenChange={(open) => {
                     if (!open) setPendingStatus(null);
                 }}
-                title={pendingStatus === "APPROVED" ? "Setujui Klaim" : "Tolak Klaim"}
+                title={pendingStatus === "APPROVED" ? "Kirim ke Agen" : "Tolak Klaim"}
                 description={
                     pendingStatus === "APPROVED"
-                        ? "Apakah Anda yakin ingin menyetujui klaim ini?"
+                        ? "Pastikan semua data medis sudah lengkap sebelum dikirim kembali ke Agen."
                         : "Apakah Anda yakin ingin menolak klaim ini?"
                 }
-                confirmText={pendingStatus === "APPROVED" ? "Ya, Setujui" : "Ya, Tolak"}
+                confirmText={pendingStatus === "APPROVED" ? "Ya, Kirim" : "Ya, Tolak"}
                 cancelText="Batal"
                 onConfirm={() => {
                     if (!pendingStatus) return;
-                    handleUpdateStatus(pendingStatus);
+                    const action = pendingStatus === 'APPROVED' ? 'SEND_TO_AGENT' : 'REJECT';
+                    handleWorkflowAction(action);
                 }}
                 destructive={pendingStatus === "REJECTED"}
                 loading={processing}

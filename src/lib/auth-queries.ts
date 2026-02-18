@@ -324,6 +324,8 @@ export async function findUserWithProfile(userId: string) {
        u.role,
        u.status,
        u.created_at,
+       u.agency_id,
+       ag.name as agency_name,
        p.full_name,
        p.id_card as nik,
        p.phone_number,
@@ -335,6 +337,7 @@ export async function findUserWithProfile(userId: string) {
      from public.app_user u
      left join public.user_person_link l on u.user_id = l.user_id
      left join public.person p on l.person_id = p.person_id
+     left join public.agency ag on u.agency_id = ag.agency_id
      where u.user_id = $1`,
     [userId]
   );

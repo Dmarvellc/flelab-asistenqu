@@ -6,7 +6,7 @@ import { deleteCacheByPattern, deleteCacheKeys, getJsonCache, setJsonCache } fro
 
 export async function GET(req: Request) {
   const client = await dbPool.connect();
-  
+
   try {
     const cookieStore = await cookies();
     const userId = cookieStore.get("app_user_id")?.value;
@@ -71,7 +71,7 @@ export async function POST(req: Request) {
       [client_id]
     );
     if (clientRes.rows.length === 0) {
-        return NextResponse.json({ error: "Client not found" }, { status: 404 });
+      return NextResponse.json({ error: "Client not found" }, { status: 404 });
     }
     const person_id = clientRes.rows[0].person_id;
     const assigned_agent_id = clientRes.rows[0].agent_id ?? null;
@@ -86,11 +86,11 @@ export async function POST(req: Request) {
       INSERT INTO public.claim (
         client_id, person_id, contract_id, hospital_id, disease_id, 
         claim_date, total_amount, notes, 
-        assigned_agent_id, created_by_user_id, status
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'DRAFT')
+        assigned_agent_id, created_by_user_id, status, stage
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'DRAFT', 'DRAFT_AGENT')
       RETURNING claim_id
     `, [
-      client_id, person_id, contract_id, hospital_id, disease_id, 
+      client_id, person_id, contract_id, hospital_id, disease_id,
       claim_date, total_amount, composedNotes, assigned_agent_id, userId
     ]);
 

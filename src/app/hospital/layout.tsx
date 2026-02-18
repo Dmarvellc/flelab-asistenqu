@@ -40,7 +40,7 @@ export default function HospitalLayout({ children }: { children: React.ReactNode
       </SidebarContent>
       <SidebarFooter>
         <Button variant="ghost" className="w-full justify-start gap-2" asChild>
-          <Link href="/api/auth/logout">
+          <Link href="/api/auth/logout?from=hospital">
             <LogOut className="h-4 w-4" />
             Keluar
           </Link>
@@ -51,9 +51,9 @@ export default function HospitalLayout({ children }: { children: React.ReactNode
 
   return (
     <DashboardLayout sidebar={sidebar} header={
-        <DashboardHeader mobileSidebar={sidebar}>
-            <Notifications role="hospital" />
-        </DashboardHeader>
+      <DashboardHeader mobileSidebar={sidebar}>
+        <Notifications role="hospital" />
+      </DashboardHeader>
     }>
       {children}
       <EmergencyButton unitLabel="Tim Rumah Sakit" />

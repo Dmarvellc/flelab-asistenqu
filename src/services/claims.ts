@@ -28,6 +28,7 @@ export async function getHospitalClaims(hospitalId: string | null): Promise<Clai
         c.claim_id,
         c.claim_date::text, -- Cast to text for consistent date handling
         c.status,
+        c.stage,
         c.total_amount,
         p.full_name as client_name,
         d.name as disease_name,
@@ -42,22 +43,22 @@ export async function getHospitalClaims(hospitalId: string | null): Promise<Clai
       LEFT JOIN public.hospital h ON c.hospital_id = h.hospital_id
       WHERE c.status != 'DRAFT'
     `;
-    
+
     const queryParams: (string | null)[] = [];
-    
+
     if (hospitalId) {
-        query += ` AND c.hospital_id = $${queryParams.length + 1}`;
-        queryParams.push(hospitalId);
+      query += ` AND c.hospital_id = $${queryParams.length + 1}`;
+      queryParams.push(hospitalId);
     }
 
     query += ` ORDER BY c.created_at DESC`;
 
     const result = await client.query(query, queryParams);
-    
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return result.rows.map((row: any) => ({
-        ...row,
-        total_amount: Number(row.total_amount),
+      ...row,
+      total_amount: Number(row.total_amount),
     }));
 
   } finally {
@@ -73,13 +74,13 @@ export async function getAgentIdByUserId(userId: string): Promise<string | null>
     const userRes = await client.query(`
       SELECT role FROM public.app_user WHERE user_id = $1
     `, [userId]);
-    
+
     if (userRes.rows.length > 0) {
-        const role = userRes.rows[0].role;
-        // Check for both lowercase and uppercase to be safe
-        if (role === 'agent' || role === 'AGENT') {
-            return userId;
-        }
+      const role = userRes.rows[0].role;
+      // Check for both lowercase and uppercase to be safe
+      if (role === 'agent' || role === 'AGENT') {
+        return userId;
+      }
     }
     return null;
   } finally {
@@ -95,6 +96,7 @@ export async function getAgentClaims(userId: string): Promise<Claim[]> {
         c.claim_id,
         c.claim_date::text,
         c.status,
+        c.stage,
         c.total_amount,
         p.full_name as client_name,
         d.name as disease_name,
@@ -110,13 +112,13 @@ export async function getAgentClaims(userId: string): Promise<Claim[]> {
       WHERE c.created_by_user_id = $1
       ORDER BY c.created_at DESC
     `;
-    
+
     const result = await client.query(query, [userId]);
-    
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return result.rows.map((row: any) => ({
-        ...row,
-        total_amount: Number(row.total_amount),
+      ...row,
+      total_amount: Number(row.total_amount),
     }));
   } finally {
     client.release();
@@ -131,6 +133,7 @@ export async function getAllClaims(): Promise<Claim[]> {
         c.claim_id,
         c.claim_date::text,
         c.status,
+        c.stage,
         c.total_amount,
         p.full_name as client_name,
         d.name as disease_name,
@@ -146,13 +149,13 @@ export async function getAllClaims(): Promise<Claim[]> {
       ORDER BY c.created_at DESC
       LIMIT 100
     `;
-    
+
     const result = await client.query(query);
-    
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return result.rows.map((row: any) => ({
-        ...row,
-        total_amount: Number(row.total_amount),
+      ...row,
+      total_amount: Number(row.total_amount),
     }));
   } finally {
     client.release();

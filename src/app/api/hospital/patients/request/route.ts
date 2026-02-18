@@ -4,7 +4,7 @@ import { cookies } from "next/headers";
 
 export async function GET(req: Request) {
   const client = await dbPool.connect();
-  
+
   try {
     const cookieStore = await cookies();
     const userId = cookieStore.get("app_user_id")?.value;
@@ -22,7 +22,7 @@ export async function GET(req: Request) {
         r.additional_data_file,
         r.created_at,
         p.full_name as person_name,
-        p.identity_number as person_nik
+        p.id_card as person_nik
       FROM public.patient_data_request r
       JOIN public.person p ON r.person_id = p.person_id
       WHERE r.hospital_id = $1
@@ -41,7 +41,7 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   const client = await dbPool.connect();
-  
+
   try {
     const cookieStore = await cookies();
     const userId = cookieStore.get("app_user_id")?.value;
@@ -53,26 +53,26 @@ export async function POST(req: Request) {
     const { person_id, additional_data_request } = await req.json();
 
     if (!person_id) {
-        return NextResponse.json({ error: "Person ID is required" }, { status: 400 });
+      return NextResponse.json({ error: "Person ID is required" }, { status: 400 });
     }
 
     // Find Agent associated with Person
     const agentResult = await client.query(
-        `SELECT agent_id FROM public.client WHERE person_id = $1 LIMIT 1`,
-        [person_id]
+      `SELECT agent_id FROM public.client WHERE person_id = $1 LIMIT 1`,
+      [person_id]
     );
 
     if (agentResult.rowCount === 0) {
-        return NextResponse.json({ error: "Patient not found or not associated with an agent" }, { status: 404 });
+      return NextResponse.json({ error: "Patient not found or not associated with an agent" }, { status: 404 });
     }
 
     const agent_id = agentResult.rows[0].agent_id;
 
     const result = await client.query(
-        `INSERT INTO public.patient_data_request (hospital_id, agent_id, person_id, additional_data_request) 
+      `INSERT INTO public.patient_data_request (hospital_id, agent_id, person_id, additional_data_request) 
          VALUES ($1, $2, $3, $4) 
          RETURNING request_id`,
-        [userId, agent_id, person_id, additional_data_request || '']
+      [userId, agent_id, person_id, additional_data_request || '']
     );
 
     return NextResponse.json({ success: true, request_id: result.rows[0].request_id });

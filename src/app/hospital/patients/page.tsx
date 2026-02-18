@@ -11,7 +11,7 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, FileText, Loader2, Download } from "lucide-react";
+import { Plus, Search, FileText, Loader2, Download, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
     Dialog,
@@ -47,7 +47,7 @@ export default function HospitalPatientsPage() {
     const [requests, setRequests] = useState<Request[]>([]);
     const [loading, setLoading] = useState(true);
     const [open, setOpen] = useState(false);
-    
+
     // Form state
     const [searchQuery, setSearchQuery] = useState("");
     const [searchResults, setSearchResults] = useState<Person[]>([]);
@@ -196,8 +196,8 @@ export default function HospitalPatientsPage() {
                             <div className="grid gap-2">
                                 <Label>Cari Pasien (Nama / NIK)</Label>
                                 <p className="text-[10px] text-muted-foreground">Ketik nama dan klik hasil pencarian untuk memilih.</p>
-                                <Input 
-                                    placeholder="Ketik minimal 3 karakter..." 
+                                <Input
+                                    placeholder="Ketik minimal 3 karakter..."
                                     value={searchQuery}
                                     onChange={(e) => {
                                         setSearchQuery(e.target.value);
@@ -213,7 +213,7 @@ export default function HospitalPatientsPage() {
                                 {searchResults.length > 0 && !selectedPerson && (
                                     <div className="border rounded-md max-h-40 overflow-y-auto mt-2 shadow-sm bg-white">
                                         {searchResults.map(person => (
-                                            <div 
+                                            <div
                                                 key={person.person_id}
                                                 className="p-2 hover:bg-muted cursor-pointer text-sm border-b last:border-0"
                                                 onClick={() => {
@@ -240,8 +240,8 @@ export default function HospitalPatientsPage() {
                             </div>
                             <div className="grid gap-2">
                                 <Label>Data Tambahan yang Dibutuhkan</Label>
-                                <Textarea 
-                                    placeholder="Contoh: Rekam medis 3 bulan terakhir, Hasil Lab..." 
+                                <Textarea
+                                    placeholder="Contoh: Rekam medis 3 bulan terakhir, Hasil Lab..."
                                     value={additionalData}
                                     onChange={(e) => setAdditionalData(e.target.value)}
                                 />
@@ -294,13 +294,37 @@ export default function HospitalPatientsPage() {
                                     <TableCell>{getStatusBadge(req.status)}</TableCell>
                                     <TableCell>{new Date(req.created_at).toLocaleDateString("id-ID")}</TableCell>
                                     <TableCell className="text-right">
-                                        {req.additional_data_file ? (
-                                            <a href={req.additional_data_file} target="_blank" rel="noopener noreferrer">
-                                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                                                    <Download className="h-4 w-4" />
-                                                </Button>
-                                            </a>
-                                        ) : "-"}
+                                        <div className="flex justify-end gap-2">
+                                            {req.additional_data_file && (
+                                                <a href={req.additional_data_file} target="_blank" rel="noopener noreferrer">
+                                                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                                        <Download className="h-4 w-4" />
+                                                    </Button>
+                                                </a>
+                                            )}
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                className="h-8 w-8 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
+                                                onClick={async () => {
+                                                    if (confirm("Hapus permintaan ini?")) {
+                                                        try {
+                                                            const res = await fetch(`/api/hospital/patients/request/${req.request_id}`, { method: "DELETE" });
+                                                            if (res.ok) {
+                                                                toast({ title: "Berhasil dihapus" });
+                                                                fetchRequests();
+                                                            } else {
+                                                                toast({ title: "Gagal menghapus", variant: "destructive" });
+                                                            }
+                                                        } catch (e) {
+                                                            toast({ title: "Error", variant: "destructive" });
+                                                        }
+                                                    }
+                                                }}
+                                            >
+                                                <Trash2 className="h-4 w-4" />
+                                            </Button>
+                                        </div>
                                     </TableCell>
                                 </TableRow>
                             ))

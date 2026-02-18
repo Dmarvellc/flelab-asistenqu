@@ -27,6 +27,8 @@ interface UserProfile {
     gender: string | null;
     ktp_image_path: string | null;
     selfie_image_path: string | null;
+    agency_id?: string;
+    agency_name?: string;
 }
 
 export default function AgentSettingsPage() {
@@ -46,6 +48,12 @@ export default function AgentSettingsPage() {
         gender: "",
     });
     const [saving, setSaving] = useState(false);
+
+    // Agency Transfer State
+    const [agencies, setAgencies] = useState<{ agency_id: string, name: string }[]>([]);
+    const [showTransferForm, setShowTransferForm] = useState(false);
+    const [transferForm, setTransferForm] = useState({ agencyId: "", reason: "" });
+    const [transferLoading, setTransferLoading] = useState(false);
 
     const fetchProfile = async () => {
         try {
@@ -85,8 +93,21 @@ export default function AgentSettingsPage() {
         }
     };
 
+    const fetchAgencies = async () => {
+        try {
+            const res = await fetch("/api/public/agencies");
+            if (res.ok) {
+                const data = await res.json();
+                setAgencies(data);
+            }
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
     useEffect(() => {
         fetchProfile();
+        fetchAgencies();
     }, []);
 
     const handleSave = async () => {
@@ -146,6 +167,39 @@ export default function AgentSettingsPage() {
             });
         }
     };
+
+    const handleTransferSubmit = async () => {
+        if (!transferForm.agencyId) return;
+        setTransferLoading(true);
+        try {
+            const res = await fetch("/api/agent/transfer-request", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    targetAgencyId: transferForm.agencyId,
+                    reason: transferForm.reason
+                })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || "Gagal mengajukan pindah agensi");
+
+            toast({
+                title: "Berhasil",
+                description: "Permintaan pindah agensi berhasil dikirim. Menunggu persetujuan admin.",
+                variant: "default"
+            });
+            setShowTransferForm(false);
+            setTransferForm({ agencyId: "", reason: "" });
+        } catch (e: any) {
+            toast({
+                title: "Gagal",
+                description: e.message,
+                variant: "destructive"
+            });
+        } finally {
+            setTransferLoading(false);
+        }
+    }
 
     if (loading) {
         return (
@@ -413,6 +467,63 @@ export default function AgentSettingsPage() {
                         </div>
                     </div>
                 </div>
+            </div>
+
+            {/* Agency Settings */}
+            <div className="space-y-6">
+                <div className="flex items-center justify-between border-b border-neutral-200 pb-2 dark:border-neutral-800">
+                    <h3 className="text-lg font-medium">Pengaturan Agensi</h3>
+                </div>
+
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                    <div className="space-y-2">
+                        <Label className="text-xs font-medium uppercase tracking-wider text-neutral-500">Agensi Saat Ini</Label>
+                        <p className="font-medium text-lg">{profile.agency_name || "Belum ada agensi"}</p>
+                    </div>
+                </div>
+
+                {!showTransferForm ? (
+                    <Button variant="outline" onClick={() => setShowTransferForm(true)}>
+                        Pindah Agensi
+                    </Button>
+                ) : (
+                    <div className="border rounded-lg p-4 space-y-4 bg-muted/30">
+                        <h4 className="font-medium">Formulir Pindah Agensi</h4>
+                        <div className="space-y-2">
+                            <Label>Pilih Agensi Tujuan</Label>
+                            <Select
+                                value={transferForm.agencyId}
+                                onValueChange={(val) => setTransferForm({ ...transferForm, agencyId: val })}
+                            >
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Pilih agensi..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {agencies.filter(a => a.agency_id !== profile.agency_id).map(agency => (
+                                        <SelectItem key={agency.agency_id} value={agency.agency_id}>
+                                            {agency.name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Alasan Pindah</Label>
+                            <Textarea
+                                placeholder="Jelaskan alasan Anda pindah..."
+                                value={transferForm.reason}
+                                onChange={(e) => setTransferForm({ ...transferForm, reason: e.target.value })}
+                            />
+                        </div>
+                        <div className="flex gap-2 justify-end">
+                            <Button variant="ghost" onClick={() => setShowTransferForm(false)}>Batal</Button>
+                            <Button onClick={handleTransferSubmit} disabled={transferLoading}>
+                                {transferLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                Ajukan Pindah
+                            </Button>
+                        </div>
+                    </div>
+                )}
             </div>
 
         </div>

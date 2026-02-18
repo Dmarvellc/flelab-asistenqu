@@ -6,18 +6,18 @@ import { ClaimsList } from "@/components/dashboard/claims-list"
 import { cookies } from "next/headers"
 import { getAgentClaims, getAgentIdByUserId } from "@/services/claims"
 import { getAgentMetrics } from "@/services/agent-metrics"
-import { AgentRequestsList } from "@/components/dashboard/agent-requests-list"
+
 
 export default async function AgentDashboardPage() {
   const cookieStore = await cookies()
   const userId = cookieStore.get("app_user_id")?.value || ""
-  
+
   // Fetch data in parallel
   const [agentId, metrics] = await Promise.all([
     getAgentIdByUserId(userId),
     getAgentMetrics(userId) // metrics service uses userId to query
   ]);
-  
+
   const claims = agentId ? await getAgentClaims(agentId) : [];
 
   return (
@@ -25,27 +25,30 @@ export default async function AgentDashboardPage() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Dasbor Agen</h2>
-          <p className="text-muted-foreground">
-            Selamat datang di portal agen Anda. Kelola klien dan polis asuransi dengan mudah.
+          <p className="text-muted-foreground flex gap-2 items-center">
+            Selamat datang di portal agen Anda.
+            <Link href="/agent/requests" className="text-blue-600 hover:underline">
+              Lihat Permintaan Data ({claims.length || 0})
+            </Link>
           </p>
         </div>
         <div className="flex gap-2">
-            <Link href="/agent/claims/new">
-                <Button variant="outline">
-                    <Plus className="mr-2 h-4 w-4" />
-                    Buat Klaim
-                </Button>
-            </Link>
-            <Link href="/agent/clients/new">
-            <Button className="bg-black hover:bg-gray-900 text-white">
-                <Plus className="mr-2 h-4 w-4" />
-                Tambah Klien
+          <Link href="/agent/claims/new">
+            <Button variant="outline">
+              <Plus className="mr-2 h-4 w-4" />
+              Buat Klaim
             </Button>
-            </Link>
+          </Link>
+          <Link href="/agent/clients/new">
+            <Button className="bg-black hover:bg-gray-900 text-white">
+              <Plus className="mr-2 h-4 w-4" />
+              Tambah Klien
+            </Button>
+          </Link>
         </div>
       </div>
 
-      <AgentRequestsList />
+
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         <Card>
@@ -116,7 +119,7 @@ export default async function AgentDashboardPage() {
           </CardContent>
         </Card>
       </div>
-      
+
       <div className="grid gap-6">
         <ClaimsList role="agent" claims={claims} />
       </div>

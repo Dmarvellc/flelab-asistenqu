@@ -18,7 +18,7 @@ export default function DeveloperLayout({ children }: { children: React.ReactNod
 
   const handleLogout = useCallback(async () => {
     try {
-      await fetch("/api/auth/logout", { method: "POST" });
+      await fetch("/api/auth/logout?from=developer", { method: "POST" });
     } catch (e) {
       console.error("Logout failed", e);
     }

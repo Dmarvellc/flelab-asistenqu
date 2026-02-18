@@ -4,15 +4,15 @@ import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Check, X, Upload, FileText, Download } from "lucide-react";
+import { Loader2, Check, X, Upload, FileText, Download, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -92,7 +92,7 @@ export function AgentRequestsList() {
         if (!selectedRequest || !file) return;
 
         setProcessing(selectedRequest.request_id);
-        
+
         const formData = new FormData();
         formData.append("file", file);
 
@@ -161,8 +161,8 @@ export function AgentRequestsList() {
                                     <span className="font-semibold">{req.person_name}</span>
                                     <Badge variant="outline">{req.person_nik}</Badge>
                                     <Badge className={
-                                        req.status === 'PENDING' ? 'bg-yellow-500' : 
-                                        req.status === 'APPROVED' ? 'bg-blue-500' : 'bg-gray-500'
+                                        req.status === 'PENDING' ? 'bg-yellow-500' :
+                                            req.status === 'APPROVED' ? 'bg-blue-500' : 'bg-gray-500'
                                     }>
                                         {req.status}
                                     </Badge>
@@ -175,11 +175,12 @@ export function AgentRequestsList() {
                                 </p>
                             </div>
                             <div className="flex items-center gap-2">
+
                                 {req.status === 'PENDING' && (
                                     <>
-                                        <Button 
-                                            size="sm" 
-                                            variant="outline" 
+                                        <Button
+                                            size="sm"
+                                            variant="outline"
                                             className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
                                             onClick={() => handleStatusUpdate(req.request_id, 'REJECTED')}
                                             disabled={!!processing}
@@ -187,8 +188,8 @@ export function AgentRequestsList() {
                                             {processing === req.request_id ? <Loader2 className="h-4 w-4 animate-spin" /> : <X className="h-4 w-4 mr-1" />}
                                             Tolak
                                         </Button>
-                                        <Button 
-                                            size="sm" 
+                                        <Button
+                                            size="sm"
                                             className="bg-green-600 hover:bg-green-700 text-white"
                                             onClick={() => handleStatusUpdate(req.request_id, 'APPROVED')}
                                             disabled={!!processing}
@@ -199,7 +200,7 @@ export function AgentRequestsList() {
                                     </>
                                 )}
                                 {req.status === 'APPROVED' && (
-                                    <Button 
+                                    <Button
                                         size="sm"
                                         className="bg-blue-600 hover:bg-blue-700 text-white"
                                         onClick={() => {
@@ -227,9 +228,9 @@ export function AgentRequestsList() {
                         <div className="grid gap-4 py-4">
                             <div className="grid gap-2">
                                 <Label htmlFor="file">File (PDF, Doc, Image - Max 10MB)</Label>
-                                <Input 
-                                    id="file" 
-                                    type="file" 
+                                <Input
+                                    id="file"
+                                    type="file"
                                     onChange={(e) => setFile(e.target.files?.[0] || null)}
                                 />
                             </div>
