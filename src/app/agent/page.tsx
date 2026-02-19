@@ -1,128 +1,74 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Plus, Users, FileText, Activity } from "lucide-react"
+import { Plus, ArrowRight } from "lucide-react"
 import Link from "next/link"
 import { ClaimsList } from "@/components/dashboard/claims-list"
 import { cookies } from "next/headers"
 import { getAgentClaims, getAgentIdByUserId } from "@/services/claims"
 import { getAgentMetrics } from "@/services/agent-metrics"
 
-
 export default async function AgentDashboardPage() {
   const cookieStore = await cookies()
   const userId = cookieStore.get("app_user_id")?.value || ""
 
-  // Fetch data in parallel
   const [agentId, metrics] = await Promise.all([
     getAgentIdByUserId(userId),
-    getAgentMetrics(userId) // metrics service uses userId to query
+    getAgentMetrics(userId)
   ]);
 
   const claims = agentId ? await getAgentClaims(agentId) : [];
 
+  const stats = [
+    { label: "Klien Aktif", value: metrics.activeClients },
+    { label: "Polis Pending", value: metrics.pendingContracts },
+    { label: "Total Klaim", value: metrics.totalClaims },
+    { label: "Poin", value: metrics.points },
+  ];
+
   return (
     <div className="flex flex-col gap-6">
+
+      {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight">Dasbor Agen</h2>
-          <p className="text-muted-foreground flex gap-2 items-center">
-            Selamat datang di portal agen Anda.
-            <Link href="/agent/requests" className="text-blue-600 hover:underline">
-              Lihat Permintaan Data ({claims.length || 0})
-            </Link>
-          </p>
-        </div>
-        <div className="flex gap-2">
+        <h1 className="text-lg font-semibold text-gray-900">Dasbor</h1>
+        <div className="flex items-center gap-2">
           <Link href="/agent/claims/new">
-            <Button variant="outline">
-              <Plus className="mr-2 h-4 w-4" />
-              Buat Klaim
+            <Button variant="outline" size="sm" className="border-gray-200 text-gray-600 text-xs h-8 px-3">
+              Klaim Baru
             </Button>
           </Link>
           <Link href="/agent/clients/new">
-            <Button className="bg-black hover:bg-gray-900 text-white">
-              <Plus className="mr-2 h-4 w-4" />
-              Tambah Klien
+            <Button size="sm" className="bg-black hover:bg-gray-900 text-white text-xs h-8 px-3">
+              + Tambah Klien
             </Button>
           </Link>
         </div>
       </div>
 
-
-
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Klien Aktif
-            </CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{metrics.activeClients}</div>
-            <p className="text-xs text-muted-foreground">
-              Total nasabah yang Anda kelola
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Polis Pending
-            </CardTitle>
-            <FileText className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{metrics.pendingContracts}</div>
-            <p className="text-xs text-muted-foreground">
-              Menunggu persetujuan
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Total Klaim
-            </CardTitle>
-            <Activity className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{metrics.totalClaims}</div>
-            <p className="text-xs text-muted-foreground">
-              Semua klaim yang diajukan
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Poin Reward
-            </CardTitle>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              className="h-4 w-4 text-muted-foreground"
-            >
-              <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-            </svg>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{metrics.points}</div>
-            <p className="text-xs text-muted-foreground">
-              Poin yang dapat ditukar
-            </p>
-          </CardContent>
-        </Card>
+      {/* Stats — no icons, value + secondary label */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {stats.map((stat) => (
+          <div key={stat.label} className="bg-white rounded-xl border border-gray-100 px-5 py-4">
+            <div className="text-2xl font-bold text-gray-900 tabular-nums">{stat.value}</div>
+            <p className="text-xs text-gray-400 mt-1">{stat.label}</p>
+          </div>
+        ))}
       </div>
 
-      <div className="grid gap-6">
-        <ClaimsList role="agent" claims={claims} />
+      {/* Claims list */}
+      <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+        <div className="px-5 py-4 border-b border-gray-50 flex items-center justify-between">
+          <span className="text-sm font-semibold text-gray-900">Klaim Terkini</span>
+          <Link href="/agent/claims">
+            <button className="text-xs text-gray-400 hover:text-gray-700 flex items-center gap-1 transition-colors">
+              Semua <ArrowRight className="h-3 w-3" />
+            </button>
+          </Link>
+        </div>
+        <div className="p-4">
+          <ClaimsList role="agent" claims={claims} />
+        </div>
       </div>
+
     </div>
   );
 }

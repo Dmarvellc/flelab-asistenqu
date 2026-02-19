@@ -2,25 +2,28 @@
 
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, useCallback } from "react";
-import { DashboardLayout, DashboardSidebar, SidebarHeader, SidebarContent, SidebarFooter, NavItem, DashboardHeader } from "@/components/dashboard/dashboard-layout"
+import {
+  DashboardLayout,
+  DashboardSidebar,
+  SidebarHeader,
+  SidebarContent,
+  SidebarFooter,
+  NavItem,
+} from "@/components/dashboard/dashboard-layout"
 import { EmergencyButton } from "@/components/claims/emergency-button"
-import { LayoutDashboard, Users, FileText, LogOut, Loader2, Settings, ChevronLeft, ChevronRight, ClipboardList } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { LayoutDashboard, Users, FileText, LogOut, Settings, ClipboardList, Stethoscope } from "lucide-react"
 import Link from "next/link"
-import { cn } from "@/lib/utils";
-import { Notifications } from "@/components/dashboard/notifications";
 
 export default function AgentLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [isChecking, setIsChecking] = useState(true);
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [userName, setUserName] = useState<string | null>(null);
+  const [badges, setBadges] = useState({ pendingContracts: 0, totalClaims: 0 });
 
-  // Normalize pathname to ensure robust comparison 
   const isPublicPage = pathname === "/agent/login" || pathname === "/agent/register";
 
-  // Use useCallback because handleLogout is a dependency of useEffect
   const handleLogout = useCallback(async () => {
     try {
       await fetch("/api/auth/logout?from=agent", { method: "POST" });
@@ -33,120 +36,113 @@ export default function AgentLayout({ children }: { children: React.ReactNode })
   }, [router]);
 
   useEffect(() => {
-    // 1. If public page, always allow access immediately
     if (isPublicPage) {
       setIsAuthorized(true);
-      // We set isChecking to false to unblock UI
       setIsChecking(false);
       return;
     }
-
-    // 2. If protected page, check local storage
     const user = localStorage.getItem("user");
     if (!user) {
       setIsAuthorized(false);
       setIsChecking(false);
-      // Wait, we should redirect!
-      // But if we just redirect, we might cause a redirect loop if the browser has a valid cookie
-      // So we must clear the cookie first by calling logout
       handleLogout();
     } else {
+      try {
+        const parsed = JSON.parse(user);
+        setUserName(parsed.email || parsed.name || null);
+      } catch { }
       setIsAuthorized(true);
       setIsChecking(false);
     }
   }, [pathname, isPublicPage, handleLogout]);
 
-  // Only show loader if we are checking auth on a PROTECTED page.
+  // Fetch badge counts once authorized
+  useEffect(() => {
+    if (!isAuthorized || isPublicPage) return;
+    fetch("/api/agent/metrics")
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (data) setBadges({ pendingContracts: data.pendingContracts || 0, totalClaims: data.totalClaims || 0 });
+      })
+      .catch(() => { });
+  }, [isAuthorized, isPublicPage]);
+
   if (isChecking && !isPublicPage) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-black text-white">
-        <Loader2 className="h-8 w-8 animate-spin" />
+      <div className="flex min-h-screen items-center justify-center bg-[#0a0a0a]">
+        <div className="h-8 w-8 rounded-full border-2 border-white/10 border-t-white animate-spin" />
       </div>
     )
   }
 
-  // Extra safety: if not checking, but not authorized and NOT public (waiting for flush), show loader
   if (!isChecking && !isAuthorized && !isPublicPage) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-black text-white">
-        <Loader2 className="h-8 w-8 animate-spin" />
+      <div className="flex min-h-screen items-center justify-center bg-[#0a0a0a]">
+        <div className="h-8 w-8 rounded-full border-2 border-white/10 border-t-white animate-spin" />
       </div>
     )
   }
 
-  // If public page, just render children (auth not required)
-  if (isPublicPage) {
-    return <>{children}</>;
-  }
+  if (isPublicPage) return <>{children}</>;
+  if (pathname === "/agent/verification") return <>{children}</>;
 
-  // If verification page, render without sidebar/layout (but auth was checked)
-  // This allows the verification page to have its own full screen layout
-  if (pathname === "/agent/verification") {
-    return <>{children}</>;
-  }
+  const navItems = [
+    { href: "/agent", icon: LayoutDashboard, label: "Dasbor", exact: true, badge: undefined },
+    { href: "/agent/clients", icon: Users, label: "Klien", badge: undefined },
+    { href: "/agent/claims", icon: FileText, label: "Klaim", badge: badges.totalClaims || undefined },
+    { href: "/agent/requests", icon: ClipboardList, label: "Permintaan", badge: badges.pendingContracts || undefined },
+    { href: "/agent/doctors", icon: Stethoscope, label: "Dokter", badge: undefined },
+    { href: "/agent/settings", icon: Settings, label: "Pengaturan", badge: undefined },
+  ];
 
-  const renderSidebar = (collapsed: boolean) => (
+  const isNavActive = (href: string, exact = false) => {
+    if (exact) return pathname === href;
+    return pathname === href || pathname.startsWith(href + "/");
+  };
+
+  const sidebar = (
     <DashboardSidebar>
-      <SidebarHeader className="flex items-center justify-between">
-        {!collapsed && (
-          <Link href="/agent" className="flex items-center gap-2 font-bold text-lg tracking-wide text-white animate-in fade-in duration-300">
-            <span>Portal Agen</span>
-          </Link>
-        )}
-        <Button
-          variant="ghost"
-          size="icon"
-          className={cn("text-zinc-400 hover:text-white hover:bg-zinc-800", collapsed && "mx-auto")}
-          onClick={() => setIsCollapsed(!isCollapsed)}
-        >
-          {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
-        </Button>
+      {/* Brand */}
+      <SidebarHeader>
+        <Link href="/agent">
+          <p className="font-semibold text-sm text-white tracking-tight">AsistenQu Agent</p>
+        </Link>
       </SidebarHeader>
+
+      {/* Nav */}
       <SidebarContent>
-        {/* Pass active prop explicitly */}
-        <NavItem href="/agent" icon={LayoutDashboard} active={pathname === "/agent"} isCollapsed={collapsed}>
-          Dasbor
-        </NavItem>
-        <NavItem href="/agent/clients" icon={Users} active={pathname === "/agent/clients"} isCollapsed={collapsed}>
-          Klien
-        </NavItem>
-        <NavItem href="/agent/claims" icon={FileText} active={pathname === "/agent/claims"} isCollapsed={collapsed}>
-          Klaim
-        </NavItem>
-        <NavItem href="/agent/requests" icon={ClipboardList} active={pathname === "/agent/requests" || pathname.startsWith("/agent/requests/")} isCollapsed={collapsed}>
-          Permintaan
-        </NavItem>
-        <NavItem href="/agent/settings" icon={Settings} active={pathname === "/agent/settings"} isCollapsed={collapsed}>
-          Pengaturan
-        </NavItem>
+        {navItems.map((item) => (
+          <NavItem
+            key={item.href}
+            href={item.href}
+            icon={item.icon}
+            active={isNavActive(item.href, item.exact)}
+            isCollapsed={false}
+            badge={item.badge}
+          >
+            {item.label}
+          </NavItem>
+        ))}
       </SidebarContent>
+
+      {/* Footer */}
       <SidebarFooter>
-        <Button
-          variant="ghost"
-          className={cn(
-            "w-full justify-start gap-2 text-zinc-400 hover:text-white hover:bg-zinc-900",
-            collapsed && "justify-center px-2"
-          )}
+        {userName && (
+          <p className="text-[11px] text-white/25 px-3 mb-1.5 truncate">{userName}</p>
+        )}
+        <button
+          className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-white/35 hover:bg-white/[0.06] hover:text-white/60 transition-all duration-150"
           onClick={handleLogout}
-          title={collapsed ? "Keluar" : undefined}
         >
-          <LogOut className="h-4 w-4 shrink-0" />
-          {!collapsed && <span className="truncate">Keluar</span>}
-        </Button>
+          <LogOut className="h-3.5 w-3.5 shrink-0" />
+          <span>Keluar</span>
+        </button>
       </SidebarFooter>
     </DashboardSidebar>
   );
 
   return (
-    <DashboardLayout
-      sidebar={renderSidebar(isCollapsed)}
-      header={
-        <DashboardHeader mobileSidebar={renderSidebar(false)}>
-          <Notifications role="agent" />
-        </DashboardHeader>
-      }
-      isCollapsed={isCollapsed}
-    >
+    <DashboardLayout sidebar={sidebar} isCollapsed={false}>
       {children}
       <EmergencyButton unitLabel="Tim Agen / Case Manager" />
     </DashboardLayout>

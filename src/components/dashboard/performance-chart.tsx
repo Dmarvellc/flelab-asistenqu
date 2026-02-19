@@ -13,32 +13,53 @@ const data = [
     { name: "Jul", claims: 18, points: 2400 },
 ]
 
+const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+        return (
+            <div className="bg-white border border-gray-100 rounded-xl shadow-lg p-3 min-w-[120px]">
+                <p className="text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wider">{label}</p>
+                {payload.map((entry: any) => (
+                    <div key={entry.name} className="flex items-center justify-between gap-4">
+                        <div className="flex items-center gap-1.5">
+                            <div
+                                className="h-2 w-2 rounded-full"
+                                style={{ backgroundColor: entry.fill }}
+                            />
+                            <span className="text-xs text-gray-500">{entry.name}</span>
+                        </div>
+                        <span className="text-xs font-semibold text-gray-900">{entry.value}</span>
+                    </div>
+                ))}
+            </div>
+        );
+    }
+    return null;
+};
+
 export function PerformanceChart() {
     return (
-        <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={data}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
+        <ResponsiveContainer width="100%" height={220}>
+            <BarChart data={data} barGap={4}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
                 <XAxis
                     dataKey="name"
-                    stroke="#6b7280"
-                    fontSize={12}
+                    stroke="#d1d5db"
+                    fontSize={11}
                     tickLine={false}
                     axisLine={false}
-                    dy={10}
+                    dy={8}
+                    tick={{ fill: '#9ca3af', fontWeight: 500 }}
                 />
                 <YAxis
-                    stroke="#6b7280"
-                    fontSize={12}
+                    stroke="#d1d5db"
+                    fontSize={11}
                     tickLine={false}
                     axisLine={false}
-                    tickFormatter={(value: number) => `${value}`}
+                    tick={{ fill: '#9ca3af' }}
                 />
-                <Tooltip
-                    cursor={{ fill: '#f3f4f6' }}
-                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
-                />
-                <Bar dataKey="points" fill="#4f46e5" radius={[4, 4, 0, 0]} name="Points Earned" />
-                <Bar dataKey="claims" fill="#93c5fd" radius={[4, 4, 0, 0]} name="Claims Processed" />
+                <Tooltip content={<CustomTooltip />} cursor={{ fill: '#f9fafb', radius: 6 }} />
+                <Bar dataKey="points" fill="#111827" radius={[4, 4, 0, 0]} name="Poin" />
+                <Bar dataKey="claims" fill="#d1d5db" radius={[4, 4, 0, 0]} name="Klaim" />
             </BarChart>
         </ResponsiveContainer>
     )

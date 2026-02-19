@@ -4,10 +4,12 @@ import { cookies } from "next/headers";
 
 export async function GET(req: Request) {
   const client = await dbPool.connect();
-  
+
   try {
     const cookieStore = await cookies();
-    const userId = cookieStore.get("app_user_id")?.value;
+    const userId =
+      cookieStore.get("session_agent_user_id")?.value ??
+      cookieStore.get("app_user_id")?.value;
 
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -27,17 +29,17 @@ export async function GET(req: Request) {
       JOIN public.client c ON con.client_id = c.client_id
       WHERE c.agent_id = $1 AND con.status = 'PENDING'
     `, [userId]);
-    
+
     const pendingContracts = parseInt(pendingContractsRes.rows[0].count);
 
     // 3. Points Balance (Komisi / Poin)
     const agentRes = await client.query(`
       SELECT points_balance FROM public.agent WHERE agent_id = $1
     `, [userId]);
-    
+
     let points = 0;
     if (agentRes.rows.length > 0) {
-        points = agentRes.rows[0].points_balance;
+      points = agentRes.rows[0].points_balance;
     }
 
     // 4. Total Claims (submitted/approved)

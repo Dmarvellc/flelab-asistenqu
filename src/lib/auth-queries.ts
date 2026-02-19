@@ -326,6 +326,7 @@ export async function findUserWithProfile(userId: string) {
        u.created_at,
        u.agency_id,
        ag.name as agency_name,
+       ag.address as agency_address,
        p.full_name,
        p.id_card as nik,
        p.phone_number,
@@ -396,6 +397,17 @@ export async function updateUserProfile(userId: string, data: {
     }
 
     await client.query("COMMIT");
+
+    // Keep agent.agent_name in sync with person.full_name (if this user is an agent)
+    try {
+      await dbPool.query(
+        `UPDATE public.agent SET agent_name = $1, updated_at = NOW() WHERE agent_id = $2`,
+        [data.fullName, userId]
+      );
+    } catch (_) {
+      // Not an agent, ignore
+    }
+
     return true;
   } catch (error) {
     await client.query("ROLLBACK");
