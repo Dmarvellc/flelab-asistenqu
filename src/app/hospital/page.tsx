@@ -1,16 +1,24 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ClaimsList } from "@/components/dashboard/claims-list"
 import { cookies } from "next/headers"
+import { redirect } from "next/navigation"
 import { getHospitalClaims, getHospitalIdByUserId } from "@/services/claims"
 
 export default async function HospitalDashboardPage() {
   const cookieStore = await cookies()
-  const userId = cookieStore.get("app_user_id")?.value || ""
+  const userId = cookieStore.get("app_user_id")?.value
+
+  // Cookie missing → not logged in, redirect to login
+  if (!userId || userId.trim() === "") {
+    redirect("/hospital/login")
+  }
+
   const hospitalId = await getHospitalIdByUserId(userId)
   const claims = await getHospitalClaims(hospitalId)
-  
+
+
   // Filter for "On Progress" claims roughly
-  const activeClaims = claims.filter(c => 
+  const activeClaims = claims.filter(c =>
     ['SUBMITTED', 'INFO_REQUESTED', 'INFO_SUBMITTED'].includes(c.status)
   )
 
@@ -52,7 +60,7 @@ export default async function HospitalDashboardPage() {
           </CardContent>
         </Card>
       </div>
-      
+
       <div className="grid gap-6">
         <ClaimsList role="hospital" claims={activeClaims} />
       </div>

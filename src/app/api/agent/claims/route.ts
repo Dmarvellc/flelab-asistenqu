@@ -9,7 +9,7 @@ export async function GET(req: Request) {
 
   try {
     const cookieStore = await cookies();
-    const userId = cookieStore.get("app_user_id")?.value;
+    const userId = cookieStore.get("session_agent_user_id")?.value ?? cookieStore.get("app_user_id")?.value;
 
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -25,9 +25,14 @@ export async function GET(req: Request) {
     const result = await client.query(`
       SELECT 
         c.claim_id,
+        c.claim_number,
         c.claim_date,
         c.status,
+        c.stage,
         c.total_amount,
+        c.log_number,
+        c.log_issued_at,
+        c.log_sent_to_hospital_at,
         p.full_name as client_name,
         d.name as disease_name,
         h.name as hospital_name
@@ -56,7 +61,7 @@ export async function POST(req: Request) {
   const client = await dbPool.connect();
   try {
     const cookieStore = await cookies();
-    const userId = cookieStore.get("app_user_id")?.value;
+    const userId = cookieStore.get("session_agent_user_id")?.value ?? cookieStore.get("app_user_id")?.value;
 
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

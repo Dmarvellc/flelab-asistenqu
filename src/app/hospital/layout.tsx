@@ -56,7 +56,6 @@ export default function HospitalLayout({ children }: { children: React.ReactNode
       </DashboardHeader>
     }>
       {children}
-      <EmergencyButton unitLabel="Tim Rumah Sakit" />
     </DashboardLayout>
   )
 }

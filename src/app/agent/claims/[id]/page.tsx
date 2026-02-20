@@ -3,9 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, ArrowLeft, Send, AlertCircle, Trash2, Edit2, Upload, FileText, X, MoreVertical } from "lucide-react";
+import { Loader2, ArrowLeft, Send, AlertCircle, Trash2, Edit2, Upload, FileText, MoreVertical, Download, Shield, User, Calendar, Building2, Stethoscope, Banknote, Clock } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -23,7 +21,6 @@ import {
     DialogFooter,
     DialogHeader,
     DialogTitle,
-    DialogTrigger,
 } from "@/components/ui/dialog";
 import {
     DropdownMenu,
@@ -34,10 +31,12 @@ import {
 import Link from "next/link";
 import { extractClaimNotes } from "@/lib/claim-form-meta";
 import { ActionModal } from "@/components/ui/action-modal";
+import { cn } from "@/lib/utils";
 
 
 type ClaimDetail = {
     claim_id: string;
+    claim_number: string | null;
     claim_date: string;
     status: string;
     stage: string;
@@ -47,6 +46,11 @@ type ClaimDetail = {
     disease_name: string;
     hospital_name: string;
     created_at: string;
+    log_number: string | null;
+    log_issued_at: string | null;
+    log_sent_to_hospital_at: string | null;
+    insurance_name: string | null;
+    insurance_contact: string | null;
 };
 
 type InfoRequest = {
@@ -73,6 +77,22 @@ type NoticeState = {
     description: string;
     onClose?: () => void;
 };
+
+function FieldRow({ label, icon: Icon, value }: { label: string; icon: React.ElementType; value: React.ReactNode }) {
+    return (
+        <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-6 py-4 border-b border-gray-50 last:border-0">
+            <div className="flex items-center gap-2 sm:w-48 shrink-0">
+                <Icon className="h-4 w-4 text-gray-400" />
+                <span className="text-xs font-medium uppercase tracking-wider text-gray-400">{label}</span>
+            </div>
+            <div className="flex-1 min-w-0">
+                <p className={cn("text-sm text-gray-900", !value && "text-gray-400 italic")}>
+                    {value || "Belum diisi"}
+                </p>
+            </div>
+        </div>
+    );
+}
 
 export default function ClaimDetailPage() {
     const params = useParams();
@@ -307,93 +327,103 @@ export default function ClaimDetailPage() {
 
     if (loading) {
         return (
-            <div className="flex justify-center items-center h-64">
-                <Loader2 className="h-8 w-8 animate-spin" />
+            <div className="flex h-[60vh] w-full items-center justify-center">
+                <div className="flex flex-col items-center gap-4">
+                    <div className="h-10 w-10 rounded-full border-2 border-gray-200 border-t-gray-800 animate-spin" />
+                    <p className="text-sm text-gray-400">Memuat detail klaim...</p>
+                </div>
             </div>
         );
     }
 
     if (!claim) {
-        return <div>Klaim tidak ditemukan.</div>;
+        return <div className="text-sm text-gray-500 py-10 text-center">Klaim tidak ditemukan.</div>;
     }
 
-    const getStatusBadge = (status: string) => {
+    const getStatusStyle = (status: string) => {
         switch (status) {
-            case 'DRAFT': return <Badge variant="outline">Draft</Badge>;
-            case 'SUBMITTED': return <Badge className="bg-blue-500">Diajukan</Badge>;
-            case 'APPROVED': return <Badge className="bg-green-500">Disetujui</Badge>;
-            case 'REJECTED': return <Badge variant="destructive">Ditolak</Badge>;
-            case 'PAID': return <Badge className="bg-emerald-500">Dibayar</Badge>;
-            case 'INFO_REQUESTED': return <Badge className="bg-amber-500">Butuh Info</Badge>;
-            case 'INFO_SUBMITTED': return <Badge className="bg-blue-400">Info Diterima</Badge>;
-            default: return <Badge variant="secondary">{status}</Badge>;
+            case 'DRAFT': return "bg-gray-100 text-gray-600 border-gray-200";
+            case 'SUBMITTED': return "bg-blue-50 text-blue-700 border-blue-200";
+            case 'APPROVED': return "bg-green-50 text-green-700 border-green-200";
+            case 'REJECTED': return "bg-red-50 text-red-700 border-red-200";
+            case 'PAID': return "bg-emerald-50 text-emerald-700 border-emerald-200";
+            case 'INFO_REQUESTED': return "bg-amber-50 text-amber-700 border-amber-200";
+            case 'INFO_SUBMITTED': return "bg-blue-50 text-blue-700 border-blue-200";
+            default: return "bg-gray-50 text-gray-600 border-gray-200";
+        }
+    };
+
+    const getStatusLabel = (status: string) => {
+        switch (status) {
+            case 'DRAFT': return "Draft";
+            case 'SUBMITTED': return "Diajukan";
+            case 'APPROVED': return "Disetujui";
+            case 'REJECTED': return "Ditolak";
+            case 'PAID': return "Dibayar";
+            case 'INFO_REQUESTED': return "Butuh Info";
+            case 'INFO_SUBMITTED': return "Info Diterima";
+            default: return status;
         }
     };
 
     const parsedNotes = extractClaimNotes(claim.notes);
 
     return (
-        <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 justify-between">
+        <div className="flex flex-col gap-8 animate-in fade-in duration-500 max-w-5xl mx-auto pb-12">
+            {/* Header */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 pb-6 border-b border-gray-100">
                 <div className="flex items-center gap-4">
                     <Link href="/agent/claims">
-                        <Button variant="ghost" size="icon">
-                            <ArrowLeft className="h-4 w-4" />
+                        <Button variant="ghost" size="icon" className="rounded-full bg-gray-50 hover:bg-gray-100 h-10 w-10 shrink-0">
+                            <ArrowLeft className="h-4 w-4 text-gray-600" />
                         </Button>
                     </Link>
                     <div>
-                        <h2 className="text-2xl font-bold tracking-tight">Detail Klaim</h2>
-                        <div className="flex items-center gap-2 mt-1">
-                            <p className="text-muted-foreground text-sm">ID: {claim.claim_id}</p>
-                            {getStatusBadge(claim.status)}
+                        <div className="flex flex-wrap items-center gap-2 mb-1">
+                            <span className={cn("text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full border", getStatusStyle(claim.status))}>
+                                {getStatusLabel(claim.status)}
+                            </span>
+                            {claim.log_number && (
+                                <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-purple-700 bg-purple-50 border border-purple-200 px-2.5 py-1 rounded-full">
+                                    <Shield className="h-3 w-3" />
+                                    LOG: {claim.log_number}
+                                </span>
+                            )}
                         </div>
+                        <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900 mt-2">
+                            {claim.claim_number || `Klaim #${claim.claim_id.slice(0, 8)}`}
+                        </h2>
                     </div>
                 </div>
 
-                <div className="flex items-center gap-2 w-full sm:w-auto">
+                <div className="flex items-center gap-2 shrink-0">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        className="gap-2 rounded-xl h-10 px-4 border-gray-200 shadow-sm text-gray-700 bg-white"
+                        onClick={() => window.open(`/agent/claims/${params.id}/print`, '_blank')}
+                    >
+                        <Download className="h-4 w-4" />
+                        PDF
+                    </Button>
+
                     {claim.status === 'DRAFT' && (
                         <>
-                            <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-                                <DialogContent>
-                                    <DialogHeader>
-                                        <DialogTitle>Edit Klaim</DialogTitle>
-                                        <DialogDescription>
-                                            Ubah detail klaim ini.
-                                        </DialogDescription>
-                                    </DialogHeader>
-                                    <div className="space-y-4 py-4">
-                                        <div className="space-y-2">
-                                            <Label>Tanggal Kejadian</Label>
-                                            <Input
-                                                type="date"
-                                                value={editForm.claim_date}
-                                                onChange={(e) => setEditForm({ ...editForm, claim_date: e.target.value })}
-                                            />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label>Perkiraan Biaya</Label>
-                                            <Input
-                                                type="number"
-                                                value={editForm.total_amount}
-                                                onChange={(e) => setEditForm({ ...editForm, total_amount: e.target.value })}
-                                            />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label>Catatan</Label>
-                                            <Textarea
-                                                value={editForm.notes}
-                                                onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })}
-                                            />
-                                        </div>
-                                    </div>
-                                    <DialogFooter>
-                                        <Button variant="outline" onClick={() => setIsEditOpen(false)}>Batal</Button>
-                                        <Button onClick={handleUpdateClaim} disabled={submitting}>
-                                            {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Simpan Perubahan"}
-                                        </Button>
-                                    </DialogFooter>
-                                </DialogContent>
-                            </Dialog>
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="outline" size="icon" className="rounded-xl h-10 w-10 border-gray-200 shadow-sm bg-white hover:bg-gray-50 text-gray-700">
+                                        <MoreVertical className="h-4 w-4" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-48 rounded-xl shadow-lg border-gray-100">
+                                    <DropdownMenuItem onClick={() => setIsEditOpen(true)} className="gap-2 p-2.5 cursor-pointer">
+                                        <Edit2 className="h-4 w-4" /> Edit Detail
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => setPendingAction("delete")} className="text-red-500 focus:text-red-600 gap-2 p-2.5 cursor-pointer focus:bg-red-50 mt-1">
+                                        <Trash2 className="h-4 w-4" /> Hapus Klaim
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
 
                             <Button
                                 onClick={() => {
@@ -404,209 +434,246 @@ export default function ClaimDetailPage() {
                                     setPendingAction("submit");
                                 }}
                                 disabled={submitting}
-                                variant="default"
-                                className={claim?.stage === 'PENDING_AGENT' ? "bg-green-600 hover:bg-green-700" : ""}
+                                className={cn(
+                                    "gap-2 rounded-xl h-10 px-5 shadow-sm text-sm font-medium transition-all ml-1",
+                                    claim?.stage === 'PENDING_AGENT'
+                                        ? "bg-emerald-600 hover:bg-emerald-700 text-white"
+                                        : "bg-black hover:bg-gray-900 text-white"
+                                )}
                             >
-                                {submitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
-                                {claim?.stage === 'PENDING_AGENT' ? "Ajukan Final ke Agensi" : "Lengkapi & Kirim ke RS"}
+                                {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                                {claim?.stage === 'PENDING_AGENT' ? "Ajukan ke Agensi" : "Kirim ke RS"}
                             </Button>
-
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" size="icon">
-                                        <MoreVertical className="h-4 w-4" />
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                    <DropdownMenuItem onClick={() => setIsEditOpen(true)}>
-                                        <Edit2 className="mr-2 h-4 w-4" />
-                                        Edit
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => setPendingAction("delete")} className="text-red-600 focus:text-red-600">
-                                        <Trash2 className="mr-2 h-4 w-4" />
-                                        Hapus
-                                    </DropdownMenuItem>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
                         </>
                     )}
                 </div>
             </div>
 
+            {/* Alert: Info Requested */}
             {claim.status === 'INFO_REQUESTED' && infoRequest && (
-                <div className="rounded-md border border-amber-500 bg-amber-50 p-4">
-                    <p className="text-amber-800 font-semibold flex items-center gap-2">
-                        <AlertCircle className="h-4 w-4 text-amber-600" />
-                        Permintaan Data Tambahan
-                    </p>
-                    <p className="text-sm text-amber-700 mt-1">
-                        Ada data tambahan yang perlu dilengkapi agar klaim bisa diproses.
-                    </p>
+                <div className="bg-amber-50 rounded-2xl p-5 border border-amber-200 flex items-start gap-4">
+                    <div className="h-10 w-10 rounded-full bg-amber-100 flex items-center justify-center shrink-0 mt-0.5">
+                        <AlertCircle className="h-5 w-5 text-amber-600" />
+                    </div>
+                    <div>
+                        <h3 className="font-semibold text-amber-900">Permintaan Data Tambahan</h3>
+                        <p className="text-sm text-amber-800 mt-1 leading-relaxed">
+                            Rumah sakit atau tim medis memerlukan informasi tambahan untuk melanjutkan proses klaim ini. Silakan lengkapi formulir di bagian "Kebutuhan Data" di bawah.
+                        </p>
+                    </div>
                 </div>
             )}
 
-            <div className="grid gap-6 md:grid-cols-2">
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Informasi Klaim</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <div className="grid grid-cols-2 gap-4">
-                            <div>
-                                <p className="text-sm font-medium text-muted-foreground">Nasabah</p>
-                                <p className="text-lg font-semibold">{claim.client_name}</p>
-                            </div>
-                            <div>
-                                <p className="text-sm font-medium text-muted-foreground">Tanggal Kejadian</p>
-                                <p>{new Date(claim.claim_date).toLocaleDateString("id-ID", { day: 'numeric', month: 'long', year: 'numeric' })}</p>
-                            </div>
-                            <div>
-                                <p className="text-sm font-medium text-muted-foreground">Rumah Sakit</p>
-                                <p>{claim.hospital_name || "-"}</p>
-                            </div>
-                            <div>
-                                <p className="text-sm font-medium text-muted-foreground">Penyakit</p>
-                                <p>{claim.disease_name || "-"}</p>
-                            </div>
-                            <div>
-                                <p className="text-sm font-medium text-muted-foreground">Perkiraan Biaya</p>
-                                <p className="text-lg font-bold text-emerald-600">
-                                    {claim.total_amount ?
-                                        new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(claim.total_amount)
-                                        : "-"}
-                                </p>
-                            </div>
+            {/* Main Content Layout */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {/* Left Column: Details */}
+                <div className="lg:col-span-2 space-y-8">
+                    {/* section: Info Utama */}
+                    <div className="bg-white rounded-3xl border border-gray-100 overflow-hidden shadow-sm">
+                        <div className="px-6 py-5 border-b border-gray-50 flex items-center justify-between bg-gray-50/30">
+                            <h3 className="font-semibold text-gray-900 text-base">Informasi Utama</h3>
                         </div>
-                        <div>
-                            <p className="text-sm font-medium text-muted-foreground">Catatan</p>
-                            <p className="text-sm mt-1">{parsedNotes.plainNotes || "-"}</p>
+                        <div className="px-6 py-2">
+                            <FieldRow label="Nasabah" icon={User} value={<span className="font-medium">{claim.client_name}</span>} />
+                            <FieldRow label="Tanggal Kejadian" icon={Calendar} value={new Date(claim.claim_date).toLocaleDateString("id-ID", { day: 'numeric', month: 'long', year: 'numeric' })} />
+                            <FieldRow label="Rumah Sakit" icon={Building2} value={claim.hospital_name} />
+                            <FieldRow label="Diagnosis / Penyakit" icon={Stethoscope} value={claim.disease_name} />
+                            <FieldRow
+                                label="Perkiraan Biaya"
+                                icon={Banknote}
+                                value={claim.total_amount ? <span className="text-lg font-bold text-emerald-600">{new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(claim.total_amount)}</span> : undefined}
+                            />
+                            <FieldRow label="Catatan Tambahan" icon={FileText} value={parsedNotes.plainNotes} />
                         </div>
+                    </div>
 
-                        {parsedNotes.meta && (
-                            <div className="pt-4 border-t">
-                                <p className="text-sm font-medium text-muted-foreground mb-2">Data Form Klaim</p>
-                                <div className="grid grid-cols-1 gap-2 text-sm">
-                                    <p><span className="text-muted-foreground">Kategori:</span> {parsedNotes.meta.claim_category || "-"}</p>
-                                    <p><span className="text-muted-foreground">Jenis manfaat:</span> {parsedNotes.meta.benefit_type || "-"}</p>
-                                    <p><span className="text-muted-foreground">Penyebab:</span> {parsedNotes.meta.care_cause || "-"}</p>
-                                    <p><span className="text-muted-foreground">Awal gejala:</span> {parsedNotes.meta.symptom_onset_date || "-"}</p>
-                                    <p><span className="text-muted-foreground">Alkohol/narkotika:</span> {parsedNotes.meta.alcohol_drug_related || "-"}</p>
+                    {/* section: Meta Form */}
+                    {parsedNotes.meta && (
+                        <div className="bg-white rounded-3xl border border-gray-100 overflow-hidden shadow-sm">
+                            <div className="px-6 py-5 border-b border-gray-50 flex items-center justify-between bg-gray-50/30">
+                                <h3 className="font-semibold text-gray-900 text-base">Detail Medis Awal</h3>
+                            </div>
+                            <div className="px-6 py-2">
+                                <FieldRow label="Kategori" icon={FileText} value={parsedNotes.meta.claim_category} />
+                                <FieldRow label="Jenis Manfaat" icon={FileText} value={parsedNotes.meta.benefit_type} />
+                                <FieldRow label="Penyebab Perawatan" icon={FileText} value={parsedNotes.meta.care_cause} />
+                                <FieldRow label="Awal Gejala" icon={Clock} value={parsedNotes.meta.symptom_onset_date} />
+                                <FieldRow label="Terkait Narkotika" icon={AlertCircle} value={parsedNotes.meta.alcohol_drug_related} />
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                {/* Right Column: Uploads / Actions */}
+                <div className="space-y-6">
+                    {claim.status === 'INFO_REQUESTED' && infoRequest ? (
+                        <div className="bg-white rounded-3xl border border-amber-200 overflow-hidden shadow-sm">
+                            <div className="px-6 py-5 bg-amber-50 border-b border-amber-200 flex items-center gap-2">
+                                <AlertCircle className="w-4 h-4 text-amber-600" />
+                                <div>
+                                    <h3 className="font-semibold text-amber-900 text-sm">Kebutuhan Data</h3>
+                                    <p className="text-[10px] text-amber-700/70 mt-0.5 uppercase tracking-widest font-bold">Wajib diisi</p>
                                 </div>
                             </div>
-                        )}
-                    </CardContent>
-                </Card>
-
-                <Card>
-                    <CardHeader>
-                        <CardTitle>
-                            {claim.status === 'INFO_REQUESTED' ? "Respon Permintaan Data" : "Dokumen Pendukung"}
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        {claim.status === 'INFO_REQUESTED' && infoRequest ? (
-                            <form onSubmit={handleSubmitInfo} className="space-y-4">
-                                {infoRequest.form_schema.map((field) => (
-                                    <div key={field.id} className="space-y-2">
-                                        <Label htmlFor={field.id}>
-                                            {field.label} {field.required && <span className="text-red-500">*</span>}
-                                        </Label>
-
-                                        {field.type === 'select' ? (
-                                            <Select
-                                                onValueChange={(val) => handleInputChange(field.id, val)}
-                                                required={field.required}
-                                            >
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder="Pilih..." />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    {field.options?.map((opt) => (
-                                                        <SelectItem key={opt} value={opt}>{opt}</SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
-                                        ) : (
-                                            <Input
-                                                id={field.id}
-                                                type={field.type}
-                                                required={field.required}
-                                                onChange={(e) => handleInputChange(field.id, e.target.value)}
-                                            />
-                                        )}
-                                    </div>
-                                ))}
-                                <Button type="submit" className="w-full" disabled={submitting}>
-                                    {submitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
-                                    Kirim Data Tambahan
-                                </Button>
-                            </form>
-                        ) : (
-                            <div className="space-y-4">
+                            <div className="p-6">
+                                <form onSubmit={handleSubmitInfo} className="space-y-5">
+                                    {infoRequest.form_schema.map((field) => (
+                                        <div key={field.id} className="space-y-2">
+                                            <Label htmlFor={field.id} className="text-xs uppercase font-semibold text-gray-500 tracking-wider">
+                                                {field.label} {field.required && <span className="text-red-500">*</span>}
+                                            </Label>
+                                            {field.type === 'select' ? (
+                                                <Select
+                                                    onValueChange={(val) => handleInputChange(field.id, val)}
+                                                    required={field.required}
+                                                >
+                                                    <SelectTrigger className="rounded-xl border-gray-200 text-sm h-11">
+                                                        <SelectValue placeholder="Pilih opsi..." />
+                                                    </SelectTrigger>
+                                                    <SelectContent className="rounded-xl">
+                                                        {field.options?.map((opt) => (
+                                                            <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
+                                            ) : (
+                                                <Input
+                                                    id={field.id}
+                                                    type={field.type}
+                                                    required={field.required}
+                                                    onChange={(e) => handleInputChange(field.id, e.target.value)}
+                                                    className="rounded-xl border-gray-200 text-sm h-11"
+                                                    placeholder={`Ketik ${field.label.toLowerCase()}...`}
+                                                />
+                                            )}
+                                        </div>
+                                    ))}
+                                    <Button type="submit" className="w-full rounded-xl h-11 bg-black hover:bg-gray-900 text-white shadow-md font-medium mt-4 transition-all active:scale-[0.98]" disabled={submitting}>
+                                        {submitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+                                        Kirim Respon
+                                    </Button>
+                                </form>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="bg-white rounded-3xl border border-gray-100 overflow-hidden shadow-sm">
+                            <div className="px-6 py-5 border-b border-gray-50 flex items-center justify-between bg-gray-50/30">
+                                <h3 className="font-semibold text-gray-900 text-base">Dokumen File</h3>
+                                <span className="bg-gray-200/60 text-gray-600 text-xs font-bold px-2 py-0.5 rounded-md">{documents.length} File</span>
+                            </div>
+                            <div className="p-6 space-y-5">
                                 {claim.status === 'DRAFT' && (
-                                    <div className="rounded-md border bg-muted/40 p-3 text-sm space-y-2">
-                                        <p className="font-medium">Checklist minimal sebelum pengajuan</p>
-                                        <ul className="list-disc ml-5 text-muted-foreground space-y-1">
-                                            <li>Unggah dokumen utama klaim dan lampiran medis.</li>
-                                            <li>Pastikan tanggal kejadian, RS, dan diagnosis sudah benar.</li>
-                                            <li>Isi catatan singkat hanya untuk informasi penting.</li>
-                                        </ul>
-                                    </div>
-                                )}
-
-                                {claim.status === 'DRAFT' && (
-                                    <div className="border-2 border-dashed rounded-lg p-6 text-center hover:bg-muted/50 transition-colors relative">
+                                    <div className="border-2 border-dashed border-gray-200 rounded-2xl p-6 relative flex flex-col items-center justify-center text-center hover:bg-gray-50 transition-colors group cursor-pointer bg-white">
                                         <input
                                             type="file"
-                                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                                             onChange={handleFileUpload}
                                             disabled={uploading}
                                         />
-                                        <div className="flex flex-col items-center gap-2">
+                                        <div className="h-12 w-12 rounded-full bg-gray-50 flex items-center justify-center mb-3 group-hover:scale-110 shadow-sm border border-gray-100 transition-transform">
                                             {uploading ? (
-                                                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                                                <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
                                             ) : (
-                                                <Upload className="h-8 w-8 text-muted-foreground" />
+                                                <Upload className="h-5 w-5 text-gray-400" />
                                             )}
-                                            <p className="text-sm font-medium">
-                                                {uploading ? "Mengunggah..." : "Klik untuk unggah dokumen"}
-                                            </p>
-                                            <p className="text-xs text-muted-foreground">PDF, JPG, PNG (Max 5MB)</p>
                                         </div>
+                                        <h4 className="font-medium text-sm text-gray-900">
+                                            {uploading ? "Sabar, mengunggah..." : "Tambah Dokumen"}
+                                        </h4>
+                                        <p className="text-[11px] text-gray-400 mt-1 max-w-[200px]">PDF, JPG, PNG &bull; Maks 5MB</p>
                                     </div>
                                 )}
 
-                                <div className="space-y-2">
+                                <div className="space-y-3">
                                     {documents.length === 0 ? (
-                                        <p className="text-sm text-muted-foreground text-center py-4">Belum ada dokumen.</p>
+                                        claim.status !== 'DRAFT' ? (
+                                            <div className="text-center py-6">
+                                                <FileText className="h-8 w-8 text-gray-200 mx-auto mb-2" />
+                                                <p className="text-xs text-gray-400">Belum ada dokumen tertaut</p>
+                                            </div>
+                                        ) : null
                                     ) : (
                                         documents.map((doc) => (
-                                            <div key={doc.document_id} className="flex items-center gap-3 p-3 border rounded-md bg-card">
-                                                <div className="h-10 w-10 bg-muted rounded flex items-center justify-center">
-                                                    <FileText className="h-5 w-5 text-muted-foreground" />
+                                            <a
+                                                key={doc.document_id}
+                                                href={doc.file_url}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="group flex flex-col sm:flex-row sm:items-center gap-3 p-3.5 rounded-xl border border-gray-100 bg-gray-50/30 hover:border-gray-200 hover:bg-gray-50 transition-all cursor-pointer relative"
+                                            >
+                                                <div className="flex items-center gap-3 flex-1 min-w-0">
+                                                    <div className="h-10 w-10 bg-white rounded-lg flex items-center justify-center shrink-0 border border-gray-100 group-hover:shadow-sm transition-all">
+                                                        <FileText className="h-4 w-4 text-gray-400 group-hover:text-black transition-colors" />
+                                                    </div>
+                                                    <div className="flex-1 min-w-0">
+                                                        <p className="text-sm font-medium text-gray-900 truncate group-hover:text-black transition-colors">
+                                                            {doc.file_url.split('/').pop()}
+                                                        </p>
+                                                        <p className="text-[10px] text-gray-400 mt-0.5 uppercase tracking-wider font-semibold">
+                                                            {new Date(doc.created_at).toLocaleDateString("id-ID", { day: 'numeric', month: 'short', year: 'numeric' })}
+                                                        </p>
+                                                    </div>
                                                 </div>
-                                                <div className="flex-1 overflow-hidden">
-                                                    <p className="text-sm font-medium truncate">
-                                                        {doc.file_url.split('/').pop()}
-                                                    </p>
-                                                    <p className="text-xs text-muted-foreground">
-                                                        {new Date(doc.created_at).toLocaleDateString()}
-                                                    </p>
+                                                <div className="hidden sm:flex h-8 w-8 bg-white border border-gray-100 rounded-lg shrink-0 items-center justify-center text-gray-300 group-hover:text-black group-hover:border-gray-300 transition-colors shadow-sm">
+                                                    <Download className="h-3.5 w-3.5" />
                                                 </div>
-                                                <Button variant="ghost" size="sm" asChild>
-                                                    <a href={doc.file_url} target="_blank" rel="noopener noreferrer">
-                                                        Lihat
-                                                    </a>
-                                                </Button>
-                                            </div>
+                                            </a>
                                         ))
                                     )}
                                 </div>
                             </div>
-                        )}
-                    </CardContent>
-                </Card>
+                        </div>
+                    )}
+                </div>
             </div>
+
+            {/* Dialog Edit */}
+            <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+                <DialogContent className="rounded-3xl border border-gray-100 shadow-2xl overflow-hidden sm:max-w-md p-0">
+                    <div className="px-6 py-5 border-b border-gray-100 bg-white">
+                        <DialogTitle className="text-xl font-bold">Edit Detail Klaim</DialogTitle>
+                        <DialogDescription className="text-xs mt-1 text-gray-500">
+                            Masukan tagihan kasar perkiraan untuk RS
+                        </DialogDescription>
+                    </div>
+                    <div className="p-6 space-y-5 bg-gray-50/30">
+                        <div className="space-y-2">
+                            <Label className="text-xs font-semibold uppercase tracking-wider text-gray-500">Tanggal Kejadian</Label>
+                            <Input
+                                type="date"
+                                className="rounded-xl border-gray-200 h-11"
+                                value={editForm.claim_date}
+                                onChange={(e) => setEditForm({ ...editForm, claim_date: e.target.value })}
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label className="text-xs font-semibold uppercase tracking-wider text-gray-500">Perkiraan Biaya (Rp)</Label>
+                            <Input
+                                type="number"
+                                className="rounded-xl border-gray-200 font-mono h-11"
+                                value={editForm.total_amount}
+                                onChange={(e) => setEditForm({ ...editForm, total_amount: e.target.value })}
+                                placeholder="0"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label className="text-xs font-semibold uppercase tracking-wider text-gray-500">Catatan</Label>
+                            <Textarea
+                                className="rounded-xl border-gray-200 min-h-[100px] resize-none"
+                                value={editForm.notes}
+                                onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })}
+                                placeholder="Tambahkan informasi pendukung opsional di sini..."
+                            />
+                        </div>
+                    </div>
+                    <div className="px-6 py-4 bg-white border-t border-gray-100 flex items-center justify-end gap-2">
+                        <Button variant="ghost" onClick={() => setIsEditOpen(false)} className="rounded-xl font-medium text-gray-500 hover:text-gray-900">Batal Edit</Button>
+                        <Button onClick={handleUpdateClaim} disabled={submitting} className="rounded-xl bg-black hover:bg-gray-900 font-medium px-6 h-10 shadow-md transition-all active:scale-95">
+                            {submitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Simpan Perubahaan"}
+                        </Button>
+                    </div>
+                </DialogContent>
+            </Dialog>
 
             <ActionModal
                 open={pendingAction === "submit"}
@@ -614,9 +681,9 @@ export default function ClaimDetailPage() {
                     if (!open) setPendingAction(null);
                 }}
                 title={claim?.stage === 'PENDING_AGENT' ? "Ajukan ke Agensi" : "Kirim ke Rumah Sakit"}
-                description={claim?.stage === 'PENDING_AGENT' ? "Apakah semua data dari RS sudah lengkap dan siap diajukan ke Agensi?" : "Apakah Anda yakin ingin mengirim klaim ini ke Rumah Sakit untuk dilengkapi?"}
-                confirmText={claim?.stage === 'PENDING_AGENT' ? "Ya, Ajukan" : "Ya, Kirim ke RS"}
-                cancelText="Batal"
+                description={claim?.stage === 'PENDING_AGENT' ? "Pastikan berkas medis telah dilampirkan. Yakin lanjutkan ke Agensi Asuransi?" : "Apakah dokumen pendukung sudah diunggah seluruhnya dan siap diproses Rumah Sakit?"}
+                confirmText={claim?.stage === 'PENDING_AGENT' ? "Ya, Ajukan Final" : "Kirim & Proses"}
+                cancelText="Kembali"
                 onConfirm={executeSubmitClaim}
                 loading={submitting}
             />
@@ -625,9 +692,9 @@ export default function ClaimDetailPage() {
                 onOpenChange={(open) => {
                     if (!open) setPendingAction(null);
                 }}
-                title="Hapus Klaim"
-                description="Apakah Anda yakin ingin menghapus klaim ini? Tindakan ini tidak dapat dibatalkan."
-                confirmText="Ya, Hapus"
+                title="Hapus Pengajuan"
+                description="Hapus klaim yang berstatus 'Draft' ini tidak dapat dipulihkan dan fail yang di upload akan terbuang."
+                confirmText="Ya, Hapus Permanen"
                 cancelText="Batal"
                 onConfirm={executeDeleteClaim}
                 destructive
@@ -643,7 +710,7 @@ export default function ClaimDetailPage() {
                 }}
                 title={notice.title}
                 description={notice.description}
-                confirmText="OK"
+                confirmText="OKE"
             />
         </div>
     );

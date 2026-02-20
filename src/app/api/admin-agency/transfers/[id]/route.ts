@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import { dbPool } from "@/lib/db";
 
-export async function PUT(req: Request, { params }: { params: { id: string } }) {
+export async function PUT(req: Request, context: { params: Promise<{ id: string }> }) {
     try {
         const { action } = await req.json();
-        const requestId = params.id;
+        const { id: requestId } = await context.params;
         // Get admin ID from cookie/auth context if possible
         const adminId = "system";
 

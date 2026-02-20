@@ -2,8 +2,8 @@ import { NextResponse } from "next/server";
 import { dbPool } from "@/lib/db";
 import { cookies } from "next/headers";
 
-export async function POST(req: Request, { params }: { params: { id: string } }) {
-    const { id: claimId } = params;
+export async function POST(req: Request, context: { params: Promise<{ id: string }> }) {
+    const { id: claimId } = await context.params;
     const cookieStore = await cookies();
     const userId = cookieStore.get("app_user_id")?.value;
     // Get role from cookie for fast check, or fetch from DB to be secure.

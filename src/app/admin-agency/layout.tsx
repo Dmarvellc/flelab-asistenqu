@@ -2,7 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import { DashboardLayout, DashboardSidebar, SidebarHeader, SidebarContent, SidebarFooter, NavItem, DashboardHeader } from "@/components/dashboard/dashboard-layout"
-import { LayoutDashboard, Shield, Globe, Settings, LogOut, Users, FileText, GitPullRequest } from "lucide-react"
+import { LayoutDashboard, Shield, Globe, Settings, LogOut, Users, FileText, GitPullRequest, Trophy } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 
@@ -37,6 +37,9 @@ export default function AdminAgencyLayout({ children }: { children: React.ReactN
         </NavItem>
         <NavItem href="/admin-agency/transfers" icon={GitPullRequest} active={pathname.startsWith('/admin-agency/transfers')}>
           Transfer Requests
+        </NavItem>
+        <NavItem href="/admin-agency/performance" icon={Trophy} active={pathname.startsWith('/admin-agency/performance')}>
+          Performa Agen
         </NavItem>
         <NavItem href="/admin-agency/settings" icon={Settings} active={pathname === '/admin-agency/settings'}>
           Settings

@@ -1,9 +1,9 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import AgentClientsPageClient from "./client-page";
-import { getAgentClients } from "@/services/agent-clients";
+import ReferralPageClient from "./client-page";
+import { getAgentReferralData } from "@/services/agent-referral";
 
-export default async function AgentClientsPage() {
+export default async function ReferralPage() {
     const cookieStore = await cookies();
     const userId = cookieStore.get("session_agent_user_id")?.value ?? cookieStore.get("app_user_id")?.value;
 
@@ -11,7 +11,7 @@ export default async function AgentClientsPage() {
         redirect("/agent/login");
     }
 
-    const initialClients = await getAgentClients(userId).catch(() => []);
+    const initialData = await getAgentReferralData(userId).catch(() => null);
 
-    return <AgentClientsPageClient initialClients={initialClients as any} />;
+    return <ReferralPageClient initialData={initialData as any} />;
 }

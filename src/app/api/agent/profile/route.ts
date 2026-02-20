@@ -43,9 +43,9 @@ export async function PUT(request: Request) {
     try {
         const body = await request.json();
 
-        // Basic validation
-        if (!body.fullName || !body.phone) {
-            return NextResponse.json({ error: "Nama dan Telepon wajib diisi" }, { status: 400 });
+        // Minimal validation for document uploads
+        if (!body.fullName && !body.ktp_image && !body.selfie_image) {
+            return NextResponse.json({ error: "Tidak ada data yang diubah" }, { status: 400 });
         }
 
         let ktpImagePath = undefined;

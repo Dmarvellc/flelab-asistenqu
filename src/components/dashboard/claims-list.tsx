@@ -3,8 +3,13 @@
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { claims, ClaimStatus, Claim } from "@/lib/claims-data";
+import { claims, ClaimStatus, Claim as BaseClaim } from "@/lib/claims-data";
 import { AlertCircle, CheckCircle2, XCircle, ArrowRight, FileText } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+interface Claim extends BaseClaim {
+  claim_number?: string;
+}
 
 interface ClaimsListProps {
   role: 'developer' | 'admin_agency' | 'hospital' | 'agent';
@@ -12,7 +17,7 @@ interface ClaimsListProps {
 }
 
 export function ClaimsList({ role, claims: propClaims }: ClaimsListProps) {
-  const displayClaims = propClaims || claims;
+  const displayClaims = (propClaims || claims) as Claim[];
 
   const getStatusConfig = (status: ClaimStatus) => {
     switch (status) {
@@ -79,58 +84,49 @@ export function ClaimsList({ role, claims: propClaims }: ClaimsListProps) {
         return (
           <div
             key={claim.claim_id}
-            className={`group flex flex-col md:flex-row items-start md:items-center justify-between p-4 rounded-xl border border-gray-100 border-l-[3px] bg-white hover:bg-gray-50/50 hover:shadow-sm transition-all duration-200 ${config.accent}`}
+            className="group flex flex-col md:flex-row items-start md:items-center justify-between py-4 border-b border-gray-100 last:border-0 hover:bg-gray-50/30 transition-colors px-2 -mx-2 rounded-lg"
           >
-            <div className="flex flex-col gap-1.5 mb-3 md:mb-0 flex-1 min-w-0">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="font-semibold text-gray-900 text-sm">{claim.client_name}</span>
-                <span className="text-xs text-gray-400 font-mono">#{claim.policy_number}</span>
-                <Badge
-                  className={`text-xs flex items-center gap-1 px-2 py-0.5 rounded-full font-medium ${config.className}`}
-                  variant="outline"
-                >
+            <div className="flex flex-col gap-1.5 flex-1 min-w-0">
+              <div className="flex items-center gap-3 flex-wrap">
+                <span className="font-semibold text-gray-900 text-[15px]">{claim.client_name}</span>
+                <span className="text-xs text-gray-400 font-mono tracking-wide">#{claim.claim_number || `${claim.claim_id.slice(0, 8)}`}</span>
+
+                {/* Minimalist Status */}
+                <div className="flex items-center gap-1.5 text-xs font-medium">
                   {config.icon}
-                  {config.label}
-                </Badge>
-                {claim.stage && (
-                  <Badge variant="secondary" className="text-xs font-normal bg-gray-50 text-gray-500 border-gray-100">
-                    {claim.stage}
-                  </Badge>
-                )}
+                  <span className={cn(
+                    claim.status === 'APPROVED' ? "text-black" :
+                      claim.status === 'REJECTED' ? "text-gray-900" :
+                        "text-gray-500"
+                  )}>
+                    {config.label}
+                  </span>
+                </div>
               </div>
 
-              <div className="flex items-center gap-2 text-xs text-gray-400 flex-wrap">
-                <span>{claim.hospital_name}</span>
-                <span className="text-gray-200">•</span>
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] text-gray-500 mt-1">
+                <span className="truncate max-w-[200px]">{claim.hospital_name || 'Rumah Sakit'}</span>
+                <span className="text-gray-300">•</span>
                 <span>{new Date(claim.claim_date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
-                <span className="text-gray-200">•</span>
-                <span className="font-medium text-gray-600">
-                  {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(claim.total_amount)}
+                <span className="text-gray-300">•</span>
+                <span className="font-semibold text-gray-900">
+                  {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(claim.total_amount || 0)}
                 </span>
                 {claim.disease_name && (
                   <>
-                    <span className="text-gray-200">•</span>
-                    <span>{claim.disease_name}</span>
+                    <span className="text-gray-300">•</span>
+                    <span className="truncate">{claim.disease_name}</span>
                   </>
                 )}
               </div>
-
-              {claim.missing_data && claim.missing_data.length > 0 && (
-                <div className="flex items-center gap-1.5 mt-0.5">
-                  <AlertCircle className="h-3 w-3 text-gray-400 shrink-0" />
-                  <span className="text-xs text-gray-500">
-                    Dokumen kurang: {claim.missing_data.join(", ")}
-                  </span>
-                </div>
-              )}
             </div>
 
             <Link
               href={detailUrl}
-              className="flex items-center gap-1.5 text-xs font-medium text-gray-400 hover:text-black group-hover:text-black transition-colors duration-200 shrink-0 mt-1 md:mt-0 md:ml-4"
+              className="flex items-center gap-1 text-xs font-medium text-gray-400 hover:text-black group-hover:text-black transition-colors duration-200 shrink-0 mt-3 md:mt-0 md:ml-4"
             >
               Lihat Detail
-              <ArrowRight className="h-3 w-3 group-hover:translate-x-0.5 transition-transform duration-200" />
+              <ArrowRight className="h-3 w-3 group-hover:translate-x-1 transition-transform duration-200" />
             </Link>
           </div>
         );
