@@ -6,7 +6,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { AlertCircle, Eye, EyeOff, Loader2, Zap, ArrowRight, Globe } from "lucide-react";
+import { AlertCircle, Eye, EyeOff, Loader2, ArrowRight, Globe } from "lucide-react";
 import { useTranslation } from "@/components/providers/i18n-provider";
 
 export default function AgentLoginPage() {
@@ -77,13 +77,10 @@ export default function AgentLoginPage() {
         </button>
       </div>
 
-      <div className="w-full max-w-sm animate-in fade-in slide-in-from-bottom-4 duration-700 relative z-10 bg-white p-8 rounded-[24px] shadow-2xl shadow-black/5 border border-white/20">
+      <div className="w-full max-w-sm animate-in fade-in slide-in-from-bottom-4 duration-700 relative z-10 bg-white p-8 rounded-3xl shadow-2xl shadow-black/5 border border-white/20">
 
         {/* Logo */}
         <div className="flex flex-col items-center mb-8">
-          <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-black to-gray-800 flex items-center justify-center shadow-lg shadow-black/10 mb-5">
-            <Zap className="h-6 w-6 text-white" />
-          </div>
           <h1 className="text-2xl font-bold text-gray-900 tracking-tight">{t.loginTitle}</h1>
           <p className="text-sm text-gray-500 mt-2 text-center">{t.loginSub}</p>
         </div>

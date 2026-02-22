@@ -9,7 +9,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   const client = await dbPool.connect();
   try {
     const cookieStore = await cookies();
-    const userId = cookieStore.get("app_user_id")?.value;
+    const userId = cookieStore.get("session_agent_user_id")?.value ?? cookieStore.get("app_user_id")?.value;
 
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -73,7 +73,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
         { status: 400 }
       );
     }
-    
+
     // Try each available doc type. This avoids duplicate-key race when uploads happen close together.
     for (const docType of candidateDocTypes) {
       const result = await client.query(
@@ -119,29 +119,29 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 }
 
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
-    const client = await dbPool.connect();
-    try {
-        const { id } = await params;
-        const cacheKey = `claims:agent:documents:${id}`;
-        const cached = await getJsonCache<{ documents: unknown[] }>(cacheKey);
-        if (cached) {
-            return NextResponse.json(cached);
-        }
+  const client = await dbPool.connect();
+  try {
+    const { id } = await params;
+    const cacheKey = `claims:agent:documents:${id}`;
+    const cached = await getJsonCache<{ documents: unknown[] }>(cacheKey);
+    if (cached) {
+      return NextResponse.json(cached);
+    }
 
-        const result = await client.query(`
+    const result = await client.query(`
             SELECT document_id, doc_type, file_url, created_at, status
             FROM public.claim_document
             WHERE claim_id = $1
             ORDER BY created_at DESC
         `, [id]);
 
-        const response = { documents: result.rows };
-        await setJsonCache(cacheKey, response, 30);
-        return NextResponse.json(response);
-    } catch (error) {
-        console.error("Fetch documents failed", error);
-        return NextResponse.json({ error: "Failed to fetch documents" }, { status: 500 });
-    } finally {
-        client.release();
-    }
+    const response = { documents: result.rows };
+    await setJsonCache(cacheKey, response, 30);
+    return NextResponse.json(response);
+  } catch (error) {
+    console.error("Fetch documents failed", error);
+    return NextResponse.json({ error: "Failed to fetch documents" }, { status: 500 });
+  } finally {
+    client.release();
+  }
 }

@@ -204,9 +204,9 @@ export default function AppointmentsPage() {
     const past = filtered.filter(a => a.appointment_date < today || ["COMPLETED", "CANCELLED"].includes(a.status));
 
     return (
-        <div className="flex flex-col gap-8 animate-in fade-in duration-500">
+        <div className="flex flex-col gap-10 animate-in fade-in duration-500">
             {/* Header */}
-            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 pb-6 border-b border-gray-100">
                 <div>
                     <div className="inline-flex items-center gap-2 bg-black text-white text-xs font-medium px-3 py-1 rounded-full mb-3">
                         <CalendarCheck className="h-3 w-3" />
@@ -234,16 +234,16 @@ export default function AppointmentsPage() {
                     { label: "Dikonfirmasi", value: appointments.filter(a => a.status === "CONFIRMED").length, cls: "" },
                     { label: "Selesai", value: appointments.filter(a => a.status === "COMPLETED").length, cls: "" },
                 ].map(stat => (
-                    <div key={stat.label} className="bg-white rounded-xl border border-gray-100 px-5 py-4">
-                        <p className="text-2xl font-bold tabular-nums text-gray-900">{stat.value}</p>
-                        <p className="text-xs text-gray-400 mt-0.5">{stat.label}</p>
+                    <div key={stat.label} className="bg-white rounded-3xl border border-gray-100 p-8 shadow-sm hover:shadow-lg transition-all duration-300">
+                        <p className="text-4xl font-bold tabular-nums text-gray-900 tracking-tight">{stat.value}</p>
+                        <p className="text-[15px] font-medium text-gray-500 mt-2">{stat.label}</p>
                     </div>
                 ))}
             </div>
 
             {/* Toolbar */}
-            <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 px-5 py-4 border-b border-gray-50">
+            <div className="bg-white rounded-3xl border border-gray-100 overflow-hidden shadow-sm flex flex-col">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 p-8 border-b border-gray-50 bg-gray-50/30">
                     <div className="relative flex-1 max-w-xs">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                         <Input
@@ -281,8 +281,8 @@ export default function AppointmentsPage() {
                             <Calendar className="h-5 w-5 text-gray-300" />
                         </div>
                         <div className="text-center">
-                            <p className="text-sm font-medium text-gray-500">Belum ada jadwal</p>
-                            <p className="text-xs text-gray-400 mt-0.5">Buat jadwal baru untuk nasabah Anda</p>
+                            <p className="text-xl font-bold text-gray-900 mb-2">Belum ada jadwal</p>
+                            <p className="text-base text-gray-500 max-w-sm mx-auto leading-relaxed">Buat jadwal baru untuk nasabah Anda</p>
                         </div>
                     </div>
                 ) : (
@@ -290,8 +290,8 @@ export default function AppointmentsPage() {
                         {/* Upcoming */}
                         {upcoming.length > 0 && (
                             <div>
-                                <div className="px-5 py-3 bg-gray-50/50">
-                                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Mendatang ({upcoming.length})</p>
+                                <div className="px-8 py-4 bg-gray-50/50">
+                                    <p className="text-[13px] font-bold text-gray-500 uppercase tracking-widest">Mendatang ({upcoming.length})</p>
                                 </div>
                                 {upcoming.map((apt, i) => (
                                     <AppointmentRow key={apt.appointment_id} apt={apt} onStatusChange={updateStatus} index={i} />
@@ -301,8 +301,8 @@ export default function AppointmentsPage() {
                         {/* Past */}
                         {past.length > 0 && (
                             <div>
-                                <div className="px-5 py-3 bg-gray-50/50">
-                                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Riwayat ({past.length})</p>
+                                <div className="px-8 py-4 bg-gray-50/50 border-t border-gray-50">
+                                    <p className="text-[13px] font-bold text-gray-500 uppercase tracking-widest">Riwayat ({past.length})</p>
                                 </div>
                                 {past.map((apt, i) => (
                                     <AppointmentRow key={apt.appointment_id} apt={apt} onStatusChange={updateStatus} index={i} isPast />
@@ -429,8 +429,8 @@ function AppointmentRow({
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.04 }}
             className={cn(
-                "flex flex-col sm:flex-row sm:items-center gap-4 px-5 py-4 hover:bg-gray-50/60 transition-colors",
-                isPast && "opacity-70"
+                "flex flex-col sm:flex-row sm:items-center gap-6 p-6 sm:px-8 bg-white border-b border-gray-50 last:border-0 hover:bg-gray-50/60 transition-colors",
+                isPast && "opacity-70 grayscale-[20%]"
             )}
         >
             {/* Date Block */}

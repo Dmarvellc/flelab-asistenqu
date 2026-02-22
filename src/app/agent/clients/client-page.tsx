@@ -67,53 +67,51 @@ export default function AgentClientsPage({ initialClients }: { initialClients: C
     const activeCount = clients.filter(c => c.status === 'ACTIVE').length;
 
     return (
-        <div className="flex flex-col gap-8">
+        <div className="flex flex-col gap-10 animate-in fade-in duration-500">
             {/* Header */}
-            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-                <div>
-                    <div className="inline-flex items-center gap-2 bg-black text-white text-xs font-medium px-3 py-1.5 rounded-full mb-4 shadow-sm">
-                        <Users className="h-3.5 w-3.5 text-white/70" />
-                        <span>{clients.length} {lang === 'en' ? 'Total Clients' : 'Total Klien'}</span>
-                    </div>
-                    <h1 className="text-3xl font-bold tracking-tight text-gray-900">{t.clients}</h1>
-                    <p className="mt-1.5 text-sm text-gray-500 font-medium">
-                        {lang === 'en' ? 'Manage your clients and their insurance policies.' : 'Kelola data nasabah dan polis asuransi mereka.'}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 pb-6 border-b border-gray-100">
+                <div className="flex flex-col gap-2">
+                    <p className="text-[15px] font-semibold text-gray-500 flex items-center gap-2">
+                        <Users className="h-4 w-4" />
+                        {clients.length} {lang === 'en' ? 'Total Clients' : 'Total Klien'}
+                    </p>
+                    <h1 className="text-4xl font-bold tracking-tight text-gray-900 mt-2">{t.clients}</h1>
+                    <p className="mt-1 text-base text-gray-500">
+                        {lang === 'en' ? 'Manage your clients and their insurance policies in one integrated view.' : 'Kelola data nasabah dan polis asuransi mereka dalam satu tampilan terpadu.'}
                     </p>
                 </div>
                 <Link href="/agent/clients/new">
-                    <Button className="bg-black hover:bg-gray-900 text-white gap-2 shadow-lg shadow-black/10 transition-all duration-300 hover:shadow-xl hover:-translate-y-0.5 rounded-xl h-11 px-5 font-semibold">
-                        <Plus className="h-4 w-4" />
+                    <button className="bg-gray-900 hover:bg-black text-white text-[15px] font-semibold h-12 px-6 rounded-2xl transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5 flex items-center gap-2 w-full sm:w-auto justify-center">
+                        <Plus className="h-5 w-5" />
                         {t.addClient.replace('+ ', '')}
-                    </Button>
+                    </button>
                 </Link>
             </div>
 
             {/* Stats Row */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
                 {[
                     { label: lang === 'en' ? "Total Clients" : "Total Klien", value: clients.length },
                     { label: t.activeClients, value: activeCount },
                     { label: lang === 'en' ? "Managed Policies" : "Polis Terkelola", value: clients.reduce((s, c) => s + parseInt(c.contract_count || "0"), 0) },
                 ].map((stat, i) => (
-                    <div key={stat.label} className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm hover:shadow-md transition-all duration-300 group" style={{ animationDelay: `${i * 100}ms` }}>
-                        <p className="text-4xl font-black tabular-nums tracking-tighter text-black mb-1">{stat.value}</p>
-                        <div className="flex justify-between items-center mt-2">
-                            <p className="text-sm font-semibold text-gray-500 group-hover:text-black transition-colors">{stat.label}</p>
-                        </div>
+                    <div key={stat.label} className={cn("bg-white rounded-3xl border border-gray-100 p-8 shadow-sm hover:shadow-lg transition-all duration-300 group", i === 2 && "col-span-2 md:col-span-1")} style={{ animationDelay: `${i * 100}ms` }}>
+                        <p className="text-4xl font-bold tabular-nums tracking-tight text-gray-900 mb-2">{stat.value}</p>
+                        <p className="text-[15px] font-medium text-gray-500">{stat.label}</p>
                     </div>
                 ))}
             </div>
 
             {/* Table Card */}
-            <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300">
+            <div className="bg-white rounded-3xl border border-gray-100 overflow-hidden shadow-sm flex flex-col">
                 {/* Search Bar */}
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between px-6 py-5 border-b border-gray-50 bg-gray-50/50 gap-4">
-                    <div className="relative w-full sm:max-w-md">
-                        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between p-8 border-b border-gray-50 bg-gray-50/30 gap-4">
+                    <div className="relative w-full lg:max-w-md">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                         <Input
                             type="search"
                             placeholder={t.searchPlaceholder}
-                            className="w-full pl-10 h-11 rounded-xl bg-white border-gray-200 text-sm focus:border-black focus:ring-black shadow-sm transition-all"
+                            className="w-full pl-12 h-12 bg-white border-gray-200 text-[15px] rounded-2xl focus:bg-white focus:border-gray-300 focus:ring-4 focus:ring-gray-900/5 transition-all shadow-sm"
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
                         />
@@ -129,12 +127,12 @@ export default function AgentClientsPage({ initialClients }: { initialClients: C
                     <Table>
                         <TableHeader>
                             <TableRow className="border-gray-50 hover:bg-transparent bg-gray-50/50">
-                                <TableHead className="text-xs font-bold uppercase tracking-widest text-gray-400 pl-6 h-12">{lang === 'en' ? 'Client' : 'Nasabah'}</TableHead>
-                                <TableHead className="text-xs font-bold uppercase tracking-widest text-gray-400 h-12">{lang === 'en' ? 'Latest Product' : 'Produk Terakhir'}</TableHead>
-                                <TableHead className="text-xs font-bold uppercase tracking-widest text-gray-400 h-12">{lang === 'en' ? 'Total Policies' : 'Total Polis'}</TableHead>
-                                <TableHead className="text-xs font-bold uppercase tracking-widest text-gray-400 h-12">Status</TableHead>
-                                <TableHead className="text-xs font-bold uppercase tracking-widest text-gray-400 h-12">{lang === 'en' ? 'Joined' : 'Bergabung'}</TableHead>
-                                <TableHead className="text-xs font-bold uppercase tracking-widest text-gray-400 text-right pr-6 h-12">{lang === 'en' ? 'Action' : 'Aksi'}</TableHead>
+                                <TableHead className="text-[11px] font-bold uppercase tracking-widest text-gray-500 px-6 h-12">{lang === 'en' ? 'Client' : 'Nasabah'}</TableHead>
+                                <TableHead className="text-[11px] font-bold uppercase tracking-widest text-gray-500 px-6 h-12">{lang === 'en' ? 'Latest Product' : 'Produk Terakhir'}</TableHead>
+                                <TableHead className="text-[11px] font-bold uppercase tracking-widest text-gray-500 px-6 h-12">{lang === 'en' ? 'Total Policies' : 'Total Polis'}</TableHead>
+                                <TableHead className="text-[11px] font-bold uppercase tracking-widest text-gray-500 px-6 h-12">Status</TableHead>
+                                <TableHead className="text-[11px] font-bold uppercase tracking-widest text-gray-500 px-6 h-12">{lang === 'en' ? 'Joined' : 'Bergabung'}</TableHead>
+                                <TableHead className="text-[11px] font-bold uppercase tracking-widest text-gray-500 text-right px-6 h-12">{lang === 'en' ? 'Action' : 'Aksi'}</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -171,38 +169,38 @@ export default function AgentClientsPage({ initialClients }: { initialClients: C
                                         key={client.client_id}
                                         className="border-gray-50 hover:bg-gray-50/80 transition-colors group cursor-default"
                                     >
-                                        <TableCell className="pl-6 py-4">
+                                        <TableCell className="px-6 py-3">
                                             <div className="flex flex-col gap-0.5">
                                                 <p className="font-bold text-gray-900 text-sm group-hover:text-black transition-colors">{client.full_name}</p>
                                                 <p className="text-xs font-medium text-gray-500">{client.phone_number || "—"}</p>
                                             </div>
                                         </TableCell>
-                                        <TableCell className="py-4">
-                                            <span className="text-sm font-semibold text-gray-700">
+                                        <TableCell className="px-6 py-3">
+                                            <span className="text-[13px] font-semibold text-gray-700">
                                                 {client.latest_product || <span className="text-gray-300 font-medium italic">—</span>}
                                             </span>
                                         </TableCell>
-                                        <TableCell className="py-4">
-                                            <span className="inline-flex items-center justify-center h-8 min-w-[64px] rounded-lg bg-gray-100 text-gray-700 text-xs font-bold px-3">
+                                        <TableCell className="px-6 py-3">
+                                            <span className="inline-flex items-center justify-center h-7 min-w-[56px] rounded-lg bg-gray-50 text-gray-700 border border-gray-100 text-[11px] font-bold px-3">
                                                 {client.contract_count} {lang === 'en' ? 'Policies' : 'Polis'}
                                             </span>
                                         </TableCell>
-                                        <TableCell className="py-4">
+                                        <TableCell className="px-6 py-3">
                                             <span className={cn(
-                                                "inline-flex items-center gap-1.5 text-xs font-bold tracking-wide uppercase px-2 py-1 border",
+                                                "inline-flex items-center gap-1.5 text-[10px] font-bold tracking-widest uppercase px-2 py-1 rounded border",
                                                 client.status === 'ACTIVE'
-                                                    ? "bg-black text-white border-black"
+                                                    ? "bg-gray-900 text-white border-gray-900"
                                                     : "bg-white text-gray-500 border-gray-200"
                                             )}>
                                                 {client.status === 'ACTIVE' ? (lang === 'en' ? 'Active' : 'Aktif') : client.status}
                                             </span>
                                         </TableCell>
-                                        <TableCell className="py-4">
-                                            <span className="text-sm font-medium text-gray-500 uppercase tracking-wide text-[11px]">
+                                        <TableCell className="px-6 py-3">
+                                            <span className="text-[13px] font-medium text-gray-500 tracking-wide">
                                                 {new Date(client.created_at).toLocaleDateString(lang === 'en' ? "en-US" : "id-ID", { day: 'numeric', month: 'short', year: 'numeric' })}
                                             </span>
                                         </TableCell>
-                                        <TableCell className="text-right pr-6 py-4">
+                                        <TableCell className="text-right px-6 py-3">
                                             <DropdownMenu>
                                                 <DropdownMenuTrigger asChild>
                                                     <Button

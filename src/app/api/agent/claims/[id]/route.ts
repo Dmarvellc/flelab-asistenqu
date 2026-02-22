@@ -9,7 +9,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
 
   try {
     const cookieStore = await cookies();
-    const userId = cookieStore.get("app_user_id")?.value;
+    const userId = cookieStore.get("session_agent_user_id")?.value ?? cookieStore.get("app_user_id")?.value;
 
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -69,7 +69,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   const client = await dbPool.connect();
   try {
     const cookieStore = await cookies();
-    const userId = cookieStore.get("app_user_id")?.value;
+    const userId = cookieStore.get("session_agent_user_id")?.value ?? cookieStore.get("app_user_id")?.value;
 
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -180,7 +180,7 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
   const client = await dbPool.connect();
   try {
     const cookieStore = await cookies();
-    const userId = cookieStore.get("app_user_id")?.value;
+    const userId = cookieStore.get("session_agent_user_id")?.value ?? cookieStore.get("app_user_id")?.value;
 
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

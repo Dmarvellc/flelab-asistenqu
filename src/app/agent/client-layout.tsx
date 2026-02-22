@@ -13,6 +13,7 @@ import {
 
 import { LayoutDashboard, Users, FileText, LogOut, Settings, ClipboardList, Stethoscope, CalendarCheck, Gift, Globe, Search } from "lucide-react"
 import Link from "next/link"
+import Image from "next/image"
 import { I18nProvider, useTranslation } from "@/components/providers/i18n-provider"
 import { CommandPalette } from "@/components/agent/command-palette"
 
@@ -64,16 +65,16 @@ export function AgentLayoutClient({ children, initialBadges, serverUserName }: {
 
     if (isChecking && !isPublicPage) {
         return (
-            <div className="flex min-h-screen items-center justify-center bg-[#0a0a0a]">
-                <div className="h-8 w-8 rounded-full border-2 border-white/10 border-t-white animate-spin" />
+            <div className="flex min-h-screen items-center justify-center bg-gray-50/50">
+                <div className="h-8 w-8 rounded-full border-2 border-gray-200 border-t-gray-900 animate-spin" />
             </div>
         )
     }
 
     if (!isChecking && !isAuthorized && !isPublicPage) {
         return (
-            <div className="flex min-h-screen items-center justify-center bg-[#0a0a0a]">
-                <div className="h-8 w-8 rounded-full border-2 border-white/10 border-t-white animate-spin" />
+            <div className="flex min-h-screen items-center justify-center bg-gray-50/50">
+                <div className="h-8 w-8 rounded-full border-2 border-gray-200 border-t-gray-900 animate-spin" />
             </div>
         )
     }
@@ -102,16 +103,22 @@ export function AgentLayoutClient({ children, initialBadges, serverUserName }: {
         <DashboardSidebar>
             <SidebarHeader>
                 <Link href="/agent">
-                    <p className="font-semibold text-sm text-white tracking-tight">AsistenQu Agent</p>
+                    <Image
+                        src="https://jzupwygwzatugbrmqjau.supabase.co/storage/v1/object/sign/image/m_tagagent.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV82NWE4NDk3Zi1iNTdiLTQ1ZDMtOWI3ZC0yNDAxNzU4Njg1NTAiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJpbWFnZS9tX3RhZ2FnZW50LnBuZyIsImlhdCI6MTc3MTc2Mzk4NSwiZXhwIjozMzI3NjIyNzk4NX0.1mf2ApWgy64TXpQXboJXnSGFumPrOCvwn5u9p8EJmlI"
+                        alt="AsistenQu Agent"
+                        width={200}
+                        height={40}
+                        className="h-8 w-auto object-contain"
+                    />
                 </Link>
             </SidebarHeader>
 
             <SidebarContent>
                 <button
                     onClick={() => setIsCommandOpen(true)}
-                    className="w-full mt-4 mb-2 flex items-center gap-3 px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white/50 hover:bg-white/10 hover:text-white transition-all text-sm font-medium cursor-pointer overflow-hidden"
+                    className="w-full mt-2 mb-4 flex items-center gap-3 px-4 py-3 rounded-xl bg-gray-50 border border-gray-100 text-gray-500 hover:bg-gray-100 hover:text-gray-900 transition-all text-[15px] font-medium cursor-pointer overflow-hidden shadow-sm"
                 >
-                    <Search className="h-[18px] w-[18px] shrink-0" />
+                    <Search className="h-4 w-4 shrink-0 text-gray-400" />
                     <span className="truncate tracking-wide flex-1 text-left min-w-0">{t.searchPrompt}</span>
                 </button>
 
@@ -133,25 +140,28 @@ export function AgentLayoutClient({ children, initialBadges, serverUserName }: {
 
             <SidebarFooter>
                 {userName && (
-                    <p className="text-[11px] font-medium text-white/40 px-3 py-1 mb-1 truncate">{userName}</p>
+                    <div className="mb-6 px-2">
+                        <p className="text-xs font-semibold text-gray-400 tracking-wider uppercase mb-1">Logged in as</p>
+                        <p className="text-sm font-semibold text-gray-900 truncate">{userName}</p>
+                    </div>
                 )}
 
                 {/* Language Switch */}
-                <div className="flex items-center justify-between px-3 py-2 text-white/40 mb-2 border-b border-white/5 pb-3">
-                    <div className="flex items-center gap-2 text-xs">
-                        <Globe className="w-3.5 h-3.5" />
+                <div className="flex items-center justify-between px-2 py-3 text-gray-500 mb-2 border-b border-gray-100 pb-4">
+                    <div className="flex items-center gap-2 text-[13px] font-medium">
+                        <Globe className="w-4 h-4 text-gray-400" />
                         <span>Language</span>
                     </div>
-                    <div className="flex gap-1 bg-white/5 rounded-md p-0.5">
+                    <div className="flex gap-1 bg-gray-100 rounded-lg p-1 shadow-inner">
                         <button
                             onClick={() => setLang('en')}
-                            className={`text-[10px] px-1.5 py-0.5 rounded ${lang === 'en' ? 'bg-white text-black font-semibold' : 'hover:text-white transition-colors'}`}
+                            className={`text-[11px] font-semibold px-2 py-1 rounded-md transition-all ${lang === 'en' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900'}`}
                         >
                             EN
                         </button>
                         <button
                             onClick={() => setLang('id')}
-                            className={`text-[10px] px-1.5 py-0.5 rounded ${lang === 'id' ? 'bg-white text-black font-semibold' : 'hover:text-white transition-colors'}`}
+                            className={`text-[11px] font-semibold px-2 py-1 rounded-md transition-all ${lang === 'id' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900'}`}
                         >
                             ID
                         </button>
@@ -159,10 +169,10 @@ export function AgentLayoutClient({ children, initialBadges, serverUserName }: {
                 </div>
 
                 <button
-                    className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 mt-1 text-sm font-medium text-red-400/80 hover:bg-red-500/10 hover:text-red-400 transition-all duration-150"
+                    className="flex w-full items-center gap-3 rounded-xl px-4 py-3 mt-2 text-[15px] font-medium text-red-600 hover:bg-red-50 hover:text-red-700 transition-all duration-300 ease-out group"
                     onClick={handleLogout}
                 >
-                    <LogOut className="h-3.5 w-3.5 shrink-0" />
+                    <LogOut className="h-5 w-5 shrink-0 text-red-500 group-hover:text-red-600 group-hover:-translate-x-0.5 transition-transform" />
                     <span>{t.logout}</span>
                 </button>
             </SidebarFooter>

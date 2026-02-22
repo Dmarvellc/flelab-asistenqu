@@ -22,11 +22,11 @@ export function DashboardLayout({
   isCollapsed = false,
 }: DashboardLayoutProps) {
   return (
-    <div className="flex min-h-screen w-full bg-[#f6f6f6]">
+    <div className="flex min-h-screen w-full bg-gray-50/50">
       {/* Desktop Sidebar */}
       <aside className={cn(
-        "fixed inset-y-0 left-0 z-20 hidden flex-col bg-[#0a0a0a] sm:flex transition-all duration-300 ease-in-out",
-        isCollapsed ? "w-[72px]" : "w-[220px]"
+        "fixed inset-y-0 left-0 z-20 hidden flex-col bg-white border-r border-gray-200 sm:flex transition-all duration-300 ease-in-out shadow-[4px_0_24px_rgba(0,0,0,0.02)]",
+        isCollapsed ? "w-[80px]" : "w-[260px]"
       )}>
         {sidebar}
       </aside>
@@ -34,10 +34,10 @@ export function DashboardLayout({
       {/* Main Content */}
       <div className={cn(
         "flex flex-col w-full transition-all duration-300 ease-in-out",
-        isCollapsed ? "sm:pl-[72px]" : "sm:pl-[220px]"
+        isCollapsed ? "sm:pl-[80px]" : "sm:pl-[260px]"
       )}>
         {header}
-        <main className="flex-1 p-6 lg:p-7">
+        <main className="flex-1 p-8 lg:p-12 xl:max-w-7xl xl:mx-auto w-full">
           {children}
         </main>
       </div>
@@ -66,7 +66,7 @@ interface SidebarHeaderProps {
 export function SidebarHeader({ children, className }: SidebarHeaderProps) {
   return (
     <div className={cn(
-      "flex h-16 items-center border-b border-white/[0.06] px-4",
+      "flex h-[88px] items-center border-b border-gray-100 px-8",
       className
     )}>
       {children}
@@ -80,8 +80,8 @@ interface SidebarContentProps {
 
 export function SidebarContent({ children }: SidebarContentProps) {
   return (
-    <div className="flex-1 overflow-y-auto overflow-x-hidden py-4 dark-scrollbar w-full">
-      <nav className="grid items-start px-3 gap-0.5 w-full">
+    <div className="flex-1 overflow-y-auto overflow-x-hidden py-6 dark-scrollbar w-full">
+      <nav className="grid items-start px-6 gap-2 w-full">
         {children}
       </nav>
     </div>
@@ -95,7 +95,7 @@ interface SidebarFooterProps {
 
 export function SidebarFooter({ children, className }: SidebarFooterProps) {
   return (
-    <div className={cn("border-t border-white/[0.06] p-3", className)}>
+    <div className={cn("border-t border-gray-100 p-6", className)}>
       {children}
     </div>
   )
@@ -108,23 +108,23 @@ interface DashboardHeaderProps {
 
 export function DashboardHeader({ children, mobileSidebar }: DashboardHeaderProps) {
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b border-white/[0.06] bg-[#0a0a0a] px-6">
+    <header className="sticky top-0 z-30 flex h-[88px] items-center gap-4 border-b border-gray-200 bg-white/80 backdrop-blur-md px-8 shadow-sm">
       <Sheet>
         <SheetTrigger asChild>
           <Button
             size="icon"
             variant="ghost"
-            className="sm:hidden text-white/50 hover:text-white hover:bg-white/10"
+            className="sm:hidden text-gray-500 hover:text-gray-900 hover:bg-gray-100"
           >
-            <Menu className="h-5 w-5" />
+            <Menu className="h-6 w-6" />
             <span className="sr-only">Toggle Menu</span>
           </Button>
         </SheetTrigger>
-        <SheetContent side="left" className="p-0 w-[240px] bg-[#0a0a0a] border-r border-white/[0.06]">
+        <SheetContent side="left" className="p-0 w-[280px] bg-white border-r border-gray-200">
           {mobileSidebar}
         </SheetContent>
       </Sheet>
-      <div className="flex flex-1 items-center justify-end gap-3">
+      <div className="flex flex-1 items-center justify-end gap-4">
         {children}
       </div>
     </header>
@@ -148,21 +148,21 @@ export function NavItem({ href, icon: Icon, children, active, isCollapsed, badge
     <Link
       href={href}
       className={cn(
-        "group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200",
+        "group relative flex items-center gap-4 rounded-xl px-4 py-3.5 text-[15px] font-medium transition-all duration-300 ease-out",
         isActive
-          ? "bg-white/10 text-white shadow-sm"
-          : "text-white/50 hover:bg-white/5 hover:text-white/90",
+          ? "bg-gray-900 text-white shadow-md shadow-gray-900/10"
+          : "text-gray-500 hover:bg-gray-50 hover:text-gray-900",
         isCollapsed && "justify-center px-0"
       )}
       title={isCollapsed && typeof children === 'string' ? children : undefined}
     >
       {/* Active indicator bar */}
       {isActive && !isCollapsed && (
-        <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 bg-white rounded-r-full -ml-3 shadow-[0_0_8px_rgba(255,255,255,0.4)]" />
+        <span className="absolute -left-6 top-1/2 -translate-y-1/2 w-[4px] h-8 bg-gray-900 rounded-r-full" />
       )}
 
       {/* Icon - Always show */}
-      <Icon className={cn("h-[18px] w-[18px] shrink-0 transition-all duration-200", isActive ? "text-white" : "text-white/50 group-hover:text-white/90 group-hover:scale-105")} />
+      <Icon className={cn("h-5 w-5 shrink-0 transition-all duration-300", isActive ? "text-white" : "text-gray-400 group-hover:text-gray-700 group-hover:scale-110")} />
 
       {/* Text label — only when not collapsed */}
       {!isCollapsed && (
@@ -171,7 +171,10 @@ export function NavItem({ href, icon: Icon, children, active, isCollapsed, badge
 
       {/* Badge */}
       {badge !== undefined && badge > 0 && !isCollapsed && (
-        <span className="ml-auto flex h-5 min-w-[20px] items-center justify-center rounded-full px-1.5 text-[10px] font-bold bg-white/20 text-white">
+        <span className={cn(
+          "ml-auto flex min-w-[24px] items-center justify-center rounded-full px-2 py-0.5 text-[11px] font-bold transition-colors",
+          isActive ? "bg-white/20 text-white" : "bg-gray-100 text-gray-600 group-hover:bg-gray-200"
+        )}>
           {badge > 99 ? '99+' : badge}
         </span>
       )}

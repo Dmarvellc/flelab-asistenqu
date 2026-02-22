@@ -12,7 +12,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
         if (cached) {
             return NextResponse.json(cached);
         }
-        
+
         // Get the latest pending request for this claim
         const result = await client.query(`
             SELECT request_id, form_schema, status, created_at
@@ -43,7 +43,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     const client = await dbPool.connect();
     try {
         const cookieStore = await cookies();
-        const userId = cookieStore.get("app_user_id")?.value;
+        const userId = cookieStore.get("session_agent_user_id")?.value ?? cookieStore.get("app_user_id")?.value;
 
         if (!userId) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

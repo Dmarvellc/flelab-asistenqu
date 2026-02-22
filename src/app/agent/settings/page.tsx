@@ -276,39 +276,44 @@ export default function AgentSettingsPage() {
     ] as const;
 
     return (
-        <div className="flex flex-col gap-8 animate-in fade-in duration-500 max-w-4xl">
+        <div className="flex flex-col gap-10 animate-in fade-in duration-500 max-w-5xl">
             {/* Header */}
-            <div>
-                <h1 className="text-3xl font-bold tracking-tight text-gray-900">Pengaturan</h1>
-                <p className="mt-1 text-sm text-gray-500">Kelola informasi akun dan data diri Anda.</p>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 pb-6 border-b border-gray-100">
+                <div className="flex flex-col gap-2">
+                    <p className="text-[15px] font-semibold text-gray-500 flex items-center gap-2">
+                        <User className="h-4 w-4" />
+                        Profil & Akun
+                    </p>
+                    <h1 className="text-4xl font-bold tracking-tight text-gray-900 mt-2">Pengaturan</h1>
+                    <p className="mt-1 text-base text-gray-500">Kelola informasi akun dan data diri Anda dalam satu tempat.</p>
+                </div>
             </div>
 
             {/* Profile Header Card */}
-            <div className="bg-white rounded-2xl border border-gray-100 p-6 flex flex-col sm:flex-row items-start sm:items-center gap-5">
+            <div className="bg-white rounded-3xl border border-gray-100 p-8 shadow-sm flex flex-col sm:flex-row items-start sm:items-center gap-6 hover:shadow-lg transition-all duration-300">
                 {/* Avatar */}
-                <div className="h-20 w-20 rounded-2xl bg-gray-900 flex items-center justify-center text-white text-2xl font-bold shrink-0">
+                <div className="h-24 w-24 rounded-3xl bg-gray-900 flex items-center justify-center text-white text-3xl font-bold shrink-0">
                     {initials}
                 </div>
 
-                <div className="flex-1 min-w-0">
-                    <h2 className="text-xl font-bold text-gray-900">
+                <div className="flex-1 min-w-0 flex flex-col gap-1">
+                    <h2 className="text-2xl font-bold text-gray-900">
                         {profile.full_name || "Nama belum diisi"}
                     </h2>
-                    <p className="text-sm text-gray-500 mt-1">{profile.email}</p>
-                    <p className="text-xs text-gray-400 mt-0.5">
+                    <p className="text-base font-medium text-gray-500">{profile.email}</p>
+                    <p className="text-[13px] font-semibold tracking-wide text-gray-400 mt-1 uppercase">
                         Bergabung {format(new Date(profile.created_at), "d MMMM yyyy", { locale: id })}
                     </p>
                 </div>
 
                 {!isEditing && (
-                    <Button
+                    <button
                         onClick={() => { setIsEditing(true); setActiveSection('personal'); }}
-                        variant="outline"
-                        className="gap-2 rounded-xl shrink-0 border-gray-200 hover:border-gray-300"
+                        className="bg-gray-50 hover:bg-gray-100 text-gray-900 text-[15px] font-semibold h-12 px-6 rounded-2xl transition-all shadow-sm border border-gray-200 flex items-center gap-2 mt-4 sm:mt-0"
                     >
                         <Edit2 className="h-4 w-4" />
                         Ubah Data
-                    </Button>
+                    </button>
                 )}
             </div>
 
@@ -333,42 +338,39 @@ export default function AgentSettingsPage() {
 
             {/* Section: Personal Info */}
             {activeSection === 'personal' && (
-                <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
-                    <div className="flex items-center justify-between px-6 py-4 border-b border-gray-50">
-                        <div>
-                            <h3 className="font-semibold text-gray-900">Informasi Pribadi</h3>
-                            <p className="text-xs text-gray-400 mt-0.5">Data identitas dan kontak Anda</p>
+                <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden flex flex-col">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between p-8 border-b border-gray-50 bg-gray-50/30 gap-6">
+                        <div className="flex flex-col gap-1">
+                            <h3 className="text-xl font-bold text-gray-900">Informasi Pribadi</h3>
+                            <p className="text-[14px] font-medium text-gray-500">Ubah dan lengkapi data identitas serta kontak Anda</p>
                         </div>
                         {isEditing && (
-                            <div className="flex gap-2">
-                                <Button
+                            <div className="flex items-center gap-3">
+                                <button
                                     onClick={handleCancel}
-                                    variant="ghost"
-                                    size="sm"
                                     disabled={saving}
-                                    className="gap-1.5 rounded-lg text-gray-500"
+                                    className="bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 text-[14px] font-semibold h-11 px-5 rounded-xl transition-all shadow-sm flex items-center gap-2"
                                 >
                                     <X className="h-4 w-4" />
                                     Batal
-                                </Button>
-                                <Button
+                                </button>
+                                <button
                                     onClick={handleSave}
-                                    size="sm"
                                     disabled={saving}
-                                    className="gap-1.5 rounded-lg bg-black hover:bg-gray-900"
+                                    className="bg-gray-900 hover:bg-black text-white text-[14px] font-semibold h-11 px-5 rounded-xl transition-all shadow-md flex items-center gap-2"
                                 >
                                     {saving ? (
                                         <Loader2 className="h-4 w-4 animate-spin" />
                                     ) : (
                                         <Save className="h-4 w-4" />
                                     )}
-                                    Simpan
-                                </Button>
+                                    Simpan Perubahan
+                                </button>
                             </div>
                         )}
                     </div>
 
-                    <div className="px-6 py-2">
+                    <div className="p-4 sm:p-8">
                         <FieldRow
                             label="Email"
                             icon={Mail}
@@ -469,13 +471,13 @@ export default function AgentSettingsPage() {
 
             {/* Section: Agency */}
             {activeSection === 'agency' && (
-                <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
-                    <div className="px-6 py-4 border-b border-gray-50">
-                        <h3 className="font-semibold text-gray-900">Pengaturan Agensi</h3>
-                        <p className="text-xs text-gray-400 mt-0.5">Informasi agensi tempat Anda bernaung</p>
+                <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden flex flex-col">
+                    <div className="p-8 border-b border-gray-50 bg-gray-50/30">
+                        <h3 className="text-xl font-bold text-gray-900">Pengaturan Agensi</h3>
+                        <p className="text-[14px] font-medium text-gray-500 mt-1">Informasi agensi tempat Anda bernaung saat ini</p>
                     </div>
 
-                    <div className="p-6 space-y-6">
+                    <div className="p-8 space-y-8">
                         <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl border border-gray-100">
                             <div className="h-12 w-12 rounded-xl bg-gray-900 flex items-center justify-center">
                                 <Building2 className="h-5 w-5 text-white" />

@@ -190,13 +190,10 @@ export default function AgentRegisterPage() {
                 <button onClick={() => setLang('id')} className={`text-xs px-2 py-1 rounded-full font-medium transition-colors ${lang === 'id' ? 'bg-black text-white' : 'text-gray-500 hover:text-black'}`}>ID</button>
             </div>
 
-            <div className="w-full max-w-4xl space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 relative z-10 bg-white p-8 sm:p-12 rounded-[24px] shadow-2xl shadow-black/5 border border-white/20 my-10">
+            <div className="w-full max-w-4xl space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 relative z-10 bg-white p-8 sm:p-12 rounded-3xl shadow-2xl shadow-black/5 border border-white/20 my-10">
 
                 {/* Header */}
                 <div className="flex flex-col items-center text-center w-full pb-8">
-                    <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-black to-gray-800 flex items-center justify-center shadow-lg shadow-black/10 mb-5">
-                        <Zap className="h-6 w-6 text-white" />
-                    </div>
                     <h1 className="text-3xl font-bold tracking-tight text-gray-900">{t.registerTitle}</h1>
                     <p className="text-sm text-gray-500 mt-2 max-w-md">
                         {t.registerSub}

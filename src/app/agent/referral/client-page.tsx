@@ -81,47 +81,48 @@ export default function ReferralPage({ initialData }: { initialData: ReferralDat
     const totalEarnedPoints = parseInt(stats?.total_earned_points ?? "0");
 
     return (
-        <div className="flex flex-col gap-8 animate-in fade-in duration-500">
+        <div className="flex flex-col gap-10 animate-in fade-in duration-500">
             {/* Header */}
-            <div>
-                <div className="inline-flex items-center gap-2 bg-black text-white text-xs font-medium px-3 py-1 rounded-full mb-3">
-                    <Gift className="h-3 w-3" />
-                    <span>Program Referral</span>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 pb-6 border-b border-gray-100">
+                <div className="flex flex-col gap-2">
+                    <p className="text-[15px] font-semibold text-gray-500 flex items-center gap-2">
+                        <Gift className="h-4 w-4" />
+                        Program Referral
+                    </p>
+                    <h1 className="text-4xl font-bold tracking-tight text-gray-900 mt-2">Kode Referral</h1>
+                    <p className="mt-1 text-base text-gray-500">
+                        Bagikan kode unik Anda dan dapatkan reward setiap kali ada agen atau nasabah baru yang bergabung.
+                    </p>
                 </div>
-                <h1 className="text-3xl font-bold tracking-tight text-gray-900">Kode Referral Anda</h1>
-                <p className="mt-1 text-sm text-gray-500">
-                    Bagikan kode referral dan dapatkan reward setiap kali ada yang bergabung.
-                </p>
             </div>
 
-            {/* Referral Code Card */}
-            <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="relative overflow-hidden bg-black rounded-2xl p-8"
-            >
-                {/* Background pattern */}
-                <div className="absolute inset-0 opacity-5">
-                    <div className="absolute top-0 right-0 w-64 h-64 rounded-full bg-white transform translate-x-1/2 -translate-y-1/2" />
-                    <div className="absolute bottom-0 left-0 w-48 h-48 rounded-full bg-white transform -translate-x-1/2 translate-y-1/2" />
-                </div>
-
-                <div className="relative">
-                    <div className="flex items-center gap-2 mb-6">
-                        <div className="h-8 w-8 rounded-lg bg-white/10 flex items-center justify-center">
-                            <Star className="h-4 w-4 text-white" />
+            {/* Referral Code Card & Stats Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="lg:col-span-2 relative bg-white border border-gray-100 rounded-3xl p-8 sm:p-10 shadow-sm"
+                >
+                    <div className="flex items-center gap-3 mb-8">
+                        <div className="h-10 w-10 rounded-2xl bg-gray-50 border border-gray-100 flex items-center justify-center">
+                            <Star className="h-5 w-5 text-gray-900" />
                         </div>
-                        <p className="text-white/70 text-sm font-medium">Kode Referral Eksklusif</p>
+                        <div>
+                            <p className="text-gray-900 font-bold text-lg">Kode Eksklusif Anda</p>
+                            <p className="text-gray-500 text-sm">Gunakan kode ini saat pendaftaran</p>
+                        </div>
                     </div>
 
-                    <div className="flex items-center gap-4 mb-6">
-                        <div className="flex-1 bg-white/10 rounded-xl px-5 py-4 font-mono text-3xl font-bold text-white tracking-[0.2em]">
-                            {data?.referral_code ?? "—"}
+                    <div className="flex flex-col sm:flex-row items-center gap-4">
+                        <div className="flex-1 w-full bg-gray-50 border border-gray-200 rounded-2xl px-6 py-5 flex items-center justify-center sm:justify-start">
+                            <span className="font-mono text-4xl font-bold text-gray-900 tracking-[0.2em] uppercase">
+                                {data?.referral_code ?? "—"}
+                            </span>
                         </div>
-                        <div className="flex flex-col gap-2">
+                        <div className="flex sm:flex-col gap-3 w-full sm:w-auto">
                             <Button
                                 onClick={copyCode}
-                                className="bg-white text-black hover:bg-white/90 gap-2 rounded-xl h-12 px-5"
+                                className="flex-1 sm:flex-none bg-gray-900 text-white hover:bg-black gap-2 rounded-xl h-14 px-8 shadow-sm transition-all"
                             >
                                 {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                                 {copied ? "Disalin!" : "Salin"}
@@ -129,55 +130,83 @@ export default function ReferralPage({ initialData }: { initialData: ReferralDat
                             <Button
                                 onClick={shareCode}
                                 variant="outline"
-                                className="border-white/20 text-white hover:bg-white/10 gap-2 rounded-xl h-12 px-5"
+                                className="flex-1 sm:flex-none border-gray-200 text-gray-700 hover:bg-gray-50 gap-2 rounded-xl h-14 px-8 transition-all"
                             >
                                 <Share2 className="h-4 w-4" />
                                 Bagikan
                             </Button>
                         </div>
                     </div>
+                </motion.div>
 
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                        <div className="bg-white/10 rounded-xl px-4 py-3">
-                            <p className="text-white/50 text-xs">Total Reward</p>
-                            <p className="text-white font-bold text-lg">
-                                {new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(totalEarnedRupiah)}
-                            </p>
-                        </div>
-                        <div className="bg-white/10 rounded-xl px-4 py-3">
-                            <p className="text-white/50 text-xs">Poin Referral</p>
-                            <p className="text-white font-bold text-lg">{totalEarnedPoints.toLocaleString("id-ID")}</p>
-                        </div>
-                        <div className="bg-white/10 rounded-xl px-4 py-3 col-span-2 sm:col-span-1">
-                            <p className="text-white/50 text-xs">Berhasil Referral</p>
-                            <p className="text-white font-bold text-lg">{creditedCount} <span className="text-sm font-normal text-white/50">orang</span></p>
+                {/* Main Reward Stats */}
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="bg-white border border-gray-100 rounded-3xl p-8 sm:p-10 shadow-sm flex flex-col justify-center"
+                >
+                    <div className="mb-6">
+                        <p className="text-gray-500 font-medium mb-1">Total Reward Rupiah</p>
+                        <p className="text-4xl font-bold tabular-nums text-gray-900 tracking-tight">
+                            {new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(totalEarnedRupiah)}
+                        </p>
+                    </div>
+                    <div className="pt-6 border-t border-gray-100">
+                        <p className="text-gray-500 font-medium mb-1">Total Poin Referral</p>
+                        <div className="flex items-center gap-2">
+                            <p className="text-3xl font-bold tabular-nums text-gray-900">{totalEarnedPoints.toLocaleString("id-ID")}</p>
+                            <span className="text-gray-400 font-medium text-sm">poin</span>
                         </div>
                     </div>
-                </div>
-            </motion.div>
+                </motion.div>
+            </div>
+
+            {/* Performance Stats */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                {[
+                    { icon: Users, label: "Total Dibagikan", value: totalReferrals },
+                    { icon: Check, label: "Berhasil Daftar", value: creditedCount },
+                    { icon: TrendingUp, label: "Menunggu Verifikasi", value: parseInt(stats?.pending_count ?? "0") },
+                    { icon: Star, label: "Poin Aktif", value: (data?.referral_points ?? 0).toLocaleString("id-ID") },
+                ].map((s, i) => (
+                    <motion.div
+                        key={s.label}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: i * 0.05 }}
+                        className="bg-white rounded-3xl border border-gray-100 p-8 shadow-sm hover:shadow-md transition-all duration-300"
+                    >
+                        <div className="h-10 w-10 rounded-2xl bg-gray-50 flex items-center justify-center mb-4 border border-gray-100">
+                            <s.icon className="h-4 w-4 text-gray-600" />
+                        </div>
+                        <p className="text-3xl font-bold tabular-nums text-gray-900 tracking-tight mb-1">{s.value}</p>
+                        <p className="text-[14px] font-medium text-gray-500">{s.label}</p>
+                    </motion.div>
+                ))}
+            </div>
 
             {/* How It Works */}
-            <div className="bg-white rounded-2xl border border-gray-100 p-6">
-                <h2 className="text-sm font-semibold text-gray-900 mb-4">Cara Kerja Referral</h2>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="bg-white rounded-3xl border border-gray-100 p-8 sm:p-10 shadow-sm">
+                <h2 className="text-xl font-bold text-gray-900 mb-8">Cara Kerja Program Referral</h2>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                     {[
                         {
                             step: "1",
                             icon: Share2,
                             title: "Bagikan Kode",
-                            desc: "Kirimkan kode referral unik Anda ke calon nasabah atau agen baru.",
+                            desc: "Kirimkan kode eksklusif Anda ke calon nasabah atau rekan agen yang berminat bergabung.",
                         },
                         {
                             step: "2",
                             icon: Users,
-                            title: "Mereka Daftar",
-                            desc: "Orang yang Anda referensikan mendaftar menggunakan kode Anda.",
+                            title: "Pendaftaran Berhasil",
+                            desc: "Mereka mendaftar ke AsistenQu menggunakan kode unik Anda saat registrasi.",
                         },
                         {
                             step: "3",
                             icon: Banknote,
-                            title: "Anda Dapat Reward",
-                            desc: "Anda otomatis mendapat Rp 1.000 dan 10 poin setiap referral berhasil.",
+                            title: "Nikmati Reward",
+                            desc: "Anda akan langsung menerima komisi Rupiah dan penambahan poin secara otomatis.",
                         },
                     ].map((step, i) => (
                         <motion.div
@@ -185,47 +214,26 @@ export default function ReferralPage({ initialData }: { initialData: ReferralDat
                             initial={{ opacity: 0, y: 8 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: i * 0.1 }}
-                            className="flex gap-3"
+                            className="flex flex-col gap-4"
                         >
-                            <div className="flex-shrink-0 h-9 w-9 rounded-full bg-black text-white text-sm font-bold flex items-center justify-center">
+                            <div className="h-12 w-12 rounded-2xl bg-gray-900 text-white font-bold flex items-center justify-center text-lg shadow-sm">
                                 {step.step}
                             </div>
                             <div>
-                                <p className="text-sm font-semibold text-gray-900">{step.title}</p>
-                                <p className="text-xs text-gray-500 mt-0.5">{step.desc}</p>
+                                <h3 className="text-lg font-bold text-gray-900 mb-2">{step.title}</h3>
+                                <p className="text-[15px] leading-relaxed text-gray-500">{step.desc}</p>
                             </div>
                         </motion.div>
                     ))}
                 </div>
             </div>
 
-            {/* Stats */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                {[
-                    { icon: Users, label: "Total Referral", value: totalReferrals },
-                    { icon: Check, label: "Berhasil", value: creditedCount },
-                    { icon: TrendingUp, label: "Pending", value: parseInt(stats?.pending_count ?? "0") },
-                    { icon: Star, label: "Poin Terkumpul", value: (data?.referral_points ?? 0).toLocaleString("id-ID") },
-                ].map((s, i) => (
-                    <motion.div
-                        key={s.label}
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ delay: i * 0.05 }}
-                        className="bg-white rounded-xl border border-gray-100 px-5 py-4"
-                    >
-                        <s.icon className="h-4 w-4 text-gray-400 mb-2" />
-                        <p className="text-2xl font-bold tabular-nums text-gray-900">{s.value}</p>
-                        <p className="text-xs text-gray-400 mt-0.5">{s.label}</p>
-                    </motion.div>
-                ))}
-            </div>
-
             {/* Recent Referrals Table */}
             {(data?.recent_referrals?.length ?? 0) > 0 && (
-                <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm">
-                    <div className="px-5 py-4 border-b border-gray-50">
-                        <h2 className="text-sm font-semibold text-gray-900">Riwayat Referral</h2>
+                <div className="bg-white rounded-3xl border border-gray-100 overflow-hidden shadow-sm">
+                    <div className="px-8 py-6 border-b border-gray-50 bg-gray-50/30">
+                        <h2 className="text-lg font-bold text-gray-900">Riwayat Referral Terbaru</h2>
+                        <p className="text-[14px] text-gray-500 mt-1">Daftar pengguna yang mendaftar menggunakan kode Anda.</p>
                     </div>
                     <div className="divide-y divide-gray-50">
                         {data!.recent_referrals.map((ref, i) => (
@@ -234,31 +242,35 @@ export default function ReferralPage({ initialData }: { initialData: ReferralDat
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
                                 transition={{ delay: i * 0.03 }}
-                                className="flex items-center gap-4 px-5 py-3"
+                                className="flex flex-col sm:flex-row sm:items-center justify-between p-6 sm:px-8 hover:bg-gray-50/50 transition-colors gap-4"
                             >
-                                <div className="h-8 w-8 rounded-lg bg-gray-100 flex items-center justify-center">
-                                    <Users className="h-4 w-4 text-gray-400" />
+                                <div className="flex items-center gap-4">
+                                    <div className="h-12 w-12 rounded-2xl bg-white border border-gray-100 shadow-sm flex items-center justify-center shrink-0">
+                                        <Users className="h-5 w-5 text-gray-400" />
+                                    </div>
+                                    <div className="flex flex-col">
+                                        <p className="text-[15px] font-bold text-gray-900">{ref.referred_email}</p>
+                                        <div className="flex items-center gap-2 mt-1">
+                                            <span className="text-[13px] font-medium text-gray-500 border border-gray-200 bg-white px-2 py-0.5 rounded-md">
+                                                {new Date(ref.created_at).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}
+                                            </span>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div className="flex-1">
-                                    <p className="text-sm font-medium text-gray-900">{ref.referred_email}</p>
-                                    <p className="text-xs text-gray-400">
-                                        {new Date(ref.created_at).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}
-                                    </p>
-                                </div>
-                                <div className="text-right">
+                                <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-center w-full sm:w-auto mt-2 sm:mt-0 pt-4 sm:pt-0 border-t sm:border-t-0 border-gray-100">
                                     <p className={cn(
-                                        "text-xs font-semibold px-2.5 py-1 rounded-full",
+                                        "text-[11px] font-bold tracking-widest uppercase px-3 py-1.5 rounded-lg border",
                                         ref.status === "CREDITED"
-                                            ? "bg-green-50 text-green-700"
+                                            ? "bg-gray-900 text-white border-gray-900"
                                             : ref.status === "PENDING"
-                                                ? "bg-yellow-50 text-yellow-700"
-                                                : "bg-gray-100 text-gray-500"
+                                                ? "bg-white text-gray-600 border-gray-200"
+                                                : "bg-gray-50 text-gray-400 border-gray-100"
                                     )}>
-                                        {ref.status === "CREDITED" ? "Berhasil" : ref.status === "PENDING" ? "Pending" : "Dibatalkan"}
+                                        {ref.status === "CREDITED" ? "Berhasil" : ref.status === "PENDING" ? "Menunggu" : "Dibatalkan"}
                                     </p>
                                     {ref.status === "CREDITED" && (
-                                        <p className="text-xs text-gray-500 mt-0.5">
-                                            +Rp {ref.reward_amount.toLocaleString("id-ID")} • +{ref.reward_points} poin
+                                        <p className="text-[13px] font-semibold text-gray-900 mt-2">
+                                            + {new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(ref.reward_amount)} <span className="text-gray-400 mx-1">•</span> <span className="text-purple-600">+{ref.reward_points} pts</span>
                                         </p>
                                     )}
                                 </div>
