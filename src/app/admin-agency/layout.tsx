@@ -8,6 +8,7 @@ import Link from "next/link"
 import Image from "next/image"
 import { CommandPalette } from "@/components/admin-agency/command-palette"
 import { I18nProvider, useTranslation } from "@/components/providers/i18n-provider";
+import { AIAgencyAssistantWidget } from "@/components/admin-agency/ai-assistant-widget";
 
 export default function AdminAgencyLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -125,6 +126,7 @@ function AdminAgencyLayoutContent({ children }: { children: React.ReactNode }) {
         {children}
       </DashboardLayout>
       <CommandPalette isOpen={isCommandOpen} setIsOpen={setIsCommandOpen} />
+      <AIAgencyAssistantWidget />
     </>
   )
 }

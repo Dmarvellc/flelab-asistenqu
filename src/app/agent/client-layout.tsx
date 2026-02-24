@@ -16,6 +16,7 @@ import Link from "next/link"
 import Image from "next/image"
 import { I18nProvider, useTranslation } from "@/components/providers/i18n-provider"
 import { CommandPalette } from "@/components/agent/command-palette"
+import { AIAssistantWidget } from "@/components/agent/ai-assistant-widget"
 
 export function AgentLayoutClient({ children, initialBadges, serverUserName }: { children: React.ReactNode, initialBadges: { pendingContracts: number, totalClaims: number }, serverUserName: string | null }) {
     const pathname = usePathname();
@@ -185,6 +186,7 @@ export function AgentLayoutClient({ children, initialBadges, serverUserName }: {
                 {children}
             </DashboardLayout>
             <CommandPalette isOpen={isCommandOpen} setIsOpen={setIsCommandOpen} />
+            <AIAssistantWidget />
         </>
     )
 }
