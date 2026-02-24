@@ -3,6 +3,7 @@ import { streamText } from "ai";
 import { cookies } from "next/headers";
 import { getAgentMetrics } from "@/services/agent-metrics";
 import { findUserWithProfile } from "@/lib/auth-queries";
+import { dbPool } from "@/lib/db";
 
 export const maxDuration = 30;
 
@@ -12,7 +13,15 @@ export async function POST(req: Request) {
     const cookieStore = await cookies();
     const userId = cookieStore.get("session_agent_user_id")?.value ?? cookieStore.get("app_user_id")?.value;
 
-    let systemContext = `Anda adalah "AsistenQu AI" untuk platform AsistenQu, asisten profesional bagi Agen Asuransi. Tugas Anda adalah membantu agen menyelesaikan pekerjaan mereka lebih cepat, termasuk menuliskan draf pesan, email, promosi, penjelasan produk, atau memberikan insight performa mereka.`;
+    let systemContext = `Anda adalah "AsistenQu AI", AI asisten canggih untuk Agen Asuransi. 
+Karakter & Aturan Anda:
+- Cerdas, proaktif, dan berbakat dalam copywriting persuasif.
+- Sangat natural seperti teman ngobrol, TIDAK kaku.
+- **ATURAN MUTLAK:** Jika pengguna meminta draf pesan asuransi, email, atau tagihan WA, **HANYA keluarkan isi drafnya saja**. DILARANG KERAS menggunakan kata-kata pengantar seperti "Tentu!", "Berikut adalah drafnya:", atau kata penutup seperti "Silakan disesuaikan!". Langsung output draf agar siap di-copy.
+- Kurangi atau hilangkan penggunaan emoji berlebihan. Buat rapi dan elegan.
+- Jika membuat draft tagihan/pesan WA, buatlah terdengar hangat, menyentuh hati, natural, dan langsung *to the point*. Jangan terdengar seperti robot korporat. Gunakan tata bahasa copywriting yang terbukti (salam hangat, tanya kabar, pengingat lembut, call-to-action).
+
+Tugas Anda: Membantu agen menulis draf (berikan DRAF SAJA tanpa basa-basi), menjawab pertanyaan teknis asuransi, atau memberi analisis motivasi atas performa mereka.`;
 
     if (userId) {
         try {
@@ -22,30 +31,49 @@ export async function POST(req: Request) {
             ]);
 
             if (profile) {
-                systemContext += `\nNama Agen yang sedang Anda bantu: ${profile.full_name || 'Agen'}. Email: ${profile.email}`;
+                systemContext += `\n\nNama Agen (pengguna Anda): ${profile.full_name || 'Agen'}. Sapa nama agen ini saat Anda pertama merespon jika relevan.`;
             }
 
             if (metrics) {
-                systemContext += `\n\n=== Data Performa Agen Saat Ini (REAL-TIME DATABASE) ===
-- Total Klien Aktif: ${metrics.activeClients}
-- Polis Pending: ${metrics.pendingContracts}
-- Total Klaim (Semua Status): ${metrics.totalClaims}
-- Poin Pencapaian: ${metrics.points}
-
-Gunakan data metrik ini jika agen bertanya tentang status kinerja mereka.`;
+                systemContext += `\n\n=== Data Performa Anda (Real-Time) ===\n- Total Klien Aktif: ${metrics.activeClients}\n- Polis Pending: ${metrics.pendingContracts}\n- Total Klaim (Semua): ${metrics.totalClaims}\n- Poin Prestasi: ${metrics.points}\n\nAnalisislah metrik ini dan berikan pujian atau dorongan layaknya mentor jika diminta rekapan performa. Jangan sekadar membuat tabel kaku! Berikan narasi yang membangun.`;
             }
+
+            let clientsInfo = "";
+            try {
+                const clientDb = await dbPool.connect();
+                try {
+                    const query = `
+                        SELECT p.full_name, c.status as client_status, ct.contract_number as policy_number, ct.status as policy_status
+                        FROM client c
+                        JOIN person p ON c.person_id = p.person_id
+                        LEFT JOIN contract ct ON c.client_id = ct.client_id
+                        WHERE c.agent_id = $1
+                        LIMIT 50
+                    `;
+                    const clientsRes = await clientDb.query(query, [userId]);
+                    if (clientsRes.rows.length > 0) {
+                        clientsInfo = "\n\n=== Klien Agen Saat Ini ===\nIni adalah sebagian daftar klien agen Anda:\n" + clientsRes.rows.map((r: any) => "- " + r.full_name + " (Polis: " + (r.policy_number || "Belum ada") + ", Status Klien: " + (r.client_status || "N/A") + ", Status Polis: " + (r.policy_status || "N/A") + ")").join("\n");
+                    }
+                } finally {
+                    clientDb.release();
+                }
+            } catch (err) {
+                console.error("Failed to fetch clients for AI", err);
+            }
+
+            systemContext += clientsInfo;
         } catch (e) {
             console.error("Failed to fetch agent profile/metrics for AI", e);
         }
     }
 
-    systemContext += `\nBerikan respons dalam bahasa Indonesia yang ramah, jelas, rapi (gunakan markdown), dan profesional. Jika agen meminta membuatkan draft email atau pesan WhatsApp, buatkan yang persuasif, sopan, dan sisakan variabel blank (misal: [Nama Klien]) untuk diisi.`;
+    systemContext += `\n\nIngat Aturan Mutlak: JANGAN MEMBERIKAN KATA PENGANTAR. JIKA DIMINTA TEXT WA, HANYA BERIKAN TEXT WA NYA SAJA LANGSUNG. JANGAN BILANG "Berikut text tagihan blabla". langsung "Halo Bapak X...". Kurangi emoji. Jadilah yang paling cerdas, tegas, efektif, namun tetap hangat saat menulis surat/pesan.`;
 
-    const result = streamText({
+    const result = await streamText({
         model: openai("gpt-4o-mini"),
         system: systemContext,
         messages,
     });
 
-    return result.toDataStreamResponse();
+    return result.toAIStreamResponse();
 }

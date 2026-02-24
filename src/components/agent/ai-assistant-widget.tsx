@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Bot, X, Send, Sparkles, MessageSquare, Loader2, Zap } from "lucide-react";
+import { Bot, X, Send, MessageSquare, Zap, Copy, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useChat } from "ai/react";
 
@@ -14,7 +14,14 @@ const PREDEFINED_PROMPTS = [
 
 export function AIAssistantWidget() {
     const [isOpen, setIsOpen] = useState(false);
+    const [copiedId, setCopiedId] = useState<string | null>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
+
+    const handleCopy = (text: string, id: string) => {
+        navigator.clipboard.writeText(text);
+        setCopiedId(id);
+        setTimeout(() => setCopiedId(null), 2000);
+    };
 
     const { messages, input, handleInputChange, handleSubmit, isLoading, append } = useChat({
         api: "/api/ai/agent",
@@ -45,10 +52,9 @@ export function AIAssistantWidget() {
                 )}
             >
                 <div className="relative flex items-center justify-center">
-                    <Sparkles className="absolute -top-1 -right-1 h-3 w-3 text-amber-400 animate-pulse" />
                     <Bot className="h-6 w-6 text-white" />
                 </div>
-                <span className="font-semibold text-[15px] hidden sm:block">Teman AI</span>
+                <span className="font-semibold text-[15px] hidden sm:block">AI Asisten</span>
             </motion.button>
 
             {/* Chat Window */}
@@ -72,9 +78,9 @@ export function AIAssistantWidget() {
                                     <Bot className="h-5 w-5 text-white" />
                                 </div>
                                 <div>
-                                    <h3 className="font-bold text-[15px] leading-none">AsistenQu AI</h3>
+                                    <h3 className="font-bold text-[15px] leading-none">AI Asisten</h3>
                                     <p className="mt-1 text-xs text-gray-400 flex items-center gap-1">
-                                        <Zap className="h-3 w-3 text-amber-400" /> Cerdas & Cepat (On AIR)
+                                        <Zap className="h-3 w-3 text-amber-400" /> Online
                                     </p>
                                 </div>
                             </div>
@@ -99,14 +105,26 @@ export function AIAssistantWidget() {
                                     >
                                         <div
                                             className={cn(
-                                                "rounded-2xl px-4 py-2.5 whitespace-pre-wrap",
+                                                "rounded-2xl px-4 py-2.5 whitespace-pre-wrap select-text",
                                                 msg.role === "user"
-                                                    ? "bg-black text-white rounded-br-sm"
-                                                    : "bg-white border border-gray-100 text-gray-800 shadow-sm rounded-bl-sm"
+                                                    ? "bg-black text-white rounded-br-sm inline-block"
+                                                    : "bg-white border border-gray-100 text-gray-800 shadow-sm rounded-bl-sm inline-block"
                                             )}
                                         >
                                             {msg.content}
                                         </div>
+                                        {msg.role === "assistant" && (
+                                            <button
+                                                onClick={() => handleCopy(msg.content, msg.id)}
+                                                className="flex items-center gap-1 text-[11px] font-medium text-gray-400 mt-1 ml-1 hover:text-gray-700 transition-colors w-max"
+                                            >
+                                                {copiedId === msg.id ? (
+                                                    <><Check className="h-3 w-3 text-emerald-500" /> Disalin</>
+                                                ) : (
+                                                    <><Copy className="h-3 w-3" /> Salin Teks</>
+                                                )}
+                                            </button>
+                                        )}
                                     </div>
                                 ))}
 
@@ -127,19 +145,17 @@ export function AIAssistantWidget() {
 
                         {/* Quick Prompts */}
                         {messages.length === 1 && !isLoading && (
-                            <div className="px-4 py-2 overflow-x-auto whitespace-nowrap dark-scrollbar bg-white border-t border-gray-50">
-                                <div className="flex gap-2">
-                                    {PREDEFINED_PROMPTS.map((prompt) => (
-                                        <button
-                                            key={prompt}
-                                            onClick={() => append({ role: "user", content: prompt })}
-                                            className="inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-gray-50 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-100 hover:text-black transition-colors"
-                                        >
-                                            <MessageSquare className="h-3 w-3 text-gray-400" />
-                                            {prompt}
-                                        </button>
-                                    ))}
-                                </div>
+                            <div className="px-4 py-2 flex flex-wrap gap-2 dark-scrollbar bg-white border-t border-gray-50">
+                                {PREDEFINED_PROMPTS.map((prompt) => (
+                                    <button
+                                        key={prompt}
+                                        onClick={() => append({ role: "user", content: prompt })}
+                                        className="inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-gray-50 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-100 hover:text-black transition-colors"
+                                    >
+                                        <MessageSquare className="h-3 w-3 text-gray-400" />
+                                        {prompt}
+                                    </button>
+                                ))}
                             </div>
                         )}
 
@@ -147,20 +163,28 @@ export function AIAssistantWidget() {
                         <div className="border-t border-gray-100 bg-white p-4">
                             <form
                                 onSubmit={handleSubmit}
-                                className="flex items-center gap-2 relative"
+                                className="flex items-end gap-2 relative"
                             >
-                                <input
-                                    type="text"
+                                <textarea
                                     value={input}
                                     onChange={handleInputChange}
+                                    onKeyDown={(e) => {
+                                        if (e.key === "Enter" && !e.shiftKey) {
+                                            e.preventDefault();
+                                            const form = e.currentTarget.form;
+                                            if (form) form.requestSubmit();
+                                        }
+                                    }}
                                     placeholder="Tanya performa atau minta AI..."
-                                    className="flex-1 bg-gray-50 rounded-full border border-gray-200 px-4 py-3 text-[14px] text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-black/5"
+                                    className="flex-1 bg-gray-50 rounded-2xl border border-gray-200 px-4 py-3 text-[14px] text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-black/5 resize-none min-h-[48px] max-h-[120px] dark-scrollbar leading-relaxed"
+                                    rows={1}
                                     disabled={isLoading}
+                                    autoComplete="off"
                                 />
                                 <button
                                     type="submit"
                                     disabled={!input.trim() || isLoading}
-                                    className="absolute right-1.5 flex h-9 w-9 items-center justify-center rounded-full bg-black text-white hover:bg-gray-800 disabled:opacity-50 transition-colors"
+                                    className="absolute bottom-1.5 right-1.5 flex h-9 w-9 items-center justify-center rounded-full bg-black text-white hover:bg-gray-800 disabled:opacity-50 transition-colors"
                                 >
                                     <Send className="h-4 w-4 ml-0.5" />
                                 </button>

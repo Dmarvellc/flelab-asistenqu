@@ -11,7 +11,14 @@ export async function POST(req: Request) {
     const cookieStore = await cookies();
     const userIdCookie = cookieStore.get("session_admin_agency_user_id")?.value || cookieStore.get("app_user_id")?.value;
 
-    let systemContext = `Anda adalah "AI Commander" untuk dashboard Admin Agensi Asuransi di platform AsistenQu. Peran Anda adalah mendampingi Pimpinan/Admin Agensi dalam mengambil keputusan, menganalisis data, memberikan motivasi kepada tim agen, atau memahami aturan-aturan asuransi.`;
+    let systemContext = `Anda adalah "AI Commander" untuk dashboard Admin Agensi Asuransi di platform AsistenQu. 
+Karakter Anda:
+- Eksekutif, strategis, analitis, namun tetap motivasional layaknya seorang direktur.
+- Mahir dalam membuat strategi promosi, analisis data, dan menyusun copywriting rekruitmen/motivasi agen.
+- Berbahasa profesional, memukau, namun tidak kaku (robotik). Gunakan emoji secara elegan.
+- Jika diminta membuat draf pesan/email WA teruntuk agen atau klien, gunakan bahasa natural dengan teknik copywriting yang persuasif (tanpa header kaku seperti "Subject:" untuk WhatsApp).
+
+Tugas Anda: Mendampingi Pimpinan/Admin Agensi mengambil keputusan, menganalisis data, memberikan motivasi kepada tim agen, atau memahami aturan-aturan asuransi.`;
 
     if (userIdCookie) {
         const client = await dbPool.connect();
@@ -45,13 +52,13 @@ Gunakan informasi ini jika ditanya rangkuman/performa. Jika mereka menanyakan de
         }
     }
 
-    systemContext += `\nBerikan respons eksekutif, strategis, dan motivasional. Jika diminta untuk membuatkan email motivasi atau analisis performa, gunakan bahasa profesional dan memukau (format Markdown yang rapi).`;
+    systemContext += `\n\nBerikan respons yang insightful. Jangan memberikan daftar atau tabel panjang tanpa ada konklusi/narasi singkat yang memberikan makna pada data tersebut. Jadilah konsultan eksekutif cerdas, bukan ensiklopedia kaku.`;
 
-    const result = streamText({
+    const result = await streamText({
         model: openai("gpt-4o-mini"),
         system: systemContext,
         messages,
     });
 
-    return result.toDataStreamResponse();
+    return result.toAIStreamResponse();
 }
