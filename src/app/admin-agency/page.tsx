@@ -3,6 +3,7 @@ import { getAllClaims } from "@/services/claims"
 import Link from "next/link"
 import { dbPool } from "@/lib/db";
 import { Users, Building2, ShieldCheck, ArrowRightLeft, FileText, ArrowRight } from "lucide-react";
+import { cookies } from "next/headers";
 
 export default async function AdminAgencyDashboardPage() {
   const claims = await getAllClaims()
@@ -13,6 +14,7 @@ export default async function AdminAgencyDashboardPage() {
   let policiesCount = 0;
   let pendingTransfersCount = 0;
   let pendingClaimsCount = 0;
+  let agencyName = "Dashboard Agency";
 
   try {
     const agentsRes = await client.query("SELECT COUNT(*) FROM public.app_user WHERE role = 'agent'");
@@ -29,6 +31,21 @@ export default async function AdminAgencyDashboardPage() {
 
     const pendingClaimsRes = await client.query("SELECT COUNT(*) FROM public.claim WHERE stage = 'SUBMITTED_TO_AGENCY'");
     pendingClaimsCount = parseInt(pendingClaimsRes.rows[0].count);
+
+    // Fetch Agency Name
+    const cookieStore = await cookies();
+    const userId = cookieStore.get("app_user_id")?.value;
+    if (userId) {
+      const userRes = await client.query(`
+        SELECT a.name 
+        FROM public.app_user au
+        JOIN public.agency a ON au.agency_id = a.agency_id
+        WHERE au.user_id = $1
+      `, [userId]);
+      if (userRes.rows.length > 0) {
+        agencyName = userRes.rows[0].name;
+      }
+    }
   } finally {
     client.release();
   }
@@ -45,7 +62,7 @@ export default async function AdminAgencyDashboardPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 pb-6 border-b border-gray-100">
         <div className="flex flex-col gap-2">
-          <h1 className="text-4xl font-bold tracking-tight text-gray-900 mt-2">Dashboard Agency</h1>
+          <h1 className="text-4xl font-bold tracking-tight text-gray-900 mt-2">{agencyName}</h1>
           <p className="mt-1 text-base text-gray-500">Pantau performa agensi, perkembangan agen, dan klaim secara keseluruhan.</p>
         </div>
 
@@ -85,37 +102,37 @@ export default async function AdminAgencyDashboardPage() {
 
       {/* Action required cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
-        <div className="group bg-white rounded-3xl border border-orange-100 p-8 shadow-sm hover:shadow-xl transition-all duration-500 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-orange-50/50 rounded-full blur-2xl -mr-10 -mt-10" />
+        <div className="group bg-white rounded-3xl border border-gray-100 p-8 shadow-sm hover:shadow-xl transition-all duration-500 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-gray-50/50 rounded-full blur-2xl -mr-10 -mt-10" />
           <div className="relative z-10 flex justify-between items-start mb-8">
-            <div className="p-4 rounded-2xl bg-orange-50 text-orange-600 border border-orange-100">
+            <div className="p-4 rounded-2xl bg-gray-50 text-gray-600 border border-gray-100 group-hover:bg-gray-100 transition-colors">
               <ArrowRightLeft className="w-6 h-6" />
             </div>
           </div>
           <div className="relative z-10 flex justify-between items-end">
             <div>
-              <div className="text-[40px] font-bold text-orange-600 tracking-tight tabular-nums mb-3 leading-none">{pendingTransfersCount}</div>
-              <p className="text-base font-medium text-orange-700/80">Permintaan Transfer (Menunggu)</p>
+              <div className="text-[40px] font-bold text-gray-900 tracking-tight tabular-nums mb-3 leading-none">{pendingTransfersCount}</div>
+              <p className="text-base font-medium text-gray-500">Permintaan Transfer (Menunggu)</p>
             </div>
-            <Link href="/admin-agency/transfers" className="text-sm font-semibold text-orange-600 hover:text-orange-700 hover:underline flex items-center gap-1 transition-colors">
+            <Link href="/admin-agency/transfers" className="text-sm font-semibold text-gray-400 hover:text-gray-900 flex items-center gap-1 transition-colors">
               Tinjau Transfer
             </Link>
           </div>
         </div>
 
-        <div className="group bg-white rounded-3xl border border-blue-100 p-8 shadow-sm hover:shadow-xl transition-all duration-500 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50/50 rounded-full blur-2xl -mr-10 -mt-10" />
+        <div className="group bg-white rounded-3xl border border-gray-100 p-8 shadow-sm hover:shadow-xl transition-all duration-500 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-gray-50/50 rounded-full blur-2xl -mr-10 -mt-10" />
           <div className="relative z-10 flex justify-between items-start mb-8">
-            <div className="p-4 rounded-2xl bg-blue-50 text-blue-600 border border-blue-100">
+            <div className="p-4 rounded-2xl bg-gray-900 text-white border border-gray-800 shadow-sm group-hover:bg-black transition-colors">
               <FileText className="w-6 h-6" />
             </div>
           </div>
           <div className="relative z-10 flex justify-between items-end">
             <div>
-              <div className="text-[40px] font-bold text-blue-600 tracking-tight tabular-nums mb-3 leading-none">{pendingClaimsCount}</div>
-              <p className="text-base font-medium text-blue-700/80">Klaim Perlu Ditinjau</p>
+              <div className="text-[40px] font-bold text-gray-900 tracking-tight tabular-nums mb-3 leading-none">{pendingClaimsCount}</div>
+              <p className="text-base font-medium text-gray-500">Klaim Perlu Ditinjau</p>
             </div>
-            <Link href="/admin-agency/claims" className="text-sm font-semibold text-blue-600 hover:text-blue-700 hover:underline flex items-center gap-1 transition-colors">
+            <Link href="/admin-agency/claims" className="text-sm font-semibold text-gray-400 hover:text-gray-900 flex items-center gap-1 transition-colors">
               Validasi Klaim
             </Link>
           </div>
