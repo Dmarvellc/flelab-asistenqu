@@ -50,6 +50,16 @@ export async function PATCH(request: Request, props: { params: Promise<{ id: str
         values.push(id);
 
         const result = await client.query(query, values);
+
+        if (status) {
+            try {
+                // Silently keep agent table in sync if the user happens to be an agent
+                await client.query("UPDATE agent SET status = $1 WHERE agent_id = $2", [status, id]);
+            } catch (e) {
+                // Ignore errors if table doesn't exist or other issues, as app_user is the source of truth
+            }
+        }
+
         client.release();
 
         if (result.rows.length === 0) {

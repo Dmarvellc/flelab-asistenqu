@@ -33,6 +33,18 @@ export async function POST(req: Request) {
             if (agentRes.rows.length === 0 || agentRes.rows[0].agency_id !== agencyId) {
                 return NextResponse.json({ error: "Target agent is not in your agency" }, { status: 400 });
             }
+
+            // Check if Client currently belongs to an agent in the admin's agency
+            const clientOwnerRes = await client.query(`
+                SELECT au.agency_id 
+                FROM client c
+                JOIN app_user au ON c.agent_id = au.user_id
+                WHERE c.client_id = $1
+            `, [clientId]);
+
+            if (clientOwnerRes.rows.length === 0 || clientOwnerRes.rows[0].agency_id !== agencyId) {
+                return NextResponse.json({ error: "Client does not belong to your agency" }, { status: 403 });
+            }
         } finally {
             client.release();
         }

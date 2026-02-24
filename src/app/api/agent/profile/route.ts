@@ -21,7 +21,20 @@ export async function GET() {
             return NextResponse.json({ error: "User not found" }, { status: 404 });
         }
 
-        return NextResponse.json(user);
+        const cookieStatus = cookieStore.get("session_agent_status")?.value;
+        const res = NextResponse.json(user);
+
+        // Auto-refresh cookie if status changed (e.g., admin approved them behind the scenes)
+        if (cookieStatus && cookieStatus !== user.status) {
+            res.cookies.set("session_agent_status", user.status, {
+                httpOnly: true,
+                path: "/",
+                sameSite: "lax",
+                maxAge: 30 * 24 * 60 * 60
+            });
+        }
+
+        return res;
     } catch (error) {
         console.error("Failed to fetch profile", error);
         return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });

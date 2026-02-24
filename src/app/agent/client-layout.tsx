@@ -122,7 +122,7 @@ export function AgentLayoutClient({ children, initialBadges, serverUserName }: {
                     <span className="truncate tracking-wide flex-1 text-left min-w-0">{t.searchPrompt}</span>
                 </button>
 
-                <div className="mt-2 space-y-1 w-full">
+                <div className="mt-2 flex flex-col gap-1 w-full">
                     {navItems.map((item) => (
                         <NavItem
                             key={item.href}

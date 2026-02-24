@@ -1,12 +1,15 @@
 import { ClaimsList } from "@/components/dashboard/claims-list"
-import { getAllClaims } from "@/services/claims"
+import { getAgencyClaims } from "@/services/admin-agency"
 import Link from "next/link"
 import { dbPool } from "@/lib/db";
 import { Users, Building2, ShieldCheck, ArrowRightLeft, FileText, ArrowRight } from "lucide-react";
 import { cookies } from "next/headers";
+import { Claim } from "@/lib/claims-data";
 
 export default async function AdminAgencyDashboardPage() {
-  const claims = await getAllClaims()
+  const cookieStore = await cookies();
+  const userId = cookieStore.get("app_user_id")?.value;
+  let claims: Claim[] = [];
 
   const client = await dbPool.connect();
   let agentsCount = 0;
@@ -17,33 +20,45 @@ export default async function AdminAgencyDashboardPage() {
   let agencyName = "Dashboard Agency";
 
   try {
-    const agentsRes = await client.query("SELECT COUNT(*) FROM public.app_user WHERE role = 'agent'");
-    agentsCount = parseInt(agentsRes.rows[0].count);
-
-    const hospitalsRes = await client.query("SELECT COUNT(*) FROM public.app_user WHERE role = 'hospital_admin'");
-    hospitalsCount = parseInt(hospitalsRes.rows[0].count);
-
-    const policiesRes = await client.query("SELECT COUNT(*) FROM public.client");
-    policiesCount = parseInt(policiesRes.rows[0].count);
-
-    const transfersRes = await client.query("SELECT COUNT(*) FROM public.agency_transfer_request WHERE status = 'PENDING'");
-    pendingTransfersCount = parseInt(transfersRes.rows[0].count);
-
-    const pendingClaimsRes = await client.query("SELECT COUNT(*) FROM public.claim WHERE stage = 'SUBMITTED_TO_AGENCY'");
-    pendingClaimsCount = parseInt(pendingClaimsRes.rows[0].count);
-
-    // Fetch Agency Name
-    const cookieStore = await cookies();
-    const userId = cookieStore.get("app_user_id")?.value;
     if (userId) {
+      // Fetch Agency Details First
       const userRes = await client.query(`
-        SELECT a.name 
+        SELECT a.name, a.agency_id 
         FROM public.app_user au
         JOIN public.agency a ON au.agency_id = a.agency_id
         WHERE au.user_id = $1
       `, [userId]);
+
       if (userRes.rows.length > 0) {
         agencyName = userRes.rows[0].name;
+        const agencyId = userRes.rows[0].agency_id;
+
+        claims = await getAgencyClaims(agencyId);
+
+        const agentsRes = await client.query("SELECT COUNT(*) FROM public.app_user WHERE role = 'agent' AND agency_id = $1", [agencyId]);
+        agentsCount = parseInt(agentsRes.rows[0].count);
+
+        // Hospitals might be general, or we keep them globally if agency doesn't own hospitals, 
+        // but let's assume they don't own hospitals so we just leave it 0 or count global. 
+        // The objective says "Agency Admins only see data for their specific agency".
+        hospitalsCount = 0; // Not applicable for strict agency view, or keep as is if needed
+
+        const policiesRes = await client.query(`
+          SELECT COUNT(*) FROM public.client c
+          JOIN public.app_user au ON c.agent_id = au.user_id
+          WHERE au.agency_id = $1
+        `, [agencyId]);
+        policiesCount = parseInt(policiesRes.rows[0].count);
+
+        const transfersRes = await client.query("SELECT COUNT(*) FROM public.agency_transfer_request WHERE status = 'PENDING' AND (to_agency_id = $1 OR from_agency_id = $1)", [agencyId]);
+        pendingTransfersCount = parseInt(transfersRes.rows[0].count);
+
+        const pendingClaimsRes = await client.query(`
+          SELECT COUNT(*) FROM public.claim c
+          JOIN public.app_user au ON c.created_by_user_id = au.user_id
+          WHERE au.agency_id = $1 AND c.stage = 'SUBMITTED_TO_AGENCY'
+        `, [agencyId]);
+        pendingClaimsCount = parseInt(pendingClaimsRes.rows[0].count);
       }
     }
   } finally {
@@ -67,7 +82,7 @@ export default async function AdminAgencyDashboardPage() {
         </div>
 
         <div className="flex flex-wrap items-center gap-4 mt-4 sm:mt-0">
-          <Link href="/admin-agency/agents/new">
+          <Link href="/agent/register" target="_blank">
             <button className="bg-gray-900 hover:bg-black text-white text-[14px] font-semibold h-11 px-6 rounded-xl transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5">
               Tambah Agen Baru
             </button>
@@ -80,7 +95,7 @@ export default async function AdminAgencyDashboardPage() {
         {stats.map((stat, i) => (
           <div
             key={stat.label}
-            className="group bg-white rounded-3xl border border-gray-100 p-8 shadow-sm hover:shadow-xl transition-all duration-500 transform hover:-translate-y-1 relative overflow-hidden"
+            className="group bg-white rounded-3xl border border-gray-100 p-8 shadow-sm hover:shadow-xl transition-all duration-500 transform hover:-translate-y-1 relative overflow-hidden flex flex-col justify-between"
             style={{ animationDelay: `${i * 100}ms` }}
           >
             <div className="absolute top-0 right-0 w-32 h-32 bg-gray-50/50 rounded-full blur-2xl -mr-10 -mt-10 transition-transform group-hover:scale-150 duration-700" />
@@ -94,8 +109,10 @@ export default async function AdminAgencyDashboardPage() {
                 </Link>
               )}
             </div>
-            <div className="relative z-10 text-[40px] font-bold text-gray-900 tracking-tight tabular-nums mb-3 leading-none">{stat.value}</div>
-            <p className="relative z-10 text-base font-medium text-gray-500">{stat.label}</p>
+            <div>
+              <div className="relative z-10 text-[40px] font-bold text-gray-900 tracking-tight tabular-nums mb-3 leading-none">{stat.value}</div>
+              <p className="relative z-10 text-base font-medium text-gray-500">{stat.label}</p>
+            </div>
           </div>
         ))}
       </div>

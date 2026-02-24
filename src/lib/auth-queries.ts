@@ -36,6 +36,7 @@ export async function registerUser(params: {
   gender?: string;
   ktpImagePath?: string;
   selfieImagePath?: string;
+  agencyId?: string;
 }) {
   const passwordHash = await bcrypt.hash(params.password, 10);
   const client = await dbPool.connect();
@@ -55,10 +56,10 @@ export async function registerUser(params: {
 
     // 2. Create User in public.app_user
     const userRes = await client.query(
-      `insert into public.app_user (user_id, email, password_hash, role, status)
-       values ($1, $2, $3, $4, 'PENDING')
-       returning user_id, email, role, status`,
-      [userId, params.email.toLowerCase(), passwordHash, params.role]
+      `insert into public.app_user (user_id, email, password_hash, role, status, agency_id)
+       values ($1, $2, $3, $4, 'PENDING', $5)
+       returning user_id, email, role, status, agency_id`,
+      [userId, params.email.toLowerCase(), passwordHash, params.role, params.agencyId || null]
     );
     const user = userRes.rows[0];
 
@@ -107,14 +108,14 @@ export async function registerUser(params: {
       try {
         await client.query(
           `INSERT INTO public.agent (agent_id, agent_name, insurance_id, status, person_id)
-                 VALUES ($1, $2, $3, 'ACTIVE', $4)`,
+                 VALUES ($1, $2, $3, 'PENDING', $4)`,
           [userId, params.fullName, insuranceId, personId]
         );
       } catch (e) {
         // If the person_id column doesn't exist yet (migration didn't run), fallback to old insert without person_id
         await client.query(
           `INSERT INTO public.agent (agent_id, agent_name, insurance_id, status)
-                 VALUES ($1, $2, $3, 'ACTIVE')`,
+                 VALUES ($1, $2, $3, 'PENDING')`,
           [userId, params.fullName, insuranceId]
         );
       }

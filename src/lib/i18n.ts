@@ -10,6 +10,9 @@ export const dict = {
         referral: "Referral",
         settings: "Settings",
         logout: "Log Out",
+        agents: "Agents",
+        transferRequests: "Transfer Requests",
+        agencyPerformance: "Agency Performance",
 
         // Dashboard Stats
         activeClients: "Active Clients",
@@ -62,6 +65,9 @@ export const dict = {
         referral: "Referral",
         settings: "Pengaturan",
         logout: "Keluar",
+        agents: "Agen",
+        transferRequests: "Permintaan Transfer",
+        agencyPerformance: "Performa Agensi",
 
         // Dashboard Stats
         activeClients: "Klien Aktif",

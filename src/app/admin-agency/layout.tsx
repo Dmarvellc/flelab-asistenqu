@@ -7,8 +7,18 @@ import { LayoutDashboard, Shield, Settings, LogOut, Users, FileText, GitPullRequ
 import Link from "next/link"
 import Image from "next/image"
 import { CommandPalette } from "@/components/admin-agency/command-palette"
+import { I18nProvider, useTranslation } from "@/components/providers/i18n-provider";
 
 export default function AdminAgencyLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <I18nProvider>
+      <AdminAgencyLayoutContent>{children}</AdminAgencyLayoutContent>
+    </I18nProvider>
+  );
+}
+
+function AdminAgencyLayoutContent({ children }: { children: React.ReactNode }) {
+  const { t, lang, setLang } = useTranslation();
   const pathname = usePathname();
   const router = useRouter();
   const [isCommandOpen, setIsCommandOpen] = useState(false);
@@ -69,30 +79,30 @@ export default function AdminAgencyLayout({ children }: { children: React.ReactN
           className="w-full mt-2 mb-4 flex items-center gap-3 px-4 py-3 rounded-xl bg-gray-50 border border-gray-100 text-gray-500 hover:bg-gray-100 hover:text-gray-900 transition-all text-[15px] font-medium cursor-pointer overflow-hidden shadow-sm"
         >
           <Search className="h-4 w-4 shrink-0 text-gray-400" />
-          <span className="truncate tracking-wide flex-1 text-left min-w-0">Cari dengan Cmd+K</span>
+          <span className="truncate tracking-wide flex-1 text-left min-w-0">{t.searchPrompt}</span>
         </button>
 
-        <div className="mt-2 space-y-1 w-full">
+        <div className="mt-2 flex flex-col gap-1 w-full">
           <NavItem href="/admin-agency" icon={LayoutDashboard} active={pathname === '/admin-agency'} isCollapsed={false}>
-            Dashboard
+            {t.dashboard}
           </NavItem>
           <NavItem href="/admin-agency/agents" icon={Users} active={pathname.startsWith('/admin-agency/agents')} isCollapsed={false}>
-            Agents
+            {t.agents}
           </NavItem>
           <NavItem href="/admin-agency/clients" icon={Users} active={pathname.startsWith('/admin-agency/clients')} isCollapsed={false}>
-            Clients
+            {t.clients}
           </NavItem>
           <NavItem href="/admin-agency/claims" icon={FileText} active={pathname.startsWith('/admin-agency/claims')} isCollapsed={false}>
-            Claims
+            {t.claims}
           </NavItem>
           <NavItem href="/admin-agency/transfers" icon={GitPullRequest} active={pathname.startsWith('/admin-agency/transfers')} isCollapsed={false}>
-            Transfer Requests
+            {t.transferRequests}
           </NavItem>
           <NavItem href="/admin-agency/performance" icon={Trophy} active={pathname.startsWith('/admin-agency/performance')} isCollapsed={false}>
-            Performa Agen
+            {t.agencyPerformance}
           </NavItem>
           <NavItem href="/admin-agency/settings" icon={Settings} active={pathname === '/admin-agency/settings'} isCollapsed={false}>
-            Settings
+            {t.settings}
           </NavItem>
         </div>
       </SidebarContent>
@@ -103,7 +113,7 @@ export default function AdminAgencyLayout({ children }: { children: React.ReactN
           onClick={handleLogout}
         >
           <LogOut className="h-5 w-5 shrink-0 text-red-500 group-hover:text-red-600 group-hover:-translate-x-0.5 transition-transform" />
-          <span>Sign Out</span>
+          <span>{t.logout}</span>
         </button>
       </SidebarFooter>
     </DashboardSidebar>

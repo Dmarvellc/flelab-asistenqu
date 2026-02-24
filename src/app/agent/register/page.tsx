@@ -44,7 +44,7 @@ export default function AgentRegisterPage() {
     const { t, lang, setLang } = useTranslation();
     const [formData, setFormData] = useState({
         email: "", password: "", fullName: "", nik: "", phoneNumber: "", birthDate: "", gender: "LAKI-LAKI",
-        addressStreet: "", provinceId: "", regencyId: "", districtId: "", villageId: "", postalCode: "",
+        addressStreet: "", provinceId: "", regencyId: "", districtId: "", villageId: "", postalCode: "", agencyId: "",
     });
 
     const [loading, setLoading] = useState(false);
@@ -56,11 +56,16 @@ export default function AgentRegisterPage() {
     const [regencies, setRegencies] = useState<Region[]>([]);
     const [districts, setDistricts] = useState<Region[]>([]);
     const [villages, setVillages] = useState<Region[]>([]);
+    const [agencies, setAgencies] = useState<{ agency_id: string; name: string }[]>([]);
     const [addressLoading, setAddressLoading] = useState(false);
 
     useEffect(() => {
         fetch("/api/wilayah/provinces").then(res => res.json()).then(data => {
             if (Array.isArray(data)) setProvinces(data);
+        }).catch(err => console.error(err));
+
+        fetch("/api/agencies").then(res => res.json()).then(data => {
+            if (Array.isArray(data)) setAgencies(data);
         }).catch(err => console.error(err));
     }, []);
 
@@ -123,7 +128,7 @@ export default function AgentRegisterPage() {
     const validateForm = () => {
         const newErrors: Record<string, boolean> = {};
         let isValid = true;
-        const fields = ['email', 'password', 'fullName', 'nik', 'phoneNumber', 'birthDate', 'gender', 'addressStreet', 'provinceId', 'regencyId', 'districtId', 'villageId', 'postalCode'];
+        const fields = ['email', 'password', 'fullName', 'nik', 'phoneNumber', 'birthDate', 'gender', 'addressStreet', 'provinceId', 'regencyId', 'districtId', 'villageId', 'postalCode', 'agencyId'];
         fields.forEach(field => {
             if (!formData[field as keyof typeof formData]) {
                 newErrors[field] = true;
@@ -156,7 +161,7 @@ export default function AgentRegisterPage() {
         formattedPhone = '+' + formattedPhone;
 
         const finalBody = {
-            email: formData.email, password: formData.password, role: "agent", fullName: formData.fullName, nik: formData.nik, phoneNumber: formattedPhone, address: fullAddress, birthDate: formData.birthDate, gender: formData.gender,
+            email: formData.email, password: formData.password, role: "agent", fullName: formData.fullName, nik: formData.nik, phoneNumber: formattedPhone, address: fullAddress, birthDate: formData.birthDate, gender: formData.gender, agencyId: formData.agencyId,
         };
 
         try {
@@ -232,6 +237,17 @@ export default function AgentRegisterPage() {
                                     <Label htmlFor="password" className="text-xs font-semibold uppercase tracking-wider text-gray-500">{t.password}</Label>
                                     <Input id="password" name="password" type="password" required value={formData.password} onChange={(e) => { handleChange(e); if (fieldErrors.password) setFieldErrors({ ...fieldErrors, password: false }); }} placeholder={lang === 'en' ? "Min. 8 characters" : "Minimal 8 karakter"} className={cn("h-12 rounded-xl bg-gray-50 border-gray-200 focus:bg-white focus:border-black", fieldErrors.password && "border-red-500 focus-visible:ring-red-500")} />
                                 </div>
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="agencyId" className="text-xs font-semibold uppercase tracking-wider text-gray-500">{lang === 'en' ? "Agency" : "Agensi"}</Label>
+                                <Select name="agencyId" value={formData.agencyId} onValueChange={(value) => { handleChange({ target: { name: 'agencyId', value } } as any); if (fieldErrors.agencyId) setFieldErrors({ ...fieldErrors, agencyId: false }); }}>
+                                    <SelectTrigger id="agencyId" className={cn("h-12 rounded-xl bg-gray-50 border-gray-200 focus:bg-white focus:border-black", fieldErrors.agencyId && "border-red-500")}>
+                                        <SelectValue placeholder={lang === 'en' ? "Select your Agency" : "Pilih Agensi Anda"} />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {agencies.map(a => <SelectItem key={a.agency_id} value={a.agency_id}>{a.name}</SelectItem>)}
+                                    </SelectContent>
+                                </Select>
                             </div>
                         </div>
 

@@ -97,44 +97,44 @@ export function TransferRequestsTable() {
 
     if (requests.length === 0) {
         return (
-            <div className="text-center p-8 text-muted-foreground border rounded-lg bg-muted/10">
-                No pending transfer requests.
+            <div className="text-center py-12 text-gray-400">
+                <p className="text-sm">Tidak ada permintaan transfer yang menunggu keputusan.</p>
             </div>
         );
     }
 
     return (
-        <div className="border rounded-lg">
+        <div className="w-full">
             <Table>
                 <TableHeader>
-                    <TableRow>
-                        <TableHead>Requested At</TableHead>
-                        <TableHead>Agent</TableHead>
-                        <TableHead>From Agency</TableHead>
-                        <TableHead>To Agency</TableHead>
-                        <TableHead>Reason</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
+                    <TableRow className="bg-gray-50/50 hover:bg-gray-50/50 border-gray-100">
+                        <TableHead className="px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider h-11">Waktu Permintaan</TableHead>
+                        <TableHead className="text-xs font-semibold text-gray-500 uppercase tracking-wider h-11">Nama Agen</TableHead>
+                        <TableHead className="text-xs font-semibold text-gray-500 uppercase tracking-wider h-11">Dari Agensi</TableHead>
+                        <TableHead className="text-xs font-semibold text-gray-500 uppercase tracking-wider h-11">Ke Agensi</TableHead>
+                        <TableHead className="text-xs font-semibold text-gray-500 uppercase tracking-wider h-11">Alasan</TableHead>
+                        <TableHead className="text-xs font-semibold text-gray-500 uppercase tracking-wider h-11">Status</TableHead>
+                        <TableHead className="px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider h-11 text-right">Aksi</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
                     {requests.map((req) => (
-                        <TableRow key={req.request_id}>
-                            <TableCell className="whitespace-nowrap">
+                        <TableRow key={req.request_id} className="border-gray-50 hover:bg-gray-50/50 transition-colors">
+                            <TableCell className="px-6 whitespace-nowrap text-sm text-gray-600 font-medium">
                                 {format(new Date(req.requested_at), "d MMM yyyy HH:mm", { locale: id })}
                             </TableCell>
-                            <TableCell className="font-medium">{req.agent_name}</TableCell>
-                            <TableCell>{req.from_agency_name || "-"}</TableCell>
-                            <TableCell>{req.to_agency_name}</TableCell>
-                            <TableCell className="max-w-xs truncate" title={req.request_reason}>
+                            <TableCell className="font-semibold text-sm text-gray-900">{req.agent_name}</TableCell>
+                            <TableCell className="text-sm text-gray-600">{req.from_agency_name || "-"}</TableCell>
+                            <TableCell className="text-sm text-gray-600">{req.to_agency_name}</TableCell>
+                            <TableCell className="max-w-[200px] truncate text-sm text-gray-600" title={req.request_reason}>
                                 {req.request_reason}
                             </TableCell>
                             <TableCell>
-                                <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">
-                                    {req.status}
-                                </Badge>
+                                <span className="inline-flex items-center px-2 py-1 rounded-md text-[11px] font-bold uppercase tracking-wider bg-gray-100 text-gray-700 border border-gray-200">
+                                    MENUNGGU
+                                </span>
                             </TableCell>
-                            <TableCell className="text-right">
+                            <TableCell className="px-6 text-right">
                                 <div className="flex justify-end gap-2">
                                     <Button
                                         size="sm"

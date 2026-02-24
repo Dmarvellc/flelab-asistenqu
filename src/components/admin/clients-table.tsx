@@ -95,38 +95,46 @@ export function ClientsTable({ clients: initialClients, agents }: ClientsTablePr
 
     return (
         <>
-            <div className="border rounded-lg">
+            <div className="w-full">
                 <Table>
                     <TableHeader>
-                        <TableRow>
-                            <TableHead>Client Name</TableHead>
-                            <TableHead>Total Policies</TableHead>
-                            <TableHead>Current Agent</TableHead>
-                            <TableHead className="text-right">Actions</TableHead>
+                        <TableRow className="bg-gray-50/50 hover:bg-gray-50/50 border-gray-100">
+                            <TableHead className="px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider h-11">Nama Klien</TableHead>
+                            <TableHead className="text-xs font-semibold text-gray-500 uppercase tracking-wider h-11">Total Polis</TableHead>
+                            <TableHead className="text-xs font-semibold text-gray-500 uppercase tracking-wider h-11">Agen Pendamping</TableHead>
+                            <TableHead className="px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider h-11 text-right">Aksi</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {clients.length === 0 ? (
                             <TableRow>
-                                <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
-                                    No clients found.
+                                <TableCell colSpan={4} className="text-center py-12 text-gray-400">
+                                    <p className="text-sm">Tidak ada data klien yang ditemukan.</p>
                                 </TableCell>
                             </TableRow>
                         ) : (
                             clients.map((client) => (
-                                <TableRow key={client.client_id}>
-                                    <TableCell className="font-medium">{client.full_name}</TableCell>
-                                    <TableCell>{client.total_policies}</TableCell>
-                                    <TableCell>{client.agent_name}</TableCell>
-                                    <TableCell className="text-right">
+                                <TableRow key={client.client_id} className="border-gray-50 hover:bg-gray-50/50 transition-colors">
+                                    <TableCell className="px-6 font-semibold text-sm text-gray-900">{client.full_name}</TableCell>
+                                    <TableCell className="text-sm text-gray-600 font-medium">{client.total_policies} polis aktif</TableCell>
+                                    <TableCell className="text-sm text-gray-600 font-medium">
+                                        <div className="flex items-center gap-2">
+                                            <div className="h-6 w-6 rounded-full bg-gray-100 flex items-center justify-center shrink-0 border border-gray-200">
+                                                <UserCog className="h-3 w-3 text-gray-500" />
+                                            </div>
+                                            {client.agent_name}
+                                        </div>
+                                    </TableCell>
+                                    <TableCell className="px-6 text-right">
                                         <Button
                                             variant="outline"
                                             size="sm"
+                                            className="h-8 shadow-sm border-gray-200 text-gray-700 bg-white hover:bg-gray-50 hover:text-gray-900 transition-colors"
                                             onClick={() => handleReassignClick(client)}
                                             disabled={processingId === client.client_id}
                                         >
-                                            <UserCog className="h-4 w-4 mr-2" />
-                                            Reassign
+                                            <UserCog className="h-4 w-4 mr-1.5" />
+                                            Pindahkan Agen
                                         </Button>
                                     </TableCell>
                                 </TableRow>
@@ -139,33 +147,33 @@ export function ClientsTable({ clients: initialClients, agents }: ClientsTablePr
             <Dialog open={modalOpen} onOpenChange={setModalOpen}>
                 <DialogContent className="sm:max-w-md">
                     <DialogHeader>
-                        <DialogTitle>Reassign Client</DialogTitle>
+                        <DialogTitle>Pindahkan Klien</DialogTitle>
                         <DialogDescription>
-                            Assign <strong>{selectedClient?.full_name}</strong> to a different agent.
+                            Pilih agen pendamping baru untuk <strong>{selectedClient?.full_name}</strong>.
                         </DialogDescription>
                     </DialogHeader>
                     <div className="flex items-center space-x-2 py-4">
                         <div className="grid flex-1 gap-2">
                             <Select value={selectedAgent} onValueChange={setSelectedAgent}>
                                 <SelectTrigger>
-                                    <SelectValue placeholder="Select Agent" />
+                                    <SelectValue placeholder="Pilih Agen Baru" />
                                 </SelectTrigger>
                                 <SelectContent>
                                     {agents.map(agent => (
                                         <SelectItem key={agent.user_id} value={agent.user_id}>
-                                            {agent.full_name} ({agent.total_policies} policies)
+                                            {agent.full_name} ({agent.total_policies} polis)
                                         </SelectItem>
                                     ))}
                                 </SelectContent>
                             </Select>
                         </div>
                     </div>
-                    <DialogFooter className="sm:justify-end">
-                        <Button type="button" variant="secondary" onClick={() => setModalOpen(false)}>
-                            Cancel
+                    <DialogFooter className="sm:justify-end gap-2">
+                        <Button type="button" variant="outline" className="border-gray-200" onClick={() => setModalOpen(false)}>
+                            Batal
                         </Button>
-                        <Button type="button" onClick={handleConfirmReassign} disabled={processingId !== null}>
-                            {processingId ? <Loader2 className="h-4 w-4 animate-spin" /> : "Confirm Reassign"}
+                        <Button type="button" className="bg-gray-900 hover:bg-black text-white px-6 shadow-sm font-semibold" onClick={handleConfirmReassign} disabled={processingId !== null}>
+                            {processingId ? <Loader2 className="h-4 w-4 animate-spin" /> : "Konfirmasi Pemindahan"}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

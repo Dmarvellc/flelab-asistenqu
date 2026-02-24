@@ -52,7 +52,7 @@ interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {
 
 export function DashboardSidebar({ children, className, mobile, ...props }: SidebarProps) {
   return (
-    <div className={cn("flex flex-col h-full overflow-hidden dark-scrollbar", className)} {...props}>
+    <div className={cn("flex flex-col h-full overflow-hidden", className)} {...props}>
       {children}
     </div>
   )
@@ -80,8 +80,8 @@ interface SidebarContentProps {
 
 export function SidebarContent({ children }: SidebarContentProps) {
   return (
-    <div className="flex-1 overflow-y-auto overflow-x-hidden py-6 dark-scrollbar w-full">
-      <nav className="grid items-start px-6 gap-2 w-full">
+    <div className="flex-1 overflow-y-auto overflow-x-hidden py-6 w-full">
+      <nav className="flex flex-col px-6 gap-2 w-full">
         {children}
       </nav>
     </div>
