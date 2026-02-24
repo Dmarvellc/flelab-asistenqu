@@ -5,6 +5,7 @@ import { useState, useCallback, useEffect } from "react";
 import { DashboardLayout, DashboardSidebar, SidebarHeader, SidebarContent, SidebarFooter, NavItem } from "@/components/dashboard/dashboard-layout"
 import { LayoutDashboard, Shield, Settings, LogOut, Users, FileText, GitPullRequest, Trophy, Search } from "lucide-react"
 import Link from "next/link"
+import Image from "next/image"
 import { CommandPalette } from "@/components/admin-agency/command-palette"
 
 export default function AdminAgencyLayout({ children }: { children: React.ReactNode }) {
@@ -51,9 +52,14 @@ export default function AdminAgencyLayout({ children }: { children: React.ReactN
   const sidebar = (
     <DashboardSidebar>
       <SidebarHeader>
-        <Link href="/admin-agency" className="flex items-center gap-2 font-bold text-gray-900 tracking-tight">
-          <Shield className="h-6 w-6" />
-          <span>Agency Admin</span>
+        <Link href="/admin-agency">
+          <Image
+            src="https://jzupwygwzatugbrmqjau.supabase.co/storage/v1/object/sign/image/m_tagadmin.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV82NWE4NDk3Zi1iNTdiLTQ1ZDMtOWI3ZC0yNDAxNzU4Njg1NTAiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJpbWFnZS9tX3RhZ2FkbWluLnBuZyIsImlhdCI6MTc3MTg5NzQwMSwiZXhwIjozMzI3NjM2MTQwMX0.O2gM-49fTWQWkUKRyDs_5tsEUF-l_RKJb3xft9UWg64"
+            alt="AsistenQu Admin Agency"
+            width={200}
+            height={40}
+            className="h-8 w-auto object-contain"
+          />
         </Link>
       </SidebarHeader>
 
