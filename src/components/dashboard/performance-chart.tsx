@@ -3,15 +3,11 @@
 
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts"
 
-const data = [
-    { name: "Jan", claims: 4, points: 450 },
-    { name: "Feb", claims: 7, points: 800 },
-    { name: "Mar", claims: 5, points: 600 },
-    { name: "Apr", claims: 12, points: 1500 },
-    { name: "May", claims: 9, points: 1100 },
-    { name: "Jun", claims: 15, points: 2000 },
-    { name: "Jul", claims: 18, points: 2400 },
-]
+import { AgentChartData } from "@/services/agent-metrics";
+
+interface PerformanceChartProps {
+    data: AgentChartData[];
+}
 
 const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
@@ -36,7 +32,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
     return null;
 };
 
-export function PerformanceChart() {
+export function PerformanceChart({ data }: PerformanceChartProps) {
     return (
         <ResponsiveContainer width="100%" height={220}>
             <BarChart data={data} barGap={4}>
@@ -58,7 +54,7 @@ export function PerformanceChart() {
                     tick={{ fill: '#9ca3af' }}
                 />
                 <Tooltip content={<CustomTooltip />} cursor={{ fill: '#f9fafb', radius: 6 }} />
-                <Bar dataKey="points" fill="#111827" radius={[4, 4, 0, 0]} name="Poin" />
+                <Bar dataKey="clients" fill="#111827" radius={[4, 4, 0, 0]} name="Klien Baru" />
                 <Bar dataKey="claims" fill="#d1d5db" radius={[4, 4, 0, 0]} name="Klaim" />
             </BarChart>
         </ResponsiveContainer>

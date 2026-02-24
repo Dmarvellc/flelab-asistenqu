@@ -1,64 +1,114 @@
 "use client";
 
-import { usePathname } from "next/navigation";
-import { DashboardLayout, DashboardSidebar, SidebarHeader, SidebarContent, SidebarFooter, NavItem, DashboardHeader } from "@/components/dashboard/dashboard-layout"
-import { LayoutDashboard, Shield, Globe, Settings, LogOut, Users, FileText, GitPullRequest, Trophy } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { usePathname, useRouter } from "next/navigation";
+import { useState, useCallback, useEffect } from "react";
+import { DashboardLayout, DashboardSidebar, SidebarHeader, SidebarContent, SidebarFooter, NavItem } from "@/components/dashboard/dashboard-layout"
+import { LayoutDashboard, Shield, Settings, LogOut, Users, FileText, GitPullRequest, Trophy, Search } from "lucide-react"
 import Link from "next/link"
+import { CommandPalette } from "@/components/admin-agency/command-palette"
 
 export default function AdminAgencyLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const [isCommandOpen, setIsCommandOpen] = useState(false);
+  const [isAuthorized, setIsAuthorized] = useState(false);
+  const [isChecking, setIsChecking] = useState(true);
+
   const isLoginPage = pathname === "/admin-agency/login";
+
+  const handleLogout = useCallback(async () => {
+    try {
+      await fetch("/api/auth/logout?from=admin-agency", { method: "POST" });
+    } catch (e) {
+      console.error("Logout failed", e);
+    }
+    setIsAuthorized(false);
+    router.push("/admin-agency/login");
+  }, [router]);
+
+  useEffect(() => {
+    if (isLoginPage) {
+      setIsChecking(false);
+      return;
+    }
+    // Assuming authorization is handled by middleware or server, just basic check here
+    setIsAuthorized(true);
+    setIsChecking(false);
+  }, [pathname, isLoginPage]);
 
   if (isLoginPage) {
     return <>{children}</>;
   }
 
+  if (isChecking) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-50/50">
+        <div className="h-8 w-8 rounded-full border-2 border-gray-200 border-t-gray-900 animate-spin" />
+      </div>
+    )
+  }
+
   const sidebar = (
     <DashboardSidebar>
       <SidebarHeader>
-        <Link href="/admin-agency" className="flex items-center gap-2 font-semibold">
+        <Link href="/admin-agency" className="flex items-center gap-2 font-bold text-gray-900 tracking-tight">
           <Shield className="h-6 w-6" />
           <span>Agency Admin</span>
         </Link>
       </SidebarHeader>
+
       <SidebarContent>
-        <NavItem href="/admin-agency" icon={LayoutDashboard} active={pathname === '/admin-agency'}>
-          Dashboard
-        </NavItem>
-        <NavItem href="/admin-agency/agents" icon={Users} active={pathname.startsWith('/admin-agency/agents')}>
-          Agents
-        </NavItem>
-        <NavItem href="/admin-agency/clients" icon={Users} active={pathname.startsWith('/admin-agency/clients')}>
-          Clients
-        </NavItem>
-        <NavItem href="/admin-agency/claims" icon={FileText} active={pathname.startsWith('/admin-agency/claims')}>
-          Claims
-        </NavItem>
-        <NavItem href="/admin-agency/transfers" icon={GitPullRequest} active={pathname.startsWith('/admin-agency/transfers')}>
-          Transfer Requests
-        </NavItem>
-        <NavItem href="/admin-agency/performance" icon={Trophy} active={pathname.startsWith('/admin-agency/performance')}>
-          Performa Agen
-        </NavItem>
-        <NavItem href="/admin-agency/settings" icon={Settings} active={pathname === '/admin-agency/settings'}>
-          Settings
-        </NavItem>
+        <button
+          onClick={() => setIsCommandOpen(true)}
+          className="w-full mt-2 mb-4 flex items-center gap-3 px-4 py-3 rounded-xl bg-gray-50 border border-gray-100 text-gray-500 hover:bg-gray-100 hover:text-gray-900 transition-all text-[15px] font-medium cursor-pointer overflow-hidden shadow-sm"
+        >
+          <Search className="h-4 w-4 shrink-0 text-gray-400" />
+          <span className="truncate tracking-wide flex-1 text-left min-w-0">Cari dengan Cmd+K</span>
+        </button>
+
+        <div className="mt-2 space-y-1 w-full">
+          <NavItem href="/admin-agency" icon={LayoutDashboard} active={pathname === '/admin-agency'} isCollapsed={false}>
+            Dashboard
+          </NavItem>
+          <NavItem href="/admin-agency/agents" icon={Users} active={pathname.startsWith('/admin-agency/agents')} isCollapsed={false}>
+            Agents
+          </NavItem>
+          <NavItem href="/admin-agency/clients" icon={Users} active={pathname.startsWith('/admin-agency/clients')} isCollapsed={false}>
+            Clients
+          </NavItem>
+          <NavItem href="/admin-agency/claims" icon={FileText} active={pathname.startsWith('/admin-agency/claims')} isCollapsed={false}>
+            Claims
+          </NavItem>
+          <NavItem href="/admin-agency/transfers" icon={GitPullRequest} active={pathname.startsWith('/admin-agency/transfers')} isCollapsed={false}>
+            Transfer Requests
+          </NavItem>
+          <NavItem href="/admin-agency/performance" icon={Trophy} active={pathname.startsWith('/admin-agency/performance')} isCollapsed={false}>
+            Performa Agen
+          </NavItem>
+          <NavItem href="/admin-agency/settings" icon={Settings} active={pathname === '/admin-agency/settings'} isCollapsed={false}>
+            Settings
+          </NavItem>
+        </div>
       </SidebarContent>
+
       <SidebarFooter>
-        <Button variant="ghost" className="w-full justify-start gap-2" asChild>
-          <Link href="/api/auth/logout?from=admin-agency">
-            <LogOut className="h-4 w-4" />
-            Sign Out
-          </Link>
-        </Button>
+        <button
+          className="flex w-full items-center gap-3 rounded-xl px-4 py-3 mt-2 text-[15px] font-medium text-red-600 hover:bg-red-50 hover:text-red-700 transition-all duration-300 ease-out group"
+          onClick={handleLogout}
+        >
+          <LogOut className="h-5 w-5 shrink-0 text-red-500 group-hover:text-red-600 group-hover:-translate-x-0.5 transition-transform" />
+          <span>Sign Out</span>
+        </button>
       </SidebarFooter>
     </DashboardSidebar>
   )
 
   return (
-    <DashboardLayout sidebar={sidebar} header={<DashboardHeader mobileSidebar={sidebar} />}>
-      {children}
-    </DashboardLayout>
+    <>
+      <DashboardLayout sidebar={sidebar} isCollapsed={false}>
+        {children}
+      </DashboardLayout>
+      <CommandPalette isOpen={isCommandOpen} setIsOpen={setIsCommandOpen} />
+    </>
   )
 }

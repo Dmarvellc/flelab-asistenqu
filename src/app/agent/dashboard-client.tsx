@@ -12,6 +12,7 @@ interface DashboardClientProps {
         pendingContracts: number;
         totalClaims: number;
         points: number;
+        chartData: { name: string; claims: number; clients: number; }[];
     };
     claims: any[];
     initialAgentName: string;
@@ -81,7 +82,7 @@ export function DashboardClient({ metrics, claims, initialAgentName }: Dashboard
                         </h2>
                     </div>
                     <div className="p-6">
-                        <PerformanceChart />
+                        <PerformanceChart data={metrics.chartData} />
                     </div>
                 </div>
 

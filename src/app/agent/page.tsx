@@ -21,6 +21,7 @@ export default async function AgentDashboardPage() {
       pendingContracts: 0,
       totalClaims: 0,
       points: 0,
+      chartData: []
     })),
     getAgentClaims(userId).catch(() => []),
     findUserWithProfile(userId).catch(() => null),

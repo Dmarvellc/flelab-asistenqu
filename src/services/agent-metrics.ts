@@ -1,10 +1,17 @@
 import { dbPool } from "@/lib/db";
 
+export interface AgentChartData {
+  name: string;
+  claims: number;
+  clients: number;
+}
+
 export interface AgentMetrics {
   activeClients: number;
   pendingContracts: number;
   points: number;
   totalClaims: number;
+  chartData: AgentChartData[];
 }
 
 /**
@@ -15,7 +22,7 @@ export interface AgentMetrics {
 export async function getAgentMetrics(userId: string): Promise<AgentMetrics> {
   const client = await dbPool.connect();
   try {
-    const [clientsRes, pendingRes, agentRes, claimsRes] = await Promise.all([
+    const [clientsRes, pendingRes, agentRes, claimsRes, chartRes] = await Promise.all([
       // 1. Active clients where this user is the agent
       client.query(
         `SELECT COUNT(*) AS count
@@ -50,13 +57,49 @@ export async function getAgentMetrics(userId: string): Promise<AgentMetrics> {
             OR created_by_user_id = $1`,
         [userId]
       ).catch(() => ({ rows: [{ count: "0" }] })),
+
+      // 5. Monthly chart data for the last 6 months
+      client.query(
+        `WITH months AS (
+          SELECT date_trunc('month', NOW() - (s.a || ' months')::interval) AS month
+          FROM generate_series(5, 0, -1) AS s(a)
+         )
+         SELECT 
+           to_char(m.month, 'Mon') as name,
+           COUNT(DISTINCT c.claim_id) as claims,
+           COUNT(DISTINCT cl.client_id) as clients
+         FROM months m
+         LEFT JOIN public.claim c 
+           ON date_trunc('month', c.created_at) = m.month 
+           AND (c.assigned_agent_id = $1 OR c.created_by_user_id = $1)
+         LEFT JOIN public.client cl 
+           ON date_trunc('month', cl.created_at) = m.month 
+           AND cl.agent_id = $1
+         GROUP BY m.month
+         ORDER BY m.month;`,
+        [userId]
+      ).catch(() => ({ rows: [] })),
     ]);
+
+    const defaultChartData = [
+      { name: "Jan", claims: 0, clients: 0 },
+      { name: "Feb", claims: 0, clients: 0 },
+      { name: "Mar", claims: 0, clients: 0 },
+      { name: "Apr", claims: 0, clients: 0 },
+      { name: "May", claims: 0, clients: 0 },
+      { name: "Jun", claims: 0, clients: 0 },
+    ];
 
     return {
       activeClients: parseInt(clientsRes.rows[0]?.count ?? "0", 10),
       pendingContracts: parseInt(pendingRes.rows[0]?.count ?? "0", 10),
       points: agentRes.rows[0]?.points_balance ?? 0,
       totalClaims: parseInt(claimsRes.rows[0]?.count ?? "0", 10),
+      chartData: chartRes.rows.length > 0 ? chartRes.rows.map(row => ({
+        name: row.name,
+        claims: Number(row.claims),
+        clients: Number(row.clients)
+      })) : defaultChartData
     };
   } finally {
     client.release();
