@@ -6,7 +6,7 @@ import { getHospitalClaims, getHospitalIdByUserId } from "@/services/claims"
 
 export default async function HospitalDashboardPage() {
   const cookieStore = await cookies()
-  const userId = cookieStore.get("app_user_id")?.value
+  const userId = cookieStore.get("session_hospital_user_id")?.value ?? cookieStore.get("app_user_id")?.value
 
   // Cookie missing → not logged in, redirect to login
   if (!userId || userId.trim() === "") {

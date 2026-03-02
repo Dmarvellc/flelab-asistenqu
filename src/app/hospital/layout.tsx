@@ -3,7 +3,7 @@
 import { usePathname } from "next/navigation";
 import { DashboardLayout, DashboardSidebar, SidebarHeader, SidebarContent, SidebarFooter, NavItem, DashboardHeader } from "@/components/dashboard/dashboard-layout"
 import { EmergencyButton } from "@/components/claims/emergency-button"
-import { LayoutDashboard, Activity, Users, LogOut, FileText } from "lucide-react"
+import { LayoutDashboard, Activity, Users, LogOut, FileText, CalendarCheck } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 
@@ -25,16 +25,19 @@ export default function HospitalLayout({ children }: { children: React.ReactNode
         </Link>
       </SidebarHeader>
       <SidebarContent>
-        <NavItem href="/hospital" icon={LayoutDashboard} active>
+        <NavItem href="/hospital" icon={LayoutDashboard} active={pathname === '/hospital'}>
           Dasbor
         </NavItem>
-        <NavItem href="/hospital/patients" icon={Users}>
+        <NavItem href="/hospital/appointments" icon={CalendarCheck} active={pathname.startsWith('/hospital/appointments')}>
+          Jadwal
+        </NavItem>
+        <NavItem href="/hospital/patients" icon={Users} active={pathname.startsWith('/hospital/patients')}>
           Pasien
         </NavItem>
-        <NavItem href="/hospital/claims" icon={FileText}>
+        <NavItem href="/hospital/claims" icon={FileText} active={pathname.startsWith('/hospital/claims')}>
           Klaim
         </NavItem>
-        <NavItem href="/hospital/reports" icon={Activity}>
+        <NavItem href="/hospital/reports" icon={Activity} active={pathname.startsWith('/hospital/reports')}>
           Laporan
         </NavItem>
       </SidebarContent>

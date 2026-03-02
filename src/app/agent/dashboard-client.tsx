@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslation } from "@/components/providers/i18n-provider";
-import { ArrowRight, LayoutDashboard, FileText, Users, Award } from "lucide-react";
+import { ArrowRight, LayoutDashboard, FileText, Users, Award, PhoneCall } from "lucide-react";
 import Link from "next/link";
 import { ClaimsList } from "@/components/dashboard/claims-list";
 import { PerformanceChart } from "@/components/dashboard/performance-chart";
@@ -16,9 +16,10 @@ interface DashboardClientProps {
     };
     claims: any[];
     initialAgentName: string;
+    insuranceName?: string | null;
 }
 
-export function DashboardClient({ metrics, claims, initialAgentName }: DashboardClientProps) {
+export function DashboardClient({ metrics, claims, initialAgentName, insuranceName }: DashboardClientProps) {
     const { t } = useTranslation();
 
     const stats = [
@@ -71,6 +72,29 @@ export function DashboardClient({ metrics, claims, initialAgentName }: Dashboard
                     </div>
                 ))}
             </div>
+
+            {/* Generali Call Center Banner */}
+            {insuranceName?.toLowerCase().includes('generali') && (
+                <div className="bg-blue-50 border border-blue-100 rounded-3xl p-6 sm:p-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 shadow-sm hover:shadow-md transition-shadow">
+                    <div className="flex items-start sm:items-center gap-4">
+                        <div className="h-14 w-14 bg-white rounded-2xl flex items-center justify-center shrink-0 shadow-sm border border-blue-100">
+                            <PhoneCall className="h-6 w-6 text-blue-600" />
+                        </div>
+                        <div>
+                            <h3 className="text-xl font-bold text-blue-900">Butuh bantuan klaim pending?</h3>
+                            <p className="text-blue-700/80 font-medium text-[15px] mt-1">Hubungi Admin Generali untuk konsultasi cepat.</p>
+                        </div>
+                    </div>
+                    <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
+                        <a href="tel:02129963700" className="flex items-center gap-2 bg-white px-5 py-3 rounded-xl shadow-sm border border-blue-100 hover:shadow-md hover:-translate-y-0.5 transition-all text-blue-900 font-bold text-[15px] w-full sm:w-auto justify-center">
+                            021-29963700
+                        </a>
+                        <a href="tel:02129021616" className="flex items-center gap-2 bg-white px-5 py-3 rounded-xl shadow-sm border border-blue-100 hover:shadow-md hover:-translate-y-0.5 transition-all text-blue-900 font-bold text-[15px] w-full sm:w-auto justify-center">
+                            021-29021616
+                        </a>
+                    </div>
+                </div>
+            )}
 
             {/* Quick Actions & Chart */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">

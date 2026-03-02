@@ -37,6 +37,7 @@ export async function registerUser(params: {
   ktpImagePath?: string;
   selfieImagePath?: string;
   agencyId?: string;
+  referralCode?: string;
 }) {
   const passwordHash = await bcrypt.hash(params.password, 10);
   const client = await dbPool.connect();
@@ -118,6 +119,45 @@ export async function registerUser(params: {
                  VALUES ($1, $2, $3, 'PENDING')`,
           [userId, params.fullName, insuranceId]
         );
+      }
+    }
+
+    // 6. Process Referral Code if provided
+    if (params.referralCode) {
+      const referrerRes = await client.query(`
+        SELECT agent_id FROM public.agent WHERE referral_code = $1
+      `, [params.referralCode.toUpperCase()]);
+
+      if (referrerRes.rows.length > 0) {
+        const referrerId = referrerRes.rows[0].agent_id;
+        
+        // Add to history
+        await client.query(`
+          INSERT INTO public.referral_history (referrer_id, referred_user_id, reward_amount)
+          VALUES ($1, $2, $3)
+        `, [referrerId, userId, 1000]); // Reward Rp 1000
+
+        // Increment wallet
+        await client.query(`
+          UPDATE public.agent SET wallet_balance = COALESCE(wallet_balance, 0) + 1000 WHERE agent_id = $1
+        `, [referrerId]);
+      } else {
+        // Also check if they used old app_user schema
+        const legacyRes = await client.query(`
+           SELECT user_id FROM public.app_user WHERE referral_code = $1
+        `, [params.referralCode.toUpperCase()]);
+
+        if (legacyRes.rows.length > 0) {
+           const referrerId = legacyRes.rows[0].user_id;
+           await client.query(`
+             INSERT INTO public.referral_history (referrer_id, referred_user_id, reward_amount)
+             VALUES ($1, $2, $3)
+           `, [referrerId, userId, 1000]);
+
+           await client.query(`
+             UPDATE public.agent SET wallet_balance = COALESCE(wallet_balance, 0) + 1000 WHERE agent_id = $1
+           `, [referrerId]).catch(() => {});
+        }
       }
     }
 
@@ -328,6 +368,7 @@ export async function findUserWithProfile(userId: string) {
        u.agency_id,
        ag.name as agency_name,
        ag.address as agency_address,
+       ag.claim_form_url,
        p.full_name,
        p.id_card as nik,
        p.phone_number,

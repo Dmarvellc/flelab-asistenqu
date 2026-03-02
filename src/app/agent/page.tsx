@@ -27,8 +27,24 @@ export default async function AgentDashboardPage() {
     findUserWithProfile(userId).catch(() => null),
   ]);
 
+  let insuranceName = null;
+  try {
+    const { dbPool } = await import("@/lib/db");
+    const res = await dbPool.query(`
+      SELECT i.insurance_name 
+      FROM public.agent a 
+      JOIN public.insurance i ON a.insurance_id = i.insurance_id 
+      WHERE a.agent_id = $1
+    `, [userId]);
+    if (res.rows.length > 0) {
+      insuranceName = res.rows[0].insurance_name;
+    }
+  } catch (e) {
+    console.error("Failed to fetch insurance name:", e);
+  }
+
   const agentName = userProfile?.full_name || "Agent";
 
-  return <DashboardClient metrics={metrics} claims={claims} initialAgentName={agentName} />;
+  return <DashboardClient metrics={metrics} claims={claims} initialAgentName={agentName} insuranceName={insuranceName} />;
 }
 

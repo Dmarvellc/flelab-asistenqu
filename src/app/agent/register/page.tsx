@@ -45,6 +45,7 @@ export default function AgentRegisterPage() {
     const [formData, setFormData] = useState({
         email: "", password: "", fullName: "", nik: "", phoneNumber: "", birthDate: "", gender: "LAKI-LAKI",
         addressStreet: "", provinceId: "", regencyId: "", districtId: "", villageId: "", postalCode: "", agencyId: "",
+        referralCode: "",
     });
 
     const [loading, setLoading] = useState(false);
@@ -161,7 +162,7 @@ export default function AgentRegisterPage() {
         formattedPhone = '+' + formattedPhone;
 
         const finalBody = {
-            email: formData.email, password: formData.password, role: "agent", fullName: formData.fullName, nik: formData.nik, phoneNumber: formattedPhone, address: fullAddress, birthDate: formData.birthDate, gender: formData.gender, agencyId: formData.agencyId,
+            email: formData.email, password: formData.password, role: "agent", fullName: formData.fullName, nik: formData.nik, phoneNumber: formattedPhone, address: fullAddress, birthDate: formData.birthDate, gender: formData.gender, agencyId: formData.agencyId, referralCode: formData.referralCode,
         };
 
         try {
@@ -248,6 +249,10 @@ export default function AgentRegisterPage() {
                                         {agencies.map(a => <SelectItem key={a.agency_id} value={a.agency_id}>{a.name}</SelectItem>)}
                                     </SelectContent>
                                 </Select>
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="referralCode" className="text-xs font-semibold uppercase tracking-wider text-gray-500">{lang === 'en' ? "Referral Code (Optional)" : "Kode Referral (Opsional)"}</Label>
+                                <Input id="referralCode" name="referralCode" type="text" value={formData.referralCode} onChange={handleChange} placeholder={lang === 'en' ? "Enter referral code if any" : "Masukkan kode referral jika ada"} className="h-12 rounded-xl bg-gray-50 border-gray-200 focus:bg-white focus:border-black uppercase" />
                             </div>
                         </div>
 

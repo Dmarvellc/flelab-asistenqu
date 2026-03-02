@@ -57,6 +57,7 @@ export async function POST(request: Request) {
     ktp_image?: string;
     selfie_image?: string;
     agencyId?: string;
+    referralCode?: string;
   };
 
   if (!body.email || !body.password || !body.role) {
@@ -94,7 +95,8 @@ export async function POST(request: Request) {
       gender: body.gender,
       ktpImagePath,
       selfieImagePath,
-      agencyId: body.agencyId
+      agencyId: body.agencyId,
+      referralCode: body.referralCode
     });
     return NextResponse.json({ user });
   } catch (error) {

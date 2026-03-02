@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Plus, Search, FileText, MoreHorizontal, ArrowUpRight, CheckCircle2, XCircle, Clock, AlertCircle, DollarSign, ArrowRight } from "lucide-react";
+import { Plus, Search, FileText, MoreHorizontal, ArrowUpRight, CheckCircle2, XCircle, Clock, AlertCircle, DollarSign, ArrowRight, DownloadCloud } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
@@ -48,7 +48,7 @@ const statusConfig: Record<string, {
     },
 };
 
-export default function AgentClaimsPage({ initialClaims }: { initialClaims: Claim[] }) {
+export default function AgentClaimsPage({ initialClaims, agencyTemplateUrl }: { initialClaims: Claim[], agencyTemplateUrl?: string | null }) {
     const [claims, setClaims] = useState<Claim[]>(initialClaims || []);
     const [loading, setLoading] = useState(!initialClaims);
     const [search, setSearch] = useState("");
@@ -102,12 +102,25 @@ export default function AgentClaimsPage({ initialClaims }: { initialClaims: Clai
                     <h1 className="text-4xl font-bold tracking-tight text-gray-900 mt-2">Daftar Klaim</h1>
                     <p className="mt-1 text-base text-gray-500">Kelola dan pantau pengajuan klaim asuransi klien Anda di satu tempat terpadu.</p>
                 </div>
-                <Link href="/agent/claims/new">
-                    <button className="bg-gray-900 hover:bg-black text-white text-[15px] font-semibold h-12 px-6 rounded-2xl transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5 flex items-center gap-2">
-                        <Plus className="h-5 w-5" />
-                        Buat Klaim Baru
-                    </button>
-                </Link>
+                <div className="flex flex-col sm:flex-row gap-3 mt-4 sm:mt-0">
+                    {agencyTemplateUrl ? (
+                        <a href={agencyTemplateUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center bg-white border border-gray-200 hover:bg-gray-50 text-gray-900 text-[15px] font-semibold h-12 px-5 rounded-2xl transition-all shadow-sm hover:shadow-md gap-2">
+                            <DownloadCloud className="h-5 w-5 text-gray-500" />
+                            Unduh Form Klaim
+                        </a>
+                    ) : (
+                        <button disabled className="bg-gray-50 border border-gray-100 text-gray-400 text-[15px] font-semibold h-12 px-5 rounded-2xl flex items-center gap-2 cursor-not-allowed cursor-help" title="Belum diupload oleh Admin Agency">
+                            <DownloadCloud className="h-5 w-5 opacity-50" />
+                            Unduh Form Klaim
+                        </button>
+                    )}
+                    <Link href="/agent/claims/new">
+                        <button className="w-full sm:w-auto bg-gray-900 hover:bg-black text-white text-[15px] font-semibold h-12 px-6 rounded-2xl transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5 flex items-center justify-center gap-2">
+                            <Plus className="h-5 w-5" />
+                            Buat Klaim Baru
+                        </button>
+                    </Link>
+                </div>
             </div>
 
             {/* Stats */}

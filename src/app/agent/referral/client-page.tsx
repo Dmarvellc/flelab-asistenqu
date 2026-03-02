@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 type ReferralData = {
     referral_code: string | null;
     referral_points: number;
+    wallet_balance: number;
     stats: {
         credited_count: string;
         pending_count: string;
@@ -33,6 +34,7 @@ export default function ReferralPage({ initialData }: { initialData: ReferralDat
     const { toast } = useToast();
     const [data, setData] = useState<ReferralData | null>(initialData);
     const [loading, setLoading] = useState(!initialData);
+    const [generating, setGenerating] = useState(false);
     const [copied, setCopied] = useState(false);
 
     useEffect(() => {
@@ -53,6 +55,21 @@ export default function ReferralPage({ initialData }: { initialData: ReferralDat
         setCopied(true);
         toast({ title: "Kode disalin!", description: `Kode referral ${data.referral_code} berhasil disalin.` });
         setTimeout(() => setCopied(false), 2000);
+    };
+
+    const generateCode = async () => {
+        setGenerating(true);
+        try {
+            const res = await fetch("/api/agent/referral", { method: "POST" });
+            if (!res.ok) throw new Error("Gagal membuat kode");
+            const d = await res.json();
+            setData(prev => prev ? { ...prev, referral_code: d.referral_code } : null);
+            toast({ title: "Berhasil!", description: "Kode referral berhasil dibuat." });
+        } catch (e: any) {
+            toast({ title: "Gagal", description: e.message, variant: "destructive" });
+        } finally {
+            setGenerating(false);
+        }
     };
 
     const shareCode = () => {
@@ -115,26 +132,38 @@ export default function ReferralPage({ initialData }: { initialData: ReferralDat
 
                     <div className="flex flex-col sm:flex-row items-center gap-4">
                         <div className="flex-1 w-full bg-gray-50 border border-gray-200 rounded-2xl px-6 py-5 flex items-center justify-center sm:justify-start">
-                            <span className="font-mono text-4xl font-bold text-gray-900 tracking-[0.2em] uppercase">
-                                {data?.referral_code ?? "—"}
+                            <span className={cn("font-mono font-bold tracking-[0.2em] uppercase", data?.referral_code ? "text-4xl text-gray-900" : "text-xl text-gray-400")}>
+                                {data?.referral_code ?? "BELUM DIBUAT"}
                             </span>
                         </div>
                         <div className="flex sm:flex-col gap-3 w-full sm:w-auto">
-                            <Button
-                                onClick={copyCode}
-                                className="flex-1 sm:flex-none bg-gray-900 text-white hover:bg-black gap-2 rounded-xl h-14 px-8 shadow-sm transition-all"
-                            >
-                                {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                                {copied ? "Disalin!" : "Salin"}
-                            </Button>
-                            <Button
-                                onClick={shareCode}
-                                variant="outline"
-                                className="flex-1 sm:flex-none border-gray-200 text-gray-700 hover:bg-gray-50 gap-2 rounded-xl h-14 px-8 transition-all"
-                            >
-                                <Share2 className="h-4 w-4" />
-                                Bagikan
-                            </Button>
+                            {!data?.referral_code ? (
+                                <Button
+                                    onClick={generateCode}
+                                    disabled={generating}
+                                    className="w-full bg-gray-900 text-white hover:bg-black gap-2 rounded-xl h-14 px-8 shadow-sm transition-all"
+                                >
+                                    {generating ? "Membuat..." : "Buat Kode Referral"}
+                                </Button>
+                            ) : (
+                                <>
+                                    <Button
+                                        onClick={copyCode}
+                                        className="flex-1 sm:flex-none bg-gray-900 text-white hover:bg-black gap-2 rounded-xl h-14 px-8 shadow-sm transition-all"
+                                    >
+                                        {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                                        {copied ? "Disalin!" : "Salin"}
+                                    </Button>
+                                    <Button
+                                        onClick={shareCode}
+                                        variant="outline"
+                                        className="flex-1 sm:flex-none border-gray-200 text-gray-700 hover:bg-gray-50 gap-2 rounded-xl h-14 px-8 transition-all"
+                                    >
+                                        <Share2 className="h-4 w-4" />
+                                        Bagikan
+                                    </Button>
+                                </>
+                            )}
                         </div>
                     </div>
                 </motion.div>

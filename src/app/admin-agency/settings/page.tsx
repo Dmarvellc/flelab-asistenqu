@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, AlertCircle, RefreshCw, Edit2, Save, X, User, Mail, Phone, MapPin, Calendar, Shield, Building2 } from "lucide-react";
+import { Loader2, AlertCircle, RefreshCw, Edit2, Save, X, User, Mail, Phone, MapPin, Calendar, Shield, Building2, UploadCloud, FileText } from "lucide-react";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
@@ -27,6 +27,7 @@ interface UserProfile {
     agency_id?: string | null;
     agency_name?: string | null;
     agency_address?: string | null;
+    claim_form_url?: string | null;
 }
 
 function FieldRow({
@@ -80,6 +81,7 @@ export default function AdminAgencySettingsPage() {
     });
 
     const [saving, setSaving] = useState(false);
+    const [uploadingTemplate, setUploadingTemplate] = useState(false);
 
     const fetchProfile = async () => {
         try {
@@ -137,6 +139,37 @@ export default function AdminAgencySettingsPage() {
             toast({ title: "Gagal", description: err.message || "Gagal menyimpan perubahan.", variant: "destructive" });
         } finally {
             setSaving(false);
+        }
+    };
+
+    const handleUploadTemplate = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setUploadingTemplate(true);
+        try {
+            const formData = new FormData();
+            formData.append("file", file);
+
+            const res = await fetch("/api/admin-agency/template", {
+                method: "POST",
+                body: formData,
+            });
+
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.error || "Gagal mengunggah template");
+            }
+
+            const data = await res.json();
+            setProfile(prev => prev ? { ...prev, claim_form_url: data.url } : null);
+            toast({ title: "Berhasil", description: "Template form klaim berhasil diunggah." });
+        } catch (err: any) {
+            toast({ title: "Gagal", description: err.message, variant: "destructive" });
+        } finally {
+            setUploadingTemplate(false);
+            // reset file input
+            e.target.value = '';
         }
     };
 
@@ -314,6 +347,53 @@ export default function AdminAgencySettingsPage() {
                             </div>
                         )}
                     </div>
+
+                    {/* Template Claim Form Section */}
+                    {profile.agency_id && !isEditing && (
+                        <>
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between px-8 py-6 border-y border-gray-50 bg-gray-50/30 gap-6 mt-4">
+                                <div className="flex flex-col gap-1">
+                                    <h3 className="text-xl font-bold text-gray-900">Template Form Klaim</h3>
+                                    <p className="text-[14px] font-medium text-gray-500">Unggah template PDF form klaim agensi Anda untuk diunduh oleh agen-agen asuransi.</p>
+                                </div>
+                            </div>
+                            <div className="p-4 sm:p-8">
+                                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6 p-6 border border-gray-100 rounded-2xl bg-white shadow-sm">
+                                    <div className="h-14 w-14 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
+                                        <FileText className="h-6 w-6 text-blue-600" />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <h4 className="font-semibold text-gray-900">Dokumen Template Saat Ini</h4>
+                                        {profile.claim_form_url ? (
+                                            <a href={profile.claim_form_url} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 hover:underline mt-1 inline-block">
+                                                Lihat Dokumen
+                                            </a>
+                                        ) : (
+                                            <p className="text-sm text-gray-500 mt-1 italic">Belum ada template yang diunggah.</p>
+                                        )}
+                                    </div>
+                                    <div className="shrink-0">
+                                        <input
+                                            type="file"
+                                            id="template-upload"
+                                            className="hidden"
+                                            accept="application/pdf,image/*"
+                                            onChange={handleUploadTemplate}
+                                            disabled={uploadingTemplate}
+                                        />
+                                        <label htmlFor="template-upload">
+                                            <Button asChild disabled={uploadingTemplate} variant="outline" className="cursor-pointer gap-2 rounded-xl">
+                                                <span>
+                                                    {uploadingTemplate ? <Loader2 className="h-4 w-4 animate-spin" /> : <UploadCloud className="h-4 w-4" />}
+                                                    Unggah Template
+                                                </span>
+                                            </Button>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </>
+                    )}
                 </div>
             </div>
         </div>
