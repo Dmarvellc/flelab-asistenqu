@@ -3,7 +3,7 @@
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, useCallback } from "react";
 import { DashboardLayout, DashboardSidebar, SidebarHeader, SidebarContent, SidebarFooter, NavItem, DashboardHeader } from "@/components/dashboard/dashboard-layout"
-import { LayoutDashboard, LogOut, Loader2, Users, UserCheck } from "lucide-react"
+import { LayoutDashboard, LogOut, Loader2, Users, UserCheck, Hospital, Briefcase } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 
@@ -84,6 +84,12 @@ export default function DeveloperLayout({ children }: { children: React.ReactNod
         </NavItem>
         <NavItem href="/developer/users" icon={Users} active={pathname === "/developer/users"}>
           User List
+        </NavItem>
+        <NavItem href="/developer/add-hospital" icon={Hospital} active={pathname === "/developer/add-hospital"}>
+          Add Hospital
+        </NavItem>
+        <NavItem href="/developer/add-agency" icon={Briefcase} active={pathname === "/developer/add-agency"}>
+          Add Agency
         </NavItem>
         <NavItem href="/developer/pending" icon={UserCheck} active={pathname === "/developer/pending"}>
           Pending Approvals
