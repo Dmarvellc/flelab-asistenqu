@@ -3,21 +3,21 @@
 import { Pie, PieChart, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts"
 
 const ROLE_COLORS: Record<string, string> = {
-  super_admin: "#ef4444", // Red
-  admin_agency: "#f97316", // Orange
-  insurance_admin: "#eab308", // Yellow
-  hospital_admin: "#84cc16", // Lime
-  agent_manager: "#06b6d4", // Cyan
-  agent: "#3b82f6", // Blue
-  developer: "#8b5cf6", // Violet
-  hospital: "#10b981", // Emerald
+  super_admin: "#000000ff",
+  admin_agency: "#282828ff",
+  insurance_admin: "#443a3aff",
+  hospital_admin: "#52480aff",
+  agent_manager: "#73680aff",
+  agent: "#827810ff",
+  developer: "#948816ff",
+  hospital: "#a29616ff",
 }
 
-const DEFAULT_COLOR = "#64748b" // Slate
+const DEFAULT_COLOR = "#b0a822ff"
 
 export function UserRoleChart({ data }: { data: Record<string, number> }) {
   const chartData = Object.entries(data).map(([role, count]) => ({
-    name: (role || '').replace('_', ' '), // Format role name, ensure string
+    name: (role || '').replace('_', ' '),
     count,
     fill: ROLE_COLORS[role] || DEFAULT_COLOR,
   }));
