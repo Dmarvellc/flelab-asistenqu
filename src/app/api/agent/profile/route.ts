@@ -5,10 +5,8 @@ import { saveBase64Image } from "@/lib/image-upload";
 
 export async function GET() {
     const cookieStore = await cookies();
-    // login sets session_agent_user_id; fall back to app_user_id for legacy
     const userId =
-        cookieStore.get("session_agent_user_id")?.value ??
-        cookieStore.get("app_user_id")?.value;
+        cookieStore.get("session_agent_user_id")?.value;
 
     if (!userId) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -46,8 +44,7 @@ export async function GET() {
 export async function PUT(request: Request) {
     const cookieStore = await cookies();
     const userId =
-        cookieStore.get("session_agent_user_id")?.value ??
-        cookieStore.get("app_user_id")?.value;
+        cookieStore.get("session_agent_user_id")?.value;
 
     if (!userId) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

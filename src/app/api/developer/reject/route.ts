@@ -1,12 +1,11 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
 import { dbPool } from "@/lib/db"; // Assuming direct DB access as in other routes, or use lib helper if available
+import { getRoleFromCookies } from "@/lib/auth-cookies";
 
 export async function POST(request: Request) {
-    const cookieStore = await cookies();
-    const role = cookieStore.get("rbac_role")?.value;
+    const role = await getRoleFromCookies();
 
-    if (role !== "developer") {
+    if (role !== "developer" && role !== "super_admin") {
         return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
 

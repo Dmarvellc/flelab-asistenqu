@@ -11,7 +11,7 @@ export async function GET() {
     const client = await dbPool.connect();
     try {
         const cookieStore = await cookies();
-        const userId = cookieStore.get("app_user_id")?.value;
+        const userId = cookieStore.get("session_agent_user_id")?.value;
         if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
         // Get referral code (fallback to agent table if not in app_user, since we did a migration)
@@ -112,7 +112,7 @@ export async function POST() {
     const client = await dbPool.connect();
     try {
         const cookieStore = await cookies();
-        const userId = cookieStore.get("app_user_id")?.value;
+        const userId = cookieStore.get("session_agent_user_id")?.value;
         if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
         // Generate a unique code

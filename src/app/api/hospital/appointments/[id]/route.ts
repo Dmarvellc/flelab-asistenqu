@@ -10,7 +10,7 @@ export async function PATCH(
     const client = await dbPool.connect();
     try {
         const cookieStore = await cookies();
-        const userId = cookieStore.get("session_hospital_user_id")?.value ?? cookieStore.get("app_user_id")?.value;
+        const userId = cookieStore.get("session_hospital_user_id")?.value;
         if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
         const hospitalId = await getHospitalIdByUserId(userId);

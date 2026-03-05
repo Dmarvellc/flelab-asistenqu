@@ -6,7 +6,7 @@ import { findUserWithProfile } from "@/lib/auth-queries";
 
 export default async function AgentLayout(props: { children: React.ReactNode }) {
   const cookieStore = await cookies();
-  const userId = cookieStore.get("session_agent_user_id")?.value ?? cookieStore.get("app_user_id")?.value;
+  const userId = cookieStore.get("session_agent_user_id")?.value;
 
   let initialBadges = { pendingContracts: 0, totalClaims: 0 };
   let serverUserName: string | null = null;
