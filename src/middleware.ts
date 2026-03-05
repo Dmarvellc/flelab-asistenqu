@@ -4,7 +4,6 @@ import { getAllowedRolesForPath, Role } from './lib/rbac'
 
 export function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname
-  const params = request.nextUrl.searchParams
 
   // Check if current path requires specific roles
   const allowedRoles = getAllowedRolesForPath(path)
@@ -56,17 +55,6 @@ export function middleware(request: NextRequest) {
         userStatus = request.cookies.get('session_admin_agency_status')?.value;
       }
     }
-
-    // Also check generic/legacy rbac_role just in case (optional, but good for transition)
-    if (!roleCookie && request.cookies.get('rbac_role')?.value) {
-      // We only honor this if it matches an allowed role, to prevent crossover
-      const legacy = request.cookies.get('rbac_role')?.value;
-      if (legacy && allowedRoles.includes(legacy as Role)) {
-        roleCookie = legacy;
-        userStatus = request.cookies.get('user_status')?.value;
-      }
-    }
-
 
     if (isPublicPage) {
       // If user is already logged in with an allowed role, redirect to dashboard

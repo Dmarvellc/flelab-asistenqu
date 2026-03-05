@@ -25,7 +25,7 @@ export default function AdminAgencyLoginPage() {
       const response = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password, rememberMe: true }),
+        body: JSON.stringify({ email, password, rememberMe: true, portal: "admin_agency" }),
       });
 
       const data = await response.json();

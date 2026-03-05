@@ -8,7 +8,7 @@ import { Claim } from "@/lib/claims-data";
 
 export default async function AdminAgencyDashboardPage() {
   const cookieStore = await cookies();
-  const userId = cookieStore.get("app_user_id")?.value;
+  const userId = cookieStore.get("session_admin_agency_user_id")?.value;
   let claims: Claim[] = [];
 
   const client = await dbPool.connect();

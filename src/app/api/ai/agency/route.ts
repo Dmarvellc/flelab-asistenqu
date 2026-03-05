@@ -10,7 +10,7 @@ export async function POST(req: Request) {
     const { messages } = await req.json();
 
     const cookieStore = await cookies();
-    const userIdCookie = cookieStore.get("session_admin_agency_user_id")?.value || cookieStore.get("app_user_id")?.value;
+    const userIdCookie = cookieStore.get("session_admin_agency_user_id")?.value;
 
     let systemContext = `Anda adalah "AI Commander" untuk dashboard Admin Agensi Asuransi di platform AsistenQu. 
 Karakter Anda:

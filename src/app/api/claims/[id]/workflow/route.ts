@@ -1,11 +1,10 @@
 import { NextResponse } from "next/server";
 import { dbPool } from "@/lib/db";
-import { cookies } from "next/headers";
+import { getUserIdFromCookies } from "@/lib/auth-cookies";
 
 export async function POST(req: Request, context: { params: Promise<{ id: string }> }) {
     const { id: claimId } = await context.params;
-    const cookieStore = await cookies();
-    const userId = cookieStore.get("app_user_id")?.value;
+    const userId = await getUserIdFromCookies();
     // Get role from cookie for fast check, or fetch from DB to be secure.
     // We'll trust the cookie 'role' for now but verify via DB if critical.
     // Actually, let's fetch user from DB to get reliable role.
@@ -30,7 +29,7 @@ export async function POST(req: Request, context: { params: Promise<{ id: string
         let newStage: string | undefined;
         let newStatus: string | undefined;
         let query = "";
-        let queryParams: any[] = [];
+        let queryParams: unknown[] = [];
 
         // State Machine
         if (action === "SEND_TO_HOSPITAL") {
@@ -87,9 +86,10 @@ export async function POST(req: Request, context: { params: Promise<{ id: string
 
         return NextResponse.json({ success: true, newStage, newStatus });
 
-    } catch (error: any) {
+    } catch (error) {
         console.error("Workflow Error", error);
-        return NextResponse.json({ error: error.message }, { status: 500 });
+        const errorMessage = error instanceof Error ? error.message : "Workflow update failed";
+        return NextResponse.json({ error: errorMessage }, { status: 500 });
     } finally {
         client.release();
     }

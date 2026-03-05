@@ -6,7 +6,7 @@ export async function GET() {
     const client = await dbPool.connect();
     try {
         const cookieStore = await cookies();
-        const userId = cookieStore.get("app_user_id")?.value;
+        const userId = cookieStore.get("session_agent_user_id")?.value;
         if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
         const result = await client.query(`
@@ -47,7 +47,7 @@ export async function POST(req: Request) {
     const client = await dbPool.connect();
     try {
         const cookieStore = await cookies();
-        const userId = cookieStore.get("app_user_id")?.value;
+        const userId = cookieStore.get("session_agent_user_id")?.value;
         if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
         const body = await req.json();
