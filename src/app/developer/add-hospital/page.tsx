@@ -14,6 +14,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Hospital, ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import { PhoneInput } from "@/components/ui/phone-input";
 
 export default function AddHospitalPage() {
     const [loading, setLoading] = useState(false);
@@ -140,11 +141,11 @@ export default function AddHospitalPage() {
 
                                     <div className="grid gap-2">
                                         <Label htmlFor="phoneNumber">Phone Number</Label>
-                                        <Input
+                                        <PhoneInput
                                             id="phoneNumber"
                                             placeholder="+62 812 3456 7890"
                                             value={phoneNumber}
-                                            onChange={(e) => setPhoneNumber(e.target.value)}
+                                            onChange={setPhoneNumber}
                                         />
                                     </div>
 

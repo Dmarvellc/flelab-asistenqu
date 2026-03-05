@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { LiquidButton } from "@/components/animate-ui/components/buttons/liquid";
 import { motion, AnimatePresence } from "motion/react";
+import { PhoneInput } from "@/components/ui/phone-input";
 
 // --- Types ---
 type Step = {
@@ -235,22 +236,13 @@ export default function NewClientPage() {
 
         const fullAddress = `${formData.addressStreet}, ${villName}, ${distName}, ${regName}, ${provName} ${formData.postalCode}`;
 
-        // Format phone number to E.164
-        let formattedPhone = formData.phoneNumber.replace(/\D/g, '');
-        if (formattedPhone.startsWith('0')) {
-            formattedPhone = '62' + formattedPhone.substring(1);
-        }
-        if (!formattedPhone.startsWith('+')) {
-            formattedPhone = '+' + formattedPhone;
-        }
-
         try {
             const res = await fetch("/api/agent/clients/create", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     ...formData,
-                    phoneNumber: formattedPhone,
+                    phoneNumber: formData.phoneNumber,
                     address: fullAddress
                 }),
             });
@@ -567,12 +559,11 @@ export default function NewClientPage() {
                                                 {fieldErrors.email && <p className="text-xs text-red-500 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> Email wajib diisi.</p>}
                                             </div>
                                             <div className="space-y-1.5">
-                                                <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Nomor Telepon</Label>
-                                                <div className="relative">
-                                                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
-                                                    <Input type="tel" value={formData.phoneNumber} onChange={(e) => { setFormData({ ...formData, phoneNumber: e.target.value }); if (fieldErrors.phoneNumber) setFieldErrors({ ...fieldErrors, phoneNumber: false }); }} placeholder="08xxxxxxxxxx" className={cn("h-10 rounded-lg bg-background pl-9", fieldErrors.phoneNumber && "border-red-500")} />
-                                                </div>
-                                                {fieldErrors.phoneNumber && <p className="text-xs text-red-500 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> Nomor telepon wajib diisi.</p>}
+                                            <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Nomor Telepon</Label>
+                                            <div className="relative">
+                                                <PhoneInput value={formData.phoneNumber} onChange={(value) => { setFormData(prev => ({...prev, phoneNumber: value})); if (fieldErrors.phoneNumber) setFieldErrors({ ...fieldErrors, phoneNumber: false }); }} className={cn("h-10 rounded-lg", fieldErrors.phoneNumber && "border-red-500")} />
+                                            </div>
+                                            {fieldErrors.phoneNumber && <p className="text-xs text-red-500 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> Nomor telepon wajib diisi.</p>}
                                             </div>
                                             <div className="space-y-1.5">
                                                 <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Tanggal Lahir</Label>

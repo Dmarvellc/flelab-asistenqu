@@ -16,6 +16,7 @@ import {
 import { AlertCircle, CheckCircle2, Loader2, AlertTriangle, ArrowRight, Zap, Globe } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/components/providers/i18n-provider";
+import { PhoneInput } from "@/components/ui/phone-input";
 
 type Region = { code: string; name: string; }
 
@@ -157,12 +158,8 @@ export default function AgentRegisterPage() {
         const villName = villages.find(v => v.code === formData.villageId)?.name || "";
         const fullAddress = `${formData.addressStreet}, ${villName}, ${distName}, ${regName}, ${provName} ${formData.postalCode}`;
 
-        let formattedPhone = formData.phoneNumber.replace(/\D/g, '');
-        if (formattedPhone.startsWith('0')) formattedPhone = '62' + formattedPhone.substring(1);
-        formattedPhone = '+' + formattedPhone;
-
         const finalBody = {
-            email: formData.email, password: formData.password, role: "agent", fullName: formData.fullName, nik: formData.nik, phoneNumber: formattedPhone, address: fullAddress, birthDate: formData.birthDate, gender: formData.gender, agencyId: formData.agencyId, referralCode: formData.referralCode,
+            email: formData.email, password: formData.password, role: "agent", fullName: formData.fullName, nik: formData.nik, phoneNumber: formData.phoneNumber, address: fullAddress, birthDate: formData.birthDate, gender: formData.gender, agencyId: formData.agencyId, referralCode: formData.referralCode,
         };
 
         try {
@@ -278,7 +275,7 @@ export default function AgentRegisterPage() {
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="phoneNumber" className="text-xs font-semibold uppercase tracking-wider text-gray-500">{lang === 'en' ? "Phone Number" : "Nomor HP / WhatsApp"}</Label>
-                                    <Input id="phoneNumber" name="phoneNumber" type="tel" required value={formData.phoneNumber} onChange={(e) => { handleChange(e); if (fieldErrors.phoneNumber) setFieldErrors({ ...fieldErrors, phoneNumber: false }); }} className={cn("h-12 rounded-xl bg-gray-50 border-gray-200 focus:bg-white focus:border-black", fieldErrors.phoneNumber && "border-red-500 focus-visible:ring-red-500")} />
+                                    <PhoneInput id="phoneNumber" name="phoneNumber" required value={formData.phoneNumber} onChange={(value) => { setFormData(prev => ({...prev, phoneNumber: value})); if (fieldErrors.phoneNumber) setFieldErrors({ ...fieldErrors, phoneNumber: false }); }} className={cn("h-12 rounded-xl bg-gray-50 border-gray-200 focus:bg-white focus:border-black", fieldErrors.phoneNumber && "border-red-500 focus-visible:ring-red-500")} />
                                 </div>
                             </div>
 

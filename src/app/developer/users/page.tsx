@@ -40,6 +40,7 @@ import { MoreHorizontal, ArrowUpDown, ChevronLeft, ChevronRight, Search, Trash2,
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { ActionModal } from "@/components/ui/action-modal";
+import { PhoneInput } from "@/components/ui/phone-input";
 
 type User = {
     user_id: string;
@@ -496,7 +497,7 @@ function AddUserDialog({ onUserAdded }: { onUserAdded: () => void }) {
                             
                             <div className="grid grid-cols-4 items-center gap-4">
                                 <Label htmlFor="phone" className="text-right">Phone</Label>
-                                <Input id="phone" value={phoneNumber} onChange={e => setPhoneNumber(e.target.value)} className="col-span-3" />
+                                <PhoneInput id="phone" value={phoneNumber} onChange={setPhoneNumber} className="col-span-3" />
                             </div>
 
                             <div className="grid grid-cols-4 items-center gap-4">

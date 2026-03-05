@@ -72,8 +72,8 @@ export async function POST(request: Request) {
       }
     });
     return NextResponse.json({ user });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Create user failed", error);
-    return NextResponse.json({ error: "Create failed" }, { status: 500 });
+    return NextResponse.json({ error: "Create failed: " + (error?.message || String(error)) }, { status: 500 });
   }
 }
