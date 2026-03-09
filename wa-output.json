@@ -1,0 +1,17 @@
+{
+  "success": true,
+  "data": {
+    "messaging_product": "whatsapp",
+    "contacts": [
+      {
+        "input": "61423777006",
+        "wa_id": "61423777006"
+      }
+    ],
+    "messages": [
+      {
+        "id": "wamid.HBgLNjE0MjM3NzcwMDYVAgARGBI1MTI2OEJCOTdDNjRGMzQzNzkA"
+      }
+    ]
+  }
+}
