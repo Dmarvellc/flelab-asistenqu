@@ -34,3 +34,27 @@ export async function getUserIdFromCookies(): Promise<string | null> {
   }
   return null;
 }
+
+export async function getHospitalUserIdFromCookies(): Promise<string | null> {
+  const cookieStore = await cookies();
+  return cookieStore.get("session_hospital_user_id")?.value ?? null;
+}
+
+export async function getAgentUserIdFromCookies(): Promise<string | null> {
+  const cookieStore = await cookies();
+  return cookieStore.get("session_agent_user_id")?.value ?? null;
+}
+
+export async function getAdminAgencyUserIdFromCookies(): Promise<string | null> {
+  const cookieStore = await cookies();
+  return cookieStore.get("session_admin_agency_user_id")?.value ?? null;
+}
+
+export async function getDeveloperUserIdFromCookies(): Promise<string | null> {
+  const cookieStore = await cookies();
+  return (
+    cookieStore.get("session_developer_user_id")?.value ??
+    cookieStore.get("session_super_admin_user_id")?.value ??
+    null
+  );
+}

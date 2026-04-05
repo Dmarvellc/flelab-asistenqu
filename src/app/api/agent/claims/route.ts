@@ -70,7 +70,7 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { client_id, hospital_id, disease_id, claim_date, total_amount, notes, claim_meta } = body;
 
-    // Get person_id from client_id
+    // Get person_id from client_id and verify client belongs to this agent
     const clientRes = await client.query(
       "SELECT person_id, agent_id FROM public.client WHERE client_id = $1",
       [client_id]
@@ -78,8 +78,20 @@ export async function POST(req: Request) {
     if (clientRes.rows.length === 0) {
       return NextResponse.json({ error: "Client not found" }, { status: 404 });
     }
+    if (clientRes.rows[0].agent_id !== userId) {
+      return NextResponse.json({ error: "Client does not belong to this agent" }, { status: 403 });
+    }
     const person_id = clientRes.rows[0].person_id;
     const assigned_agent_id = clientRes.rows[0].agent_id ?? null;
+
+    // Verify hospital exists
+    const hospitalCheckRes = await client.query(
+      "SELECT hospital_id FROM public.hospital WHERE hospital_id = $1",
+      [hospital_id]
+    );
+    if (hospitalCheckRes.rows.length === 0) {
+      return NextResponse.json({ error: "Hospital not found" }, { status: 404 });
+    }
 
     // Get contract_id for this client (assuming active contract)
     const contractRes = await client.query("SELECT contract_id FROM public.contract WHERE client_id = $1 AND status = 'ACTIVE' LIMIT 1", [client_id]);

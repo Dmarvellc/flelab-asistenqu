@@ -126,6 +126,60 @@
   }
 }
 
+/* Marquee / infinite scroll */
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+.animate-marquee {
+  animation: marquee 40s linear infinite;
+}
+.animate-marquee:hover {
+  animation-play-state: paused;
+}
+
+@keyframes marquee-reverse {
+  from { transform: translateX(-50%); }
+  to   { transform: translateX(0); }
+}
+.animate-marquee-reverse {
+  animation: marquee-reverse 44s linear infinite;
+}
+.animate-marquee-reverse:hover {
+  animation-play-state: paused;
+}
+
+/* AI terminal cursor blink */
+@keyframes cursor-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+.animate-cursor {
+  animation: cursor-blink 1s step-end infinite;
+}
+
+/* Smooth fade-up entrance (hero & general) */
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(28px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.anim-fade-up {
+  animation: fade-up 1s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.anim-delay-1 { animation-delay: 0.12s; }
+.anim-delay-2 { animation-delay: 0.26s; }
+.anim-delay-3 { animation-delay: 0.42s; }
+.anim-delay-4 { animation-delay: 0.60s; }
+
+/* Cookies slide-up */
+@keyframes slide-up-in {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-slide-up {
+  animation: slide-up-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
 /* Custom animations and styles for agent portal */
 @keyframes shimmer {
   0% {

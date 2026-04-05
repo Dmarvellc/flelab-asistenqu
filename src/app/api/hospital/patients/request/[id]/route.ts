@@ -1,7 +1,7 @@
-
 import { NextResponse } from "next/server";
 import { dbPool } from "@/lib/db";
 import { cookies } from "next/headers";
+import { getHospitalIdByUserId } from "@/services/claims";
 
 export async function DELETE(req: Request, props: { params: Promise<{ id: string }> }) {
     const params = await props.params;
@@ -15,10 +15,15 @@ export async function DELETE(req: Request, props: { params: Promise<{ id: string
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        // Verify ownership: The user must be the hospital_id on the request
+        const hospitalId = await getHospitalIdByUserId(userId);
+        if (!hospitalId) {
+            return NextResponse.json({ error: "Hospital not found for this account" }, { status: 403 });
+        }
+
+        // Verify ownership using resolved hospital_id
         const check = await client.query(
             `SELECT request_id FROM public.patient_data_request WHERE request_id = $1 AND hospital_id = $2`,
-            [params.id, userId]
+            [params.id, hospitalId]
         );
 
         if (check.rowCount === 0) {

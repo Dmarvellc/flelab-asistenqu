@@ -101,7 +101,16 @@ export async function POST(request: Request) {
     return NextResponse.json({ user });
   } catch (error) {
     console.error("Register failed", error);
+    const dbError = error as { code?: string; constraint?: string; message?: string } | undefined;
+    if (dbError?.code === "23514" && dbError?.constraint === "person_phone_number_check") {
+      return NextResponse.json(
+        { error: "Phone number is invalid. Use format like +628123456789." },
+        { status: 400 }
+      );
+    }
+    if (error instanceof Error && error.message.toLowerCase().includes("phone number")) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
     return NextResponse.json({ error: "Register failed" }, { status: 500 });
   }
 }
-

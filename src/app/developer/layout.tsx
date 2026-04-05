@@ -1,116 +1,184 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState, useCallback } from "react";
-import { DashboardLayout, DashboardSidebar, SidebarHeader, SidebarContent, SidebarFooter, NavItem, DashboardHeader } from "@/components/dashboard/dashboard-layout"
-import { LayoutDashboard, LogOut, Loader2, Users, UserCheck, Hospital, Briefcase } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import Link from "next/link"
+import { useEffect, useCallback } from "react";
+import {
+  DashboardLayout,
+  DashboardSidebar,
+  SidebarHeader,
+  SidebarContent,
+  SidebarFooter,
+  NavItem,
+} from "@/components/dashboard/dashboard-layout";
+import {
+  LayoutDashboard,
+  LogOut,
+  Users,
+  UserCheck,
+  Hospital,
+  Briefcase,
+  Terminal,
+  BarChart2,
+  Server,
+  Building2,
+} from "lucide-react";
+import Link from "next/link";
+import Image from "next/image";
+import { DevTerminalDrawer } from "@/components/developer/terminal-drawer";
 
-export default function DeveloperLayout({ children }: { children: React.ReactNode }) {
+const LOGO_URL =
+  "https://jzupwygwzatugbrmqjau.supabase.co/storage/v1/object/sign/image/m_logotext.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV82NWE4NDk3Zi1iNTdiLTQ1ZDMtOWI3ZC0yNDAxNzU4Njg1NTAiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJpbWFnZS9tX2xvZ290ZXh0LnBuZyIsImlhdCI6MTc3MTkwMjgxNywiZXhwIjozMzI3NjM2NjgxN30.BDtpL6pQ6FhAGQF3V05PMC3gHkJ44R2O4vm3yfY2iyQ";
+
+export default function DeveloperLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const pathname = usePathname();
   const router = useRouter();
-  const [isAuthorized, setIsAuthorized] = useState(false);
-  const [isChecking, setIsChecking] = useState(true);
 
-  // Define public pages
   const isPublicPage = pathname === "/developer/login";
 
+  useEffect(() => {
+    if (isPublicPage) return;
+
+    fetch("/api/developer/stats", { cache: "no-store" })
+      .then((res) => {
+        if (res.status === 401 || res.status === 403) {
+          router.replace("/developer/login");
+        }
+      })
+      .catch(() => { });
+  }, [pathname, isPublicPage, router]);
+
   const handleLogout = useCallback(async () => {
-    try {
-      await fetch("/api/auth/logout?from=developer", { method: "POST" });
-    } catch (e) {
-      console.error("Logout failed", e);
-    }
-    localStorage.removeItem("user");
-    setIsAuthorized(false);
-    router.push("/developer/login");
+    await fetch("/api/auth/logout?from=developer", { method: "POST" }).catch(
+      () => { }
+    );
+    router.replace("/developer/login");
   }, [router]);
 
-  useEffect(() => {
-    // 1. If public page, always allow access immediately
-    if (isPublicPage) {
-      setIsAuthorized(true);
-      setIsChecking(false);
-      return;
-    }
-
-    // 2. If protected page, check local storage
-    const user = localStorage.getItem("user");
-    if (!user) {
-      setIsAuthorized(false);
-      setIsChecking(false);
-      // Force logout to clear cookies and redirect
-      handleLogout();
-    } else {
-      setIsAuthorized(true);
-      setIsChecking(false);
-    }
-  }, [pathname, isPublicPage, handleLogout]);
-
-  // Only show loader if we are checking auth on a PROTECTED page.
-  if (isChecking && !isPublicPage) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-black text-white">
-        <Loader2 className="h-8 w-8 animate-spin" />
-      </div>
-    )
-  }
-
-  if (!isChecking && !isAuthorized && !isPublicPage) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-black text-white">
-        <Loader2 className="h-8 w-8 animate-spin" />
-      </div>
-    )
-  }
-
-  // If public page, just render children (auth not required)
-  if (isPublicPage) {
-    return <>{children}</>;
-  }
+  if (isPublicPage) return <>{children}</>;
 
   const sidebar = (
     <DashboardSidebar>
       <SidebarHeader>
-        <Link href="/developer" className="flex items-center gap-2 font-bold text-lg tracking-wide text-white">
-          <span>Developer Console</span>
+        <Link href="/developer">
+          <Image
+            src={LOGO_URL}
+            alt="AsistenQu Developer"
+            width={160}
+            height={32}
+            className="h-8 w-auto object-contain"
+          />
         </Link>
       </SidebarHeader>
+
       <SidebarContent>
-        {/* Pass active prop explicitly */}
-        <NavItem href="/developer" icon={LayoutDashboard} active={pathname === "/developer"}>
+        {/* ── Overview ── */}
+        <div className="px-2 pb-1 pt-1">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 px-2">Overview</p>
+        </div>
+        <NavItem
+          href="/developer"
+          icon={LayoutDashboard}
+          active={pathname === "/developer"}
+        >
           Dashboard
         </NavItem>
-        <NavItem href="/developer/users" icon={Users} active={pathname === "/developer/users"}>
-          User List
+        <NavItem
+          href="/developer/analytics"
+          icon={BarChart2}
+          active={pathname === "/developer/analytics"}
+        >
+          Analytics
         </NavItem>
-        <NavItem href="/developer/add-hospital" icon={Hospital} active={pathname === "/developer/add-hospital"}>
+        <NavItem
+          href="/developer/system"
+          icon={Server}
+          active={pathname === "/developer/system"}
+        >
+          System Health
+        </NavItem>
+
+        {/* ── Management ── */}
+        <div className="px-2 pb-1 pt-4">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 px-2">Management</p>
+        </div>
+        <NavItem
+          href="/developer/users"
+          icon={Users}
+          active={pathname === "/developer/users"}
+        >
+          Users
+        </NavItem>
+        <NavItem
+          href="/developer/pending"
+          icon={UserCheck}
+          active={pathname === "/developer/pending"}
+        >
+          Pending
+        </NavItem>
+        <NavItem
+          href="/developer/agencies"
+          icon={Briefcase}
+          active={pathname === "/developer/agencies"}
+        >
+          Agencies
+        </NavItem>
+        <NavItem
+          href="/developer/hospitals"
+          icon={Building2}
+          active={pathname === "/developer/hospitals"}
+        >
+          Hospitals
+        </NavItem>
+
+        {/* ── Setup ── */}
+        <div className="px-2 pb-1 pt-4">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 px-2">Setup</p>
+        </div>
+        <NavItem
+          href="/developer/add-hospital"
+          icon={Hospital}
+          active={pathname === "/developer/add-hospital"}
+        >
           Add Hospital
         </NavItem>
-        <NavItem href="/developer/add-agency" icon={Briefcase} active={pathname === "/developer/add-agency"}>
+        <NavItem
+          href="/developer/add-agency"
+          icon={Briefcase}
+          active={pathname === "/developer/add-agency"}
+        >
           Add Agency
         </NavItem>
-        <NavItem href="/developer/pending" icon={UserCheck} active={pathname === "/developer/pending"}>
-          Pending Approvals
+        <NavItem
+          href="/developer/terminal"
+          icon={Terminal}
+          active={pathname === "/developer/terminal"}
+        >
+          Terminal
         </NavItem>
       </SidebarContent>
+
       <SidebarFooter>
-        <Button
-          variant="ghost"
-          className="w-full justify-start gap-2 text-zinc-400 hover:text-white hover:bg-zinc-900"
+        <button
+          className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-[15px] font-medium text-red-600 hover:bg-red-50 hover:text-red-700 transition-all duration-300 ease-out group"
           onClick={handleLogout}
         >
-          <LogOut className="h-4 w-4" />
-          Sign Out
-        </Button>
+          <LogOut className="h-5 w-5 shrink-0 text-red-500 group-hover:text-red-600 group-hover:-translate-x-0.5 transition-transform" />
+          <span>Sign Out</span>
+        </button>
       </SidebarFooter>
     </DashboardSidebar>
-  )
+  );
 
   return (
-    <DashboardLayout sidebar={sidebar} header={<DashboardHeader mobileSidebar={sidebar} />}>
-      {children}
-    </DashboardLayout>
-  )
+    <>
+      <DashboardLayout sidebar={sidebar}>
+        <div className="pb-14">{children}</div>
+      </DashboardLayout>
+      <DevTerminalDrawer />
+    </>
+  );
 }

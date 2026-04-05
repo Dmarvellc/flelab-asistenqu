@@ -16,6 +16,22 @@ import { Loader2, Briefcase, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { PhoneInput } from "@/components/ui/phone-input";
 
+function normalizePhoneInput(phone: string): string | undefined {
+    const trimmed = phone.trim();
+    if (!trimmed) return undefined;
+
+    let normalized = trimmed.replace(/[^\d+]/g, "");
+    if (normalized.startsWith("00")) normalized = `+${normalized.slice(2)}`;
+    if (normalized.startsWith("+")) {
+        normalized = `+${normalized.slice(1).replace(/\+/g, "")}`;
+    } else {
+        normalized = normalized.replace(/\+/g, "");
+        if (normalized.startsWith("0")) normalized = `+62${normalized.slice(1)}`;
+        else if (normalized.startsWith("62")) normalized = `+${normalized}`;
+    }
+    return normalized;
+}
+
 export default function AddAgencyPage() {
     const [loading, setLoading] = useState(false);
     const { toast } = useToast();
@@ -31,12 +47,13 @@ export default function AddAgencyPage() {
         setLoading(true);
 
         try {
+            const normalizedPhone = normalizePhoneInput(phoneNumber);
             const body = {
                 email,
                 password,
                 role: "admin_agency",
                 fullName,
-                phoneNumber,
+                phoneNumber: normalizedPhone,
                 address,
             };
 

@@ -1,51 +1,49 @@
 "use client"
 
 import Link from "next/link"
-import { useLanguage } from "@/lib/language-context"
 
 export function Footer() {
-    const { t } = useLanguage();
+  const navLinks = [
+    { label: "Fitur", href: "#features" },
+    { label: "Cara Kerja", href: "#how" },
+    { label: "Portal Agen", href: "/agent/login" },
+    { label: "Portal Agensi", href: "/admin-agency/login" },
+    { label: "Portal Rumah Sakit", href: "/hospital/login" },
+    { label: "Status Server", href: "/status" },
+  ]
 
-    return (
-        <footer className="bg-black text-white/80 py-16 px-6 border-t border-white/10">
-            <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-8">
-                <div>
-                    <h3 className="text-xl font-bold text-white mb-4">AsistenQu</h3>
-                    <p className="text-sm max-w-sm">
-                        {t("solution")}
-                    </p>
-                </div>
+  return (
+    <footer className="bg-[#0a0a0a] text-white/40">
+      <div className="max-w-7xl mx-auto px-6 py-8">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 border-b border-white/8 pb-8 mb-6">
+          {/* Brand */}
+          <Link href="/" className="text-xl font-extrabold tracking-tighter text-white hover:opacity-70 transition-opacity shrink-0">
+            AsistenQu
+          </Link>
 
-                <div>
-                    <h4 className="font-semibold text-white mb-4">{t("product")}</h4>
-                    <ul className="space-y-2 text-sm">
-                        <li><Link href="#" className="hover:text-white transition-colors">{t("features")}</Link></li>
-                        <li><Link href="#" className="hover:text-white transition-colors">{t("pricing")}</Link></li>
-                        <li><Link href="#" className="hover:text-white transition-colors">{t("integrations")}</Link></li>
-                    </ul>
-                </div>
+          {/* Nav links — horizontal */}
+          <nav className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
+            {navLinks.map((link) => (
+              <Link
+                key={link.label}
+                href={link.href}
+                className="hover:text-white transition-colors"
+              >
+                {link.label}
+              </Link>
+            ))}
+          </nav>
+        </div>
 
-                <div>
-                    <h4 className="font-semibold text-white mb-4">{t("resources")}</h4>
-                    <ul className="space-y-2 text-sm">
-                        <li><Link href="#" className="hover:text-white transition-colors">{t("blog")}</Link></li>
-                        <li><Link href="#" className="hover:text-white transition-colors">{t("help")}</Link></li>
-                        <li><Link href="#" className="hover:text-white transition-colors">{t("status")}</Link></li>
-                    </ul>
-                </div>
-
-                <div>
-                    <h4 className="font-semibold text-white mb-4">{t("legal")}</h4>
-                    <ul className="space-y-2 text-sm">
-                        <li><Link href="#" className="hover:text-white transition-colors">{t("privacy")}</Link></li>
-                        <li><Link href="#" className="hover:text-white transition-colors">{t("terms")}</Link></li>
-                    </ul>
-                </div>
-            </div>
-
-            <div className="max-w-7xl mx-auto mt-12 pt-8 border-t border-white/10 text-center text-sm text-white/50">
-                © {new Date().getFullYear()} AsistenQu. {t("copyright")}
-            </div>
-        </footer>
-    )
+        {/* Bottom row */}
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+          <p>© {new Date().getFullYear()} AsistenQu. Seluruh hak dilindungi.</p>
+          <Link href="/status" className="flex items-center gap-1.5 hover:text-white transition-colors">
+            <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+            <span>System Status</span>
+          </Link>
+        </div>
+      </div>
+    </footer>
+  )
 }

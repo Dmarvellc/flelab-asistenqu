@@ -10,6 +10,8 @@ export async function GET(request: Request) {
     const search = searchParams.get("search") || "";
     const sortBy = searchParams.get("sortBy") || "created_at";
     const sortOrder = searchParams.get("sortOrder") === "asc" ? "ASC" : "DESC";
+    const roleFilter = searchParams.get("role") || "";
+    const statusFilter = searchParams.get("status") || "";
 
     const offset = (page - 1) * limit;
 
@@ -17,13 +19,23 @@ export async function GET(request: Request) {
         const client = await dbPool.connect();
 
         // Build query
-        let whereClause = "";
+        const conditions: string[] = [];
         const queryParams: any[] = [];
 
         if (search) {
-            whereClause = "WHERE email ILIKE $1 OR role ILIKE $1";
             queryParams.push(`%${search}%`);
+            conditions.push(`(email ILIKE $${queryParams.length} OR role ILIKE $${queryParams.length})`);
         }
+        if (roleFilter) {
+            queryParams.push(roleFilter);
+            conditions.push(`role = $${queryParams.length}`);
+        }
+        if (statusFilter) {
+            queryParams.push(statusFilter);
+            conditions.push(`status = $${queryParams.length}`);
+        }
+
+        const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
 
         // Count total
         const countQuery = `SELECT COUNT(*) FROM app_user ${whereClause}`;
@@ -31,7 +43,6 @@ export async function GET(request: Request) {
         const totalUsers = parseInt(countRes.rows[0].count);
 
         // Fetch users with pagination
-        // Note: We need to handle the $1 parameter index correctly if search exists
         const userQuery = `
       SELECT user_id, email, role, status, created_at 
       FROM app_user 
