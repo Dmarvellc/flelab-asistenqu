@@ -217,7 +217,7 @@ export default function AnalyticsPage() {
                     {roleDonut.map((e, i) => <Cell key={i} fill={e.fill} />)}
                   </Pie>
                   <Tooltip
-                    formatter={(v: unknown) => [v, "Users"]}
+                    formatter={(value: number | string | undefined) => [value ?? 0, "Users"] as const}
                     contentStyle={{ borderRadius: 10, border: "none", boxShadow: "0 4px 12px rgba(0,0,0,0.08)", fontSize: 12 }}
                   />
                 </PieChart>
@@ -249,7 +249,7 @@ export default function AnalyticsPage() {
                     {statusDonut.map((e, i) => <Cell key={i} fill={e.fill} />)}
                   </Pie>
                   <Tooltip
-                    formatter={(v: unknown) => [v, "Users"]}
+                    formatter={(value: number | string | undefined) => [value ?? 0, "Users"] as const}
                     contentStyle={{ borderRadius: 10, border: "none", boxShadow: "0 4px 12px rgba(0,0,0,0.08)", fontSize: 12 }}
                   />
                 </PieChart>

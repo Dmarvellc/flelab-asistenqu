@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { registerUser } from "@/lib/auth-queries";
 import { roles } from "@/lib/rbac";
-import { supabaseAdmin } from "@/lib/supabase-admin";
+import { getSupabaseAdmin, hasSupabaseAdminConfig } from "@/lib/supabase-admin";
 
 const allowedRegisterRoles = new Set([
   "hospital_admin",
@@ -13,6 +13,7 @@ async function saveBase64Image(base64Data: string, prefix: string): Promise<stri
   try {
     const matches = base64Data.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
     if (matches && matches.length === 3) {
+      const supabaseAdmin = getSupabaseAdmin();
       const type = matches[1];
       const buffer = Buffer.from(matches[2], 'base64');
       const ext = type.split('/')[1] === 'jpeg' ? 'jpg' : type.split('/')[1];
@@ -73,6 +74,13 @@ export async function POST(request: Request) {
   }
 
   try {
+    if ((body.ktp_image || body.selfie_image) && !hasSupabaseAdminConfig()) {
+      return NextResponse.json(
+        { error: "Image upload is not configured on this deployment." },
+        { status: 500 }
+      );
+    }
+
     let ktpImagePath = undefined;
     if (body.ktp_image) {
       ktpImagePath = await saveBase64Image(body.ktp_image, "ktp") || undefined;
