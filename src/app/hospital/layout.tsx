@@ -62,8 +62,16 @@ export default function HospitalLayout({ children }: { children: React.ReactNode
 
   return (
     <DashboardLayout sidebar={sidebar} header={
-      <DashboardHeader mobileSidebar={sidebar}>
-        <Notifications role="hospital" />
+      <DashboardHeader mobileSidebar={sidebar} actions={<Notifications role="hospital" />}>
+        <Link href="/hospital">
+          <Image
+            src={LOGO_URL}
+            alt="AsistenQu Hospital"
+            width={120}
+            height={24}
+            className="h-5 w-auto object-contain"
+          />
+        </Link>
       </DashboardHeader>
     }>
       {children}

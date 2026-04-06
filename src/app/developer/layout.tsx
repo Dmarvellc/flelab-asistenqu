@@ -181,19 +181,17 @@ export default function DeveloperLayout({
       <DashboardLayout
         sidebar={sidebar}
         header={
-          <div className="sm:hidden">
-            <DashboardHeader mobileSidebar={sidebar}>
-              <Link href="/developer">
-                <Image
-                  src={LOGO_URL}
-                  alt="AsistenQu Developer"
-                  width={120}
-                  height={24}
-                  className="h-6 w-auto object-contain"
-                />
-              </Link>
-            </DashboardHeader>
-          </div>
+          <DashboardHeader mobileSidebar={sidebar}>
+            <Link href="/developer">
+              <Image
+                src={LOGO_URL}
+                alt="AsistenQu Developer"
+                width={120}
+                height={24}
+                className="h-5 w-auto object-contain"
+              />
+            </Link>
+          </DashboardHeader>
         }
       >
         <div className="pb-10">{children}</div>

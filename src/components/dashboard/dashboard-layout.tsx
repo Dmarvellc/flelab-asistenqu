@@ -104,28 +104,36 @@ export function SidebarFooter({ children, className }: SidebarFooterProps) {
 interface DashboardHeaderProps {
   children?: React.ReactNode
   mobileSidebar?: React.ReactNode
+  /** Extra actions (notifications, etc.) rendered on the right side */
+  actions?: React.ReactNode
 }
 
-export function DashboardHeader({ children, mobileSidebar }: DashboardHeaderProps) {
+export function DashboardHeader({ children, mobileSidebar, actions }: DashboardHeaderProps) {
   return (
-    <header className="sticky top-0 z-30 flex h-16 sm:h-[88px] items-center gap-3 sm:gap-4 border-b border-gray-200 bg-white/80 backdrop-blur-md px-4 sm:px-6 lg:px-8 shadow-sm">
+    <header className="sm:hidden sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-gray-200/60 bg-white/98 backdrop-blur-sm px-5 shadow-[0_2px_12px_rgba(0,0,0,0.04)]">
+      {/* Left — hamburger */}
       <Sheet>
         <SheetTrigger asChild>
-          <Button
-            size="icon"
-            variant="ghost"
-            className="sm:hidden text-gray-500 hover:text-gray-900 hover:bg-gray-100"
+          <button
+            className="flex items-center justify-center h-9 w-9 rounded-lg text-gray-500 hover:text-gray-900 hover:bg-gray-100 active:scale-95 transition-all shrink-0"
           >
-            <Menu className="h-6 w-6" />
+            <Menu className="h-5 w-5" strokeWidth={2} />
             <span className="sr-only">Toggle Menu</span>
-          </Button>
+          </button>
         </SheetTrigger>
-        <SheetContent side="left" className="p-0 w-[280px] bg-white border-r border-gray-200">
+        <SheetContent side="left" className="p-0 w-[280px] bg-white border-r border-gray-100 shadow-2xl">
           {mobileSidebar}
         </SheetContent>
       </Sheet>
-      <div className="flex flex-1 items-center justify-end gap-4">
+
+      {/* Center — logo / branding */}
+      <div className="flex-1 flex items-center justify-center min-w-0">
         {children}
+      </div>
+
+      {/* Right — actions or spacer (matches hamburger width for centering) */}
+      <div className="flex items-center justify-end w-9 shrink-0">
+        {actions}
       </div>
     </header>
   )

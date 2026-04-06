@@ -184,19 +184,17 @@ export function AgentLayoutClient({ children, initialBadges, serverUserName }: {
     return (
         <>
             <DashboardLayout sidebar={sidebar} isCollapsed={false} header={
-                <div className="sm:hidden">
-                    <DashboardHeader mobileSidebar={sidebar}>
-                        <Link href="/agent">
-                            <Image
-                                src="https://jzupwygwzatugbrmqjau.supabase.co/storage/v1/object/sign/image/m_tagagent.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV82NWE4NDk3Zi1iNTdiLTQ1ZDMtOWI3ZC0yNDAxNzU4Njg1NTAiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJpbWFnZS9tX3RhZ2FnZW50LnBuZyIsImlhdCI6MTc3MTc2Mzk4NSwiZXhwIjozMzI3NjIyNzk4NX0.1mf2ApWgy64TXpQXboJXnSGFumPrOCvwn5u9p8EJmlI"
-                                alt="AsistenQu Agent"
-                                width={140}
-                                height={28}
-                                className="h-6 w-auto object-contain"
-                            />
-                        </Link>
-                    </DashboardHeader>
-                </div>
+                <DashboardHeader mobileSidebar={sidebar}>
+                    <Link href="/agent">
+                        <Image
+                            src="https://jzupwygwzatugbrmqjau.supabase.co/storage/v1/object/sign/image/m_tagagent.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV82NWE4NDk3Zi1iNTdiLTQ1ZDMtOWI3ZC0yNDAxNzU4Njg1NTAiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJpbWFnZS9tX3RhZ2FnZW50LnBuZyIsImlhdCI6MTc3MTc2Mzk4NSwiZXhwIjozMzI3NjIyNzk4NX0.1mf2ApWgy64TXpQXboJXnSGFumPrOCvwn5u9p8EJmlI"
+                            alt="AsistenQu Agent"
+                            width={120}
+                            height={24}
+                            className="h-5 w-auto object-contain"
+                        />
+                    </Link>
+                </DashboardHeader>
             }>
                 {children}
             </DashboardLayout>
