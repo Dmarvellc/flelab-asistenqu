@@ -298,7 +298,7 @@ export default function SystemHealthPage() {
                     <Database className="h-4 w-4 text-gray-300" />
                 </div>
                 <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
+                    <table className="w-full text-sm min-w-[560px]">
                         <thead>
                             <tr className="border-b border-gray-50">
                                 <th className="text-left px-6 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Table</th>

@@ -83,27 +83,28 @@ export default function HospitalsPage() {
         <div className="space-y-6">
 
             {/* ── Header ──────────────────────────────────────────── */}
-            <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-teal-600 rounded-2xl flex items-center justify-center shadow-md">
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+                <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-10 h-10 bg-teal-600 rounded-2xl flex items-center justify-center shadow-md shrink-0">
                         <Building2 className="h-5 w-5 text-white" />
                     </div>
-                    <div>
-                        <h1 className="text-2xl font-black tracking-tight text-gray-900">Hospitals</h1>
-                        <p className="text-sm text-gray-400">{total} hospitals registered on platform</p>
+                    <div className="min-w-0">
+                        <h1 className="text-xl sm:text-2xl font-black tracking-tight text-gray-900">Hospitals</h1>
+                        <p className="text-xs sm:text-sm text-gray-400 truncate">{total} hospitals registered on platform</p>
                     </div>
                 </div>
                 <Link
                     href="/developer/add-hospital"
-                    className="flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded-xl text-sm font-semibold hover:bg-gray-800 transition-all shadow-sm"
+                    className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-gray-900 text-white rounded-xl text-sm font-semibold hover:bg-gray-800 transition-all shadow-sm shrink-0"
                 >
                     <Plus className="h-4 w-4" />
-                    Add Hospital
+                    <span className="hidden sm:inline">Add Hospital</span>
+                    <span className="sm:hidden">Add</span>
                 </Link>
             </div>
 
             {/* ── Summary Cards ────────────────────────────────────── */}
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
                 {[
                     { label: "Total Hospitals", value: total, icon: Building2, color: "text-teal-600" },
                     { label: "Hospital Admins", value: totalAdmins, icon: Users, color: "text-blue-600" },
@@ -123,8 +124,8 @@ export default function HospitalsPage() {
             </div>
 
             {/* ── Search & Controls ────────────────────────────────── */}
-            <div className="flex items-center gap-3">
-                <div className="relative flex-1 max-w-sm">
+            <div className="flex items-center gap-2 sm:gap-3">
+                <div className="relative flex-1 sm:max-w-sm">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                     <input
                         type="text"
@@ -136,17 +137,18 @@ export default function HospitalsPage() {
                 </div>
                 <button
                     onClick={() => { setLoading(true); fetchHospitals(); }}
-                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-100 border border-gray-200 transition-all"
+                    className="flex items-center gap-2 px-3 sm:px-4 py-2.5 rounded-xl text-sm font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-100 border border-gray-200 transition-all shrink-0"
+                    aria-label="Refresh"
                 >
                     <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-                    Refresh
+                    <span className="hidden sm:inline">Refresh</span>
                 </button>
             </div>
 
             {/* ── Data Table ───────────────────────────────────────── */}
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
                 <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
+                    <table className="w-full text-sm min-w-[640px]">
                         <thead>
                             <tr className="border-b border-gray-100 bg-gray-50/50">
                                 <th

@@ -4,6 +4,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useCallback } from "react";
 import {
   DashboardLayout,
+  DashboardHeader,
   DashboardSidebar,
   SidebarHeader,
   SidebarContent,
@@ -43,8 +44,10 @@ export default function DeveloperLayout({
     if (isPublicPage) return;
 
     fetch("/api/developer/stats", { cache: "no-store" })
-      .then((res) => {
+      .then(async (res) => {
         if (res.status === 401 || res.status === 403) {
+          // Stale session (wrong role) → clear it first to avoid redirect loop
+          await fetch("/api/auth/logout?from=developer", { method: "POST" }).catch(() => { });
           router.replace("/developer/login");
         }
       })
@@ -175,8 +178,25 @@ export default function DeveloperLayout({
 
   return (
     <>
-      <DashboardLayout sidebar={sidebar}>
-        <div className="pb-14">{children}</div>
+      <DashboardLayout
+        sidebar={sidebar}
+        header={
+          <div className="sm:hidden">
+            <DashboardHeader mobileSidebar={sidebar}>
+              <Link href="/developer">
+                <Image
+                  src={LOGO_URL}
+                  alt="AsistenQu Developer"
+                  width={120}
+                  height={24}
+                  className="h-6 w-auto object-contain"
+                />
+              </Link>
+            </DashboardHeader>
+          </div>
+        }
+      >
+        <div className="pb-10">{children}</div>
       </DashboardLayout>
       <DevTerminalDrawer />
     </>

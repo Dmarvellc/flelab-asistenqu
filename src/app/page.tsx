@@ -212,16 +212,16 @@ function AISection() {
 
         {/* Stats row */}
         <FadeIn delay={0.1}>
-          <div className="grid grid-cols-3 border-t border-white/8">
+          <div className="grid grid-cols-1 sm:grid-cols-3 border-t border-white/8">
             {stats.map((s, i) => (
               <div
                 key={s.label}
-                className={`py-10 ${i > 0 ? "border-l border-white/8" : ""} ${i === 0 ? "pr-8" : "px-8"}`}
+                className={`py-6 sm:py-10 ${i > 0 ? "border-t sm:border-t-0 sm:border-l border-white/8" : ""} ${i === 0 ? "sm:pr-8" : "sm:px-8"}`}
               >
-                <p className="text-5xl sm:text-6xl font-black text-white tracking-tight leading-none mb-3">
+                <p className="text-4xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight leading-none mb-2 sm:mb-3">
                   {s.value}
                 </p>
-                <p className="text-white/45 text-sm">{s.label}</p>
+                <p className="text-white/45 text-xs sm:text-sm">{s.label}</p>
               </div>
             ))}
           </div>

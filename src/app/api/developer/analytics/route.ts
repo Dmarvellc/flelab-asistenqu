@@ -123,8 +123,58 @@ export async function GET() {
       WHERE created_at >= NOW() - INTERVAL '30 days'
     `)
 
+    // 10. 14-day sparkline series for multiple entities
+    const sparklinesRes = await client.query(`
+      WITH days AS (
+        SELECT gs::date AS d
+        FROM generate_series(
+          (CURRENT_DATE - INTERVAL '13 days')::date,
+          CURRENT_DATE::date,
+          '1 day'::interval
+        ) gs
+      )
+      SELECT
+        d,
+        COALESCE((SELECT COUNT(*)::int FROM public.app_user WHERE DATE(created_at) = d), 0) AS users,
+        COALESCE((SELECT COUNT(*)::int FROM public.agency   WHERE DATE(created_at) = d), 0) AS agencies,
+        COALESCE((SELECT COUNT(*)::int FROM public.hospital WHERE DATE(created_at) = d), 0) AS hospitals,
+        COALESCE((SELECT COUNT(*)::int FROM public.agent    WHERE DATE(created_at) = d), 0) AS agents
+      FROM days
+      ORDER BY d ASC
+    `).catch(() => ({ rows: [] as Array<{ d: string; users: number; agencies: number; hospitals: number; agents: number }> }))
+
+    // 11. WoW: current 7d vs previous 7d (users)
+    const wowRes = await client.query(`
+      SELECT
+        SUM(CASE WHEN created_at >= NOW() - INTERVAL '7 days' THEN 1 ELSE 0 END)::int AS curr,
+        SUM(CASE WHEN created_at <  NOW() - INTERVAL '7 days'
+                 AND created_at >= NOW() - INTERVAL '14 days' THEN 1 ELSE 0 END)::int AS prev
+      FROM public.app_user
+    `)
+
+    // 12. Peak hour (last 30d)
+    const peakHourRes = await client.query(`
+      SELECT EXTRACT(HOUR FROM created_at)::int AS hour, COUNT(*)::int AS count
+      FROM public.app_user
+      WHERE created_at >= NOW() - INTERVAL '30 days'
+      GROUP BY hour
+      ORDER BY count DESC
+      LIMIT 1
+    `).catch(() => ({ rows: [] as Array<{ hour: number; count: number }> }))
+
     const totals = totalsRes.rows[0] || {}
     const approval = approvalRateRes.rows[0] || {}
+    const wow = wowRes.rows[0] || { curr: 0, prev: 0 }
+    const peakHour = peakHourRes.rows[0] || null
+
+    // Build sparkline arrays
+    const sparkRows = sparklinesRes.rows as Array<{ d: string; users: number; agencies: number; hospitals: number; agents: number }>
+    const sparklines = {
+      users:     sparkRows.map(r => r.users),
+      agents:    sparkRows.map(r => r.agents),
+      agencies:  sparkRows.map(r => r.agencies),
+      hospitals: sparkRows.map(r => r.hospitals),
+    }
 
     return NextResponse.json({
       dailyRegistrations: dailyRes.rows,
@@ -153,6 +203,12 @@ export async function GET() {
         rejected: approval.rejected ?? 0,
         pending:  approval.pending  ?? 0,
       },
+      sparklines,
+      wow: {
+        current:  wow.curr ?? 0,
+        previous: wow.prev ?? 0,
+      },
+      peakHour,
     })
   } finally {
     client.release()

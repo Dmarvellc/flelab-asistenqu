@@ -314,7 +314,7 @@ export default function StatusPage() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-            className="grid grid-cols-3 gap-3"
+            className="grid grid-cols-1 sm:grid-cols-3 gap-3"
           >
             {[
               { key: "operational" as const, label: "Operational", Icon: CheckCircle2 },

@@ -1,15 +1,16 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import Link from "next/link";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
-  PieChart, Pie, Cell,
+  PieChart, Pie, Cell, LineChart, Line,
 } from "recharts";
 import {
   Users, Activity, Clock, Building2, Briefcase, FileText,
-  ArrowRight, RefreshCw, TrendingUp, UserCheck,
+  ArrowRight, RefreshCw, TrendingUp, TrendingDown, UserCheck,
   CheckCircle2, XCircle, AlertTriangle, ChevronRight, BarChart2,
+  Sparkles, Zap, Command,
 } from "lucide-react";
 
 /* ─── Types ─────────────────────────────────────────────────────── */
@@ -31,6 +32,11 @@ interface Analytics {
   }
   recentUsers: RecentUser[]
   approvalRate30d: ApprovalRate
+  sparklines?: {
+    users: number[]; agents: number[]; agencies: number[]; hospitals: number[]
+  }
+  wow?: { current: number; previous: number }
+  peakHour?: { hour: number; count: number } | null
 }
 
 /* ─── Helpers ───────────────────────────────────────────────────── */
@@ -65,10 +71,6 @@ function fmtRole(r: string) {
   return r.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase())
 }
 
-function fmtDate(iso: string) {
-  return new Date(iso).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" })
-}
-
 function fmtRelative(iso: string) {
   const diff = Date.now() - new Date(iso).getTime()
   const m = Math.floor(diff / 60000)
@@ -79,35 +81,77 @@ function fmtRelative(iso: string) {
   return `${Math.floor(h / 24)}h lalu`
 }
 
-/* ─── Stat Card ─────────────────────────────────────────────────── */
+function pctDelta(curr: number, prev: number) {
+  if (prev === 0) return curr > 0 ? 100 : 0
+  return Math.round(((curr - prev) / prev) * 100)
+}
+
+/* ─── Sparkline ─────────────────────────────────────────────────── */
+function Sparkline({ data, color = "#1a56db" }: { data: number[]; color?: string }) {
+  const points = useMemo(() => data.map((v, i) => ({ i, v })), [data])
+  if (!data.length) return <div className="h-8" />
+  return (
+    <ResponsiveContainer width="100%" height={32}>
+      <LineChart data={points} margin={{ top: 2, right: 0, bottom: 2, left: 0 }}>
+        <Line
+          type="monotone"
+          dataKey="v"
+          stroke={color}
+          strokeWidth={1.5}
+          dot={false}
+          isAnimationActive={false}
+        />
+      </LineChart>
+    </ResponsiveContainer>
+  )
+}
+
+/* ─── Stat Card w/ Sparkline + Delta ───────────────────────────── */
 function StatCard({
-  label, value, icon: Icon, color = "text-gray-900",
-  sub, loading, href,
+  label, value, icon: Icon, color = "text-gray-900", accent = "#111827",
+  spark, delta, loading, href,
 }: {
   label: string; value: number | string | undefined
-  icon: React.ElementType; color?: string
-  sub?: string; loading?: boolean; href?: string
+  icon: React.ElementType; color?: string; accent?: string
+  spark?: number[]; delta?: number; loading?: boolean; href?: string
 }) {
+  const showDelta = typeof delta === "number" && !loading
+  const deltaPositive = (delta ?? 0) >= 0
+
   const content = (
-    <div className={`bg-white rounded-2xl border border-gray-100 shadow-sm px-6 py-5 flex flex-col gap-3 ${href ? "hover:border-gray-200 hover:shadow-md transition-all" : ""}`}>
+    <div className={`group relative bg-white rounded-2xl border border-gray-100 shadow-sm px-5 py-4 flex flex-col gap-2.5 overflow-hidden ${href ? "hover:border-gray-200 hover:shadow-md transition-all" : ""}`}>
       <div className="flex items-center justify-between">
-        <span className="text-xs font-semibold uppercase tracking-widest text-gray-400">{label}</span>
-        <div className="w-8 h-8 rounded-xl bg-gray-50 flex items-center justify-center">
-          <Icon className={`h-4 w-4 ${color}`} />
+        <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">{label}</span>
+        <div className="w-7 h-7 rounded-lg bg-gray-50 flex items-center justify-center">
+          <Icon className={`h-3.5 w-3.5 ${color}`} />
         </div>
       </div>
       {loading
-        ? <div className="h-9 w-20 bg-gray-100 animate-pulse rounded-lg" />
-        : <p className={`text-4xl font-black tracking-tight leading-none ${color}`}>{value ?? "—"}</p>
+        ? <div className="h-8 w-20 bg-gray-100 animate-pulse rounded-lg" />
+        : (
+          <div className="flex items-baseline gap-2">
+            <p className={`text-3xl font-black tracking-tight leading-none ${color}`}>{value ?? "—"}</p>
+            {showDelta && delta !== 0 && (
+              <span className={`inline-flex items-center gap-0.5 text-[10px] font-bold tabular-nums ${deltaPositive ? "text-emerald-600" : "text-red-500"}`}>
+                {deltaPositive ? <TrendingUp className="h-2.5 w-2.5" /> : <TrendingDown className="h-2.5 w-2.5" />}
+                {deltaPositive ? "+" : ""}{delta}%
+              </span>
+            )}
+          </div>
+        )
       }
-      {sub && <p className="text-xs text-gray-400">{sub}</p>}
+      {spark && spark.length > 0 && !loading && (
+        <div className="-mx-1 opacity-70 group-hover:opacity-100 transition-opacity">
+          <Sparkline data={spark} color={accent} />
+        </div>
+      )}
     </div>
   )
 
   return href ? <Link href={href}>{content}</Link> : content
 }
 
-/* ─── Custom Bar Tooltip ─────────────────────────────────────────── */
+/* ─── Bar Tooltip ───────────────────────────────────────────────── */
 function BarTooltip({ active, payload, label }: { active?: boolean; payload?: { value: number }[]; label?: string }) {
   if (!active || !payload?.length) return null
   return (
@@ -142,6 +186,47 @@ function StageBar({ stage, count, max }: { stage: string; count: number; max: nu
   )
 }
 
+/* ─── Smart Insights (rule-based) ──────────────────────────────── */
+function buildInsights(data: Analytics | null): Array<{ tone: "warn" | "good" | "info"; msg: string }> {
+  if (!data) return []
+  const out: Array<{ tone: "warn" | "good" | "info"; msg: string }> = []
+  const pt = data.platformTotals
+  const wow = data.wow
+
+  if (pt.pendingUsers > 0) {
+    out.push({
+      tone: pt.pendingUsers > 10 ? "warn" : "info",
+      msg: `${pt.pendingUsers} user menunggu approval${pt.pendingUsers > 10 ? " — butuh review segera" : ""}.`,
+    })
+  }
+
+  if (wow) {
+    const d = pctDelta(wow.current, wow.previous)
+    if (d >= 20) out.push({ tone: "good", msg: `Registrasi naik ${d}% minggu ini (${wow.current} vs ${wow.previous}).` })
+    else if (d <= -20) out.push({ tone: "warn", msg: `Registrasi turun ${Math.abs(d)}% minggu ini.` })
+  }
+
+  const ar = data.approvalRate30d
+  const arTotal = ar.approved + ar.rejected + ar.pending
+  if (arTotal > 0) {
+    const pct = Math.round((ar.approved / arTotal) * 100)
+    if (pct >= 90) out.push({ tone: "good", msg: `Approval rate ${pct}% — kualitas pendaftaran tinggi.` })
+    else if (pct < 50) out.push({ tone: "warn", msg: `Approval rate hanya ${pct}% — cek kualitas pendaftaran.` })
+  }
+
+  if (pt.totalAgents > 0 && pt.activeAgents / pt.totalAgents < 0.5) {
+    out.push({ tone: "warn", msg: `Hanya ${pt.activeAgents}/${pt.totalAgents} agent aktif.` })
+  }
+
+  if (data.peakHour) {
+    const h = data.peakHour.hour
+    out.push({ tone: "info", msg: `Peak registrasi pukul ${String(h).padStart(2,"0")}:00 (${data.peakHour.count} user).` })
+  }
+
+  if (out.length === 0) out.push({ tone: "good", msg: "Semua metrik dalam rentang normal." })
+  return out.slice(0, 4)
+}
+
 /* ─── Page ───────────────────────────────────────────────────────── */
 export function DeveloperClientView() {
   const [data, setData]       = useState<Analytics | null>(null)
@@ -162,7 +247,17 @@ export function DeveloperClientView() {
 
   useEffect(() => { fetchAnalytics() }, [fetchAnalytics])
 
+  // Auto-refresh every 60s
+  useEffect(() => {
+    const id = setInterval(fetchAnalytics, 60000)
+    return () => clearInterval(id)
+  }, [fetchAnalytics])
+
   const pt = data?.platformTotals
+  const wowDelta = data?.wow ? pctDelta(data.wow.current, data.wow.previous) : undefined
+
+  /* Velocity: avg users/day last 7d */
+  const velocity7d = data?.wow ? (data.wow.current / 7).toFixed(1) : "0"
 
   /* Donut data */
   const roleDonut = Object.entries(data?.roleStats ?? {}).map(([role, count]) => ({
@@ -177,39 +272,132 @@ export function DeveloperClientView() {
   const arTotal = (ar?.approved ?? 0) + (ar?.rejected ?? 0) + (ar?.pending ?? 0)
   const approvalPct = arTotal > 0 ? Math.round(((ar?.approved ?? 0) / arTotal) * 100) : 0
 
+  const insights = useMemo(() => buildInsights(data), [data])
+
   return (
-    <div className="space-y-8">
+    <div className="space-y-5 sm:space-y-6">
 
       {/* ── Header ──────────────────────────────────────────────── */}
-      <div className="flex items-center justify-between">
-        <div>
-          <div className="flex items-center gap-2.5">
-            <h1 className="text-2xl font-black tracking-tight text-gray-900">Developer Console</h1>
+      <div className="flex items-start justify-between flex-wrap gap-3 sm:gap-4">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <h1 className="text-xl sm:text-2xl font-black tracking-tight text-gray-900">Developer Console</h1>
             <span className="inline-flex items-center gap-1 bg-gray-900 text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
               Production
             </span>
+            <span className="inline-flex items-center gap-1.5 bg-emerald-50 border border-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full">
+              <span className="relative flex h-1.5 w-1.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500" />
+              </span>
+              LIVE
+            </span>
           </div>
           <p className="text-sm text-gray-400 mt-1">
-            {lastUpdate ? `Diperbarui ${fmtRelative(lastUpdate.toISOString())}` : "Memuat data…"}
+            {lastUpdate ? `Diperbarui ${fmtRelative(lastUpdate.toISOString())} · auto-refresh 60s` : "Memuat data…"}
           </p>
         </div>
-        <button
-          onClick={() => { setLoading(true); fetchAnalytics() }}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-all"
-        >
-          <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-          Refresh
-        </button>
+        <div className="flex items-center gap-2">
+          <span className="hidden md:inline-flex items-center gap-1.5 text-[11px] text-gray-400 border border-gray-200 rounded-lg px-2 py-1">
+            <Command className="h-3 w-3" /> K
+          </span>
+          <button
+            onClick={() => { setLoading(true); fetchAnalytics() }}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-all"
+          >
+            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+            Refresh
+          </button>
+        </div>
       </div>
 
-      {/* ── Stat Cards ──────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-        <StatCard label="Total Users"  value={pt?.totalUsers}   icon={Users}      loading={loading} />
-        <StatCard label="Active"       value={pt?.activeUsers}  icon={Activity}   color="text-emerald-600" loading={loading} />
-        <StatCard label="Pending"      value={pt?.pendingUsers} icon={Clock}      color="text-amber-600"   loading={loading} href="/developer/pending" />
-        <StatCard label="Agents"       value={pt?.activeAgents} icon={Users}      color="text-blue-600"    loading={loading} />
-        <StatCard label="Agencies"     value={pt?.agencies}     icon={Briefcase}  color="text-violet-600"  loading={loading} />
-        <StatCard label="Hospitals"    value={pt?.hospitals}    icon={Building2}  color="text-teal-600"    loading={loading} />
+      {/* ── Velocity Hero Strip ─────────────────────────────────── */}
+      <div className="bg-gradient-to-r from-gray-900 via-gray-900 to-blue-950 rounded-2xl px-4 sm:px-6 py-4 sm:py-5 text-white flex items-center justify-between flex-wrap gap-3 sm:gap-4 shadow-sm">
+        <div className="flex items-center gap-3 sm:gap-5 flex-wrap">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center">
+              <Zap className="h-5 w-5 text-amber-300" />
+            </div>
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-white/50">Velocity 7d</p>
+              <p className="text-xl font-black tabular-nums">{velocity7d} <span className="text-xs text-white/60 font-medium">user/hari</span></p>
+            </div>
+          </div>
+          <div className="h-10 w-px bg-white/10" />
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-white/50">This Week</p>
+            <div className="flex items-baseline gap-2">
+              <p className="text-xl font-black tabular-nums">{data?.wow?.current ?? 0}</p>
+              {typeof wowDelta === "number" && (
+                <span className={`inline-flex items-center gap-0.5 text-[10px] font-bold ${wowDelta >= 0 ? "text-emerald-300" : "text-red-300"}`}>
+                  {wowDelta >= 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+                  {wowDelta >= 0 ? "+" : ""}{wowDelta}% WoW
+                </span>
+              )}
+            </div>
+          </div>
+          <div className="h-10 w-px bg-white/10 hidden sm:block" />
+          <div className="hidden sm:block">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-white/50">Approval 30d</p>
+            <p className="text-xl font-black tabular-nums">{approvalPct}%</p>
+          </div>
+          <div className="h-10 w-px bg-white/10 hidden lg:block" />
+          <div className="hidden lg:block">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-white/50">Peak Hour</p>
+            <p className="text-xl font-black tabular-nums">
+              {data?.peakHour ? `${String(data.peakHour.hour).padStart(2,"0")}:00` : "—"}
+            </p>
+          </div>
+        </div>
+        <Link href="/developer/analytics"
+          className="inline-flex items-center gap-2 bg-white/10 hover:bg-white/20 backdrop-blur text-white text-xs font-semibold px-4 py-2 rounded-xl transition-all">
+          Deep Analytics <ArrowRight className="h-3.5 w-3.5" />
+        </Link>
+      </div>
+
+      {/* ── Stat Cards with Sparklines ─────────────────────────── */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+        <StatCard label="Total Users"  value={pt?.totalUsers}   icon={Users}      loading={loading}
+          spark={data?.sparklines?.users} delta={wowDelta} accent="#111827" />
+        <StatCard label="Active"       value={pt?.activeUsers}  icon={Activity}   color="text-emerald-600" accent="#059669" loading={loading} />
+        <StatCard label="Pending"      value={pt?.pendingUsers} icon={Clock}      color="text-amber-600"   accent="#d97706" loading={loading} href="/developer/pending" />
+        <StatCard label="Agents"       value={pt?.activeAgents} icon={Users}      color="text-blue-600"    accent="#1a56db" loading={loading}
+          spark={data?.sparklines?.agents} />
+        <StatCard label="Agencies"     value={pt?.agencies}     icon={Briefcase}  color="text-violet-600"  accent="#7c3aed" loading={loading} href="/developer/agencies"
+          spark={data?.sparklines?.agencies} />
+        <StatCard label="Hospitals"    value={pt?.hospitals}    icon={Building2}  color="text-teal-600"    accent="#0d9488" loading={loading} href="/developer/hospitals"
+          spark={data?.sparklines?.hospitals} />
+      </div>
+
+      {/* ── Smart Insights ──────────────────────────────────────── */}
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+        <div className="flex items-center gap-2 mb-3">
+          <Sparkles className="h-4 w-4 text-amber-500" />
+          <h2 className="text-sm font-bold text-gray-900">Smart Insights</h2>
+          <span className="text-[10px] font-semibold text-gray-400 bg-gray-50 border border-gray-100 rounded px-1.5 py-0.5">AUTO</span>
+        </div>
+        {loading ? (
+          <div className="space-y-2">
+            {[1,2,3].map(i => <div key={i} className="h-8 bg-gray-50 rounded-lg animate-pulse" />)}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+            {insights.map((ins, i) => {
+              const tone = ins.tone === "warn"
+                ? "bg-amber-50 border-amber-100 text-amber-800"
+                : ins.tone === "good"
+                ? "bg-emerald-50 border-emerald-100 text-emerald-800"
+                : "bg-blue-50 border-blue-100 text-blue-800"
+              const Icon = ins.tone === "warn" ? AlertTriangle : ins.tone === "good" ? CheckCircle2 : Activity
+              return (
+                <div key={i} className={`flex items-start gap-2.5 border rounded-xl px-3 py-2 ${tone}`}>
+                  <Icon className="h-4 w-4 shrink-0 mt-0.5 opacity-70" />
+                  <p className="text-xs font-medium leading-relaxed">{ins.msg}</p>
+                </div>
+              )
+            })}
+          </div>
+        )}
       </div>
 
       {/* ── Charts Row ──────────────────────────────────────────── */}
@@ -234,20 +422,8 @@ export function DeveloperClientView() {
             <ResponsiveContainer width="100%" height={200}>
               <BarChart data={data?.dailyRegistrations ?? []} barSize={6}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" vertical={false} />
-                <XAxis
-                  dataKey="date"
-                  tick={{ fontSize: 10, fill: "#9ca3af" }}
-                  axisLine={false}
-                  tickLine={false}
-                  interval={4}
-                />
-                <YAxis
-                  tick={{ fontSize: 10, fill: "#9ca3af" }}
-                  axisLine={false}
-                  tickLine={false}
-                  allowDecimals={false}
-                  width={24}
-                />
+                <XAxis dataKey="date" tick={{ fontSize: 10, fill: "#9ca3af" }} axisLine={false} tickLine={false} interval={4} />
+                <YAxis tick={{ fontSize: 10, fill: "#9ca3af" }} axisLine={false} tickLine={false} allowDecimals={false} width={24} />
                 <Tooltip content={<BarTooltip />} cursor={{ fill: "#f9fafb", radius: 4 }} />
                 <Bar dataKey="count" fill="#1a56db" radius={[3, 3, 0, 0]} />
               </BarChart>
@@ -317,12 +493,11 @@ export function DeveloperClientView() {
               <div className="py-12 text-center text-sm text-gray-400">Belum ada data</div>
             ) : (
               <div>
-                {(data?.recentUsers ?? []).map((u, i) => {
+                {(data?.recentUsers ?? []).map((u) => {
                   const sc = STATUS_CFG[u.status as keyof typeof STATUS_CFG] ?? STATUS_CFG.SUSPENDED
                   return (
                     <div key={u.user_id}
                       className="flex items-center gap-4 px-6 py-3 border-t border-gray-50 first:border-t-0 hover:bg-gray-50/50 transition-colors">
-                      {/* Avatar */}
                       <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center shrink-0 text-xs font-bold text-gray-500">
                         {(u.full_name ?? u.email)[0].toUpperCase()}
                       </div>
@@ -395,7 +570,7 @@ export function DeveloperClientView() {
                     style={{ width: `${approvalPct}%` }}
                   />
                 </div>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
                   {[
                     { label: "Approved", count: ar?.approved, icon: CheckCircle2, color: "text-emerald-600" },
                     { label: "Rejected", count: ar?.rejected, icon: XCircle,     color: "text-red-500"     },

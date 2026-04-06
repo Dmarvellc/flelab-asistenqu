@@ -37,7 +37,7 @@ export function DashboardLayout({
         isCollapsed ? "sm:pl-[80px]" : "sm:pl-[260px]"
       )}>
         {header}
-        <main className="flex-1 p-8 lg:p-12 xl:max-w-7xl xl:mx-auto w-full">
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 xl:p-10 2xl:max-w-[1600px] 2xl:mx-auto w-full">
           {children}
         </main>
       </div>
@@ -66,7 +66,7 @@ interface SidebarHeaderProps {
 export function SidebarHeader({ children, className }: SidebarHeaderProps) {
   return (
     <div className={cn(
-      "flex h-[88px] items-center border-b border-gray-100 px-8",
+      "flex h-16 sm:h-[88px] items-center border-b border-gray-100 px-5 sm:px-8",
       className
     )}>
       {children}
@@ -80,8 +80,8 @@ interface SidebarContentProps {
 
 export function SidebarContent({ children }: SidebarContentProps) {
   return (
-    <div className="flex-1 overflow-y-auto overflow-x-hidden py-6 w-full">
-      <nav className="flex flex-col px-6 gap-2 w-full">
+    <div className="flex-1 overflow-y-auto overflow-x-hidden py-4 sm:py-6 w-full">
+      <nav className="flex flex-col px-4 sm:px-6 gap-1.5 sm:gap-2 w-full">
         {children}
       </nav>
     </div>
@@ -95,7 +95,7 @@ interface SidebarFooterProps {
 
 export function SidebarFooter({ children, className }: SidebarFooterProps) {
   return (
-    <div className={cn("border-t border-gray-100 p-6", className)}>
+    <div className={cn("border-t border-gray-100 p-4 sm:p-6", className)}>
       {children}
     </div>
   )
@@ -108,7 +108,7 @@ interface DashboardHeaderProps {
 
 export function DashboardHeader({ children, mobileSidebar }: DashboardHeaderProps) {
   return (
-    <header className="sticky top-0 z-30 flex h-[88px] items-center gap-4 border-b border-gray-200 bg-white/80 backdrop-blur-md px-8 shadow-sm">
+    <header className="sticky top-0 z-30 flex h-16 sm:h-[88px] items-center gap-3 sm:gap-4 border-b border-gray-200 bg-white/80 backdrop-blur-md px-4 sm:px-6 lg:px-8 shadow-sm">
       <Sheet>
         <SheetTrigger asChild>
           <Button
@@ -148,7 +148,7 @@ export function NavItem({ href, icon: Icon, children, active, isCollapsed, badge
     <Link
       href={href}
       className={cn(
-        "group relative flex items-center gap-4 rounded-xl px-4 py-3.5 text-[15px] font-medium transition-all duration-300 ease-out",
+        "group relative flex items-center gap-3 sm:gap-4 rounded-xl px-3 sm:px-4 py-3 sm:py-3.5 text-sm sm:text-[15px] font-medium transition-all duration-300 ease-out",
         isActive
           ? "bg-gray-900 text-white shadow-md shadow-gray-900/10"
           : "text-gray-500 hover:bg-gray-50 hover:text-gray-900",
@@ -158,7 +158,7 @@ export function NavItem({ href, icon: Icon, children, active, isCollapsed, badge
     >
       {/* Active indicator bar */}
       {isActive && !isCollapsed && (
-        <span className="absolute -left-6 top-1/2 -translate-y-1/2 w-[4px] h-8 bg-gray-900 rounded-r-full" />
+        <span className="absolute -left-4 sm:-left-6 top-1/2 -translate-y-1/2 w-[3px] sm:w-[4px] h-7 sm:h-8 bg-gray-900 rounded-r-full" />
       )}
 
       {/* Icon - Always show */}

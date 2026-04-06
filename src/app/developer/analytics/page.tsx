@@ -100,7 +100,7 @@ function KPI({ label, value, sub, icon: Icon, color = "text-gray-900", loading }
   sub?: string; icon: React.ElementType; color?: string; loading?: boolean
 }) {
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-6">
       <div className="flex items-start justify-between mb-3">
         <span className="text-xs font-semibold uppercase tracking-widest text-gray-400">{label}</span>
         <Icon className={`h-4 w-4 ${color}`} />
@@ -145,10 +145,10 @@ export default function AnalyticsPage() {
   }))
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-6 sm:space-y-8 lg:space-y-10">
 
       {/* ── Header ──────────────────────────────────────────────── */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 bg-violet-100 rounded-xl flex items-center justify-center">
             <BarChart2 className="h-5 w-5 text-violet-700" />
@@ -168,7 +168,7 @@ export default function AnalyticsPage() {
       </div>
 
       {/* ── KPI Row ──────────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
         <KPI label="Total Users"   value={pt?.totalUsers}   icon={Users}     loading={loading} />
         <KPI label="Active Users"  value={pt?.activeUsers}  icon={Users}     color="text-emerald-600" loading={loading} sub={`${pt?.totalUsers ? Math.round((pt.activeUsers / pt.totalUsers) * 100) : 0}% of total`} />
         <KPI label="Agencies"      value={pt?.agencies}     icon={Briefcase} color="text-violet-600" loading={loading} />
@@ -177,7 +177,7 @@ export default function AnalyticsPage() {
       </div>
 
       {/* ── Monthly Growth Trend ─────────────────────────────────── */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-6">
         <SectionHeader title="Pertumbuhan Pengguna" sub="12 bulan terakhir" />
         {loading ? (
           <div className="h-56 bg-gray-50 rounded-xl animate-pulse" />
@@ -204,7 +204,7 @@ export default function AnalyticsPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
         {/* Role Distribution */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-6">
           <SectionHeader title="Distribusi Role (Aktif)" sub="Breakdown pengguna berdasarkan role" />
           {loading ? (
             <div className="h-52 bg-gray-50 rounded-xl animate-pulse" />
@@ -236,7 +236,7 @@ export default function AnalyticsPage() {
         </div>
 
         {/* Status Distribution */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-6">
           <SectionHeader title="Status Pengguna" sub="Semua pengguna per status" />
           {loading ? (
             <div className="h-52 bg-gray-50 rounded-xl animate-pulse" />
@@ -269,7 +269,7 @@ export default function AnalyticsPage() {
       </div>
 
       {/* ── Claims by Stage ──────────────────────────────────────── */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-6">
         <SectionHeader
           title="Pipeline Klaim"
           sub={`${pt?.totalClaims ?? "—"} total klaim — distribusi per stage`}
@@ -314,7 +314,7 @@ export default function AnalyticsPage() {
           ) : (
             <div>
               <div className="flex items-end gap-4 mb-5">
-                <span className={`text-6xl font-black tracking-tight leading-none ${approvalPct >= 80 ? "text-emerald-600" : approvalPct >= 50 ? "text-amber-600" : "text-red-600"}`}>
+                <span className={`text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-none ${approvalPct >= 80 ? "text-emerald-600" : approvalPct >= 50 ? "text-amber-600" : "text-red-600"}`}>
                   {approvalPct}%
                 </span>
                 <p className="text-sm text-gray-400 mb-2">tingkat persetujuan</p>
@@ -325,7 +325,7 @@ export default function AnalyticsPage() {
                   style={{ width: `${approvalPct}%` }}
                 />
               </div>
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-3 gap-2 sm:gap-4">
                 {[
                   { label: "Disetujui", count: ar?.approved, icon: CheckCircle2, color: "text-emerald-600", bg: "bg-emerald-50" },
                   { label: "Ditolak",   count: ar?.rejected, icon: XCircle,      color: "text-red-600",     bg: "bg-red-50"     },
@@ -343,7 +343,7 @@ export default function AnalyticsPage() {
         </div>
 
         {/* Role Growth 30d */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-6">
           <SectionHeader title="Pertumbuhan per Role" sub="30 hari terakhir" />
           {loading ? (
             <div className="space-y-3">
