@@ -77,7 +77,7 @@ export default async function AdminAgencyDashboardPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 pb-6 border-b border-gray-100">
         <div className="flex flex-col gap-2">
-          <h1 className="text-4xl font-bold tracking-tight text-gray-900 mt-2">{agencyName}</h1>
+          <h1 className="text-2xl sm:text-4xl font-bold tracking-tight text-gray-900 mt-2">{agencyName}</h1>
           <p className="mt-1 text-base text-gray-500">Pantau performa agensi, perkembangan agen, dan klaim secara keseluruhan.</p>
         </div>
 

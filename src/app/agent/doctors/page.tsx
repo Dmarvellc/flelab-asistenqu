@@ -242,7 +242,7 @@ export default function DoctorSearchPage() {
                         <Stethoscope className="h-4 w-4" />
                         {total > 0 ? `${total} Dokter Spesialis` : 'Direktori Medis'}
                     </p>
-                    <h1 className="text-4xl font-bold tracking-tight text-gray-900 mt-2">Direktori Dokter</h1>
+                    <h1 className="text-2xl sm:text-4xl font-bold tracking-tight text-gray-900 mt-2">Direktori Dokter</h1>
                     <p className="mt-1 text-base text-gray-500">
                         Cari dokter spesialis dan rumah sakit rujukan terbaik untuk kemudahan nasabah Anda.
                     </p>

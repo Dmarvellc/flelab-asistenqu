@@ -14,9 +14,9 @@ export function HeroSection() {
   return (
     <section className="relative min-h-screen flex items-start bg-[#080808] overflow-hidden">
 
-      {/* Banner — fills the right side, larger */}
+      {/* Banner — fills the right side, hidden on small mobile */}
       <motion.div
-        className="absolute right-0 inset-y-0 w-[72%] pointer-events-none select-none"
+        className="absolute right-0 inset-y-0 w-full sm:w-[72%] pointer-events-none select-none"
         initial={{ opacity: 0, x: 48, scale: 0.97 }}
         animate={{ opacity: 1, x: 0, scale: 1 }}
         transition={{ duration: 1.2, ease, delay: 0.1 }}
@@ -25,21 +25,21 @@ export function HeroSection() {
           src={BANNER_URL}
           alt="AsistenQu"
           fill
-          className="object-contain object-right-center"
+          className="object-contain object-right-center opacity-30 sm:opacity-100"
           priority
         />
       </motion.div>
 
       {/* Left vignette */}
-      <div className="absolute inset-y-0 left-0 w-[52%] bg-gradient-to-r from-[#080808] via-[#080808]/90 to-transparent pointer-events-none" />
+      <div className="absolute inset-y-0 left-0 w-full sm:w-[52%] bg-gradient-to-r from-[#080808] via-[#080808]/90 to-transparent pointer-events-none" />
 
       {/* Text block — explicit top padding for clear navbar gap */}
-      <div className="relative z-10 w-full max-w-6xl mx-auto px-6 pt-52 pb-28">
-        <div className="max-w-[50%]">
+      <div className="relative z-10 w-full max-w-6xl mx-auto px-5 sm:px-6 pt-36 sm:pt-52 pb-16 sm:pb-28">
+        <div className="max-w-full sm:max-w-[50%]">
 
           <motion.h1
             className="font-black text-white leading-[0.92] tracking-[-0.04em] mb-12"
-            style={{ fontSize: "clamp(54px, 7.8vw, 112px)" }}
+            style={{ fontSize: "clamp(36px, 7.8vw, 112px)" }}
             initial={{ opacity: 0, y: 56 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.95, ease }}

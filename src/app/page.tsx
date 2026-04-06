@@ -47,14 +47,14 @@ function StatsSection() {
   ];
 
   return (
-    <section className="bg-white border-b border-gray-100 py-16">
-      <div className="max-w-6xl mx-auto px-6">
+    <section className="bg-white border-b border-gray-100 py-10 sm:py-16">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6">
         <FadeIn>
-          <div className="grid grid-cols-2 lg:grid-cols-4 divide-x divide-y lg:divide-y-0 divide-gray-100 border border-gray-100 rounded-3xl overflow-hidden">
+          <div className="grid grid-cols-2 lg:grid-cols-4 divide-x divide-y lg:divide-y-0 divide-gray-100 border border-gray-100 rounded-2xl sm:rounded-3xl overflow-hidden">
             {stats.map((s) => (
-              <div key={s.label} className="px-10 py-10 text-center">
-                <p className="text-5xl font-black text-gray-900 tracking-tight leading-none mb-2">{s.value}</p>
-                <p className="text-sm text-gray-400 font-medium">{s.label}</p>
+              <div key={s.label} className="px-4 py-6 sm:px-10 sm:py-10 text-center">
+                <p className="text-3xl sm:text-5xl font-black text-gray-900 tracking-tight leading-none mb-1 sm:mb-2">{s.value}</p>
+                <p className="text-xs sm:text-sm text-gray-400 font-medium">{s.label}</p>
               </div>
             ))}
           </div>
@@ -106,12 +106,12 @@ function SolutionsSection() {
   ];
 
   return (
-    <section id="solutions" className="bg-white py-28">
-      <div className="max-w-6xl mx-auto px-6">
-        <div className="mb-16">
+    <section id="solutions" className="bg-white py-16 sm:py-28">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6">
+        <div className="mb-10 sm:mb-16">
           <FadeInHeading
             heading={
-              <h2 className="text-5xl sm:text-6xl font-black text-gray-900 tracking-tight leading-[1.05] mb-4">
+              <h2 className="text-3xl sm:text-5xl lg:text-6xl font-black text-gray-900 tracking-tight leading-[1.05] mb-4">
                 Satu ekosistem,
                 <br />
                 tiga portal.
@@ -125,20 +125,20 @@ function SolutionsSection() {
           />
         </div>
 
-        <StaggerFadeIn className="grid grid-cols-1 lg:grid-cols-3 gap-5 items-stretch" stagger={0.12}>
+        <StaggerFadeIn className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-5 items-stretch" stagger={0.12}>
           {portals.map((p) => (
             <Link
               key={p.label}
               href={p.href}
-              className={`group relative ${p.bg} rounded-3xl p-8 overflow-hidden hover:brightness-110 transition-all duration-300 flex`}
+              className={`group relative ${p.bg} rounded-2xl sm:rounded-3xl p-6 sm:p-8 overflow-hidden hover:brightness-110 transition-all duration-300 flex`}
             >
               <div className="relative z-10 flex flex-col w-full">
                 <div className={`w-12 h-12 ${p.iconBg} rounded-2xl flex items-center justify-center mb-8`}>
                   {p.icon}
                 </div>
                 <p className={`${p.labelColor} text-xs font-bold uppercase tracking-widest mb-2`}>{p.label}</p>
-                <h3 className="text-[22px] font-black text-white leading-snug mb-3">{p.title}</h3>
-                <p className="text-white/50 text-sm leading-relaxed flex-1 mb-8">{p.desc}</p>
+                <h3 className="text-lg sm:text-[22px] font-black text-white leading-snug mb-2 sm:mb-3">{p.title}</h3>
+                <p className="text-white/50 text-sm leading-relaxed flex-1 mb-5 sm:mb-8">{p.desc}</p>
                 <span className={`inline-flex items-center gap-2 ${p.ctaColor} font-semibold text-sm group-hover:gap-3 transition-all duration-200`}>
                   {p.cta} <ArrowRight className="h-4 w-4" />
                 </span>
@@ -167,15 +167,15 @@ function AISection() {
   ];
 
   return (
-    <section className="bg-[#080808] py-32">
-      <div className="max-w-6xl mx-auto px-6">
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-16 mb-24">
+    <section className="bg-[#080808] py-16 sm:py-24 lg:py-32">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6">
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-10 sm:gap-16 mb-16 sm:mb-24">
           {/* Left headline */}
           <div className="lg:col-span-3">
             <FadeIn>
               <h2
                 className="font-black text-white leading-[1.02] tracking-tight mb-8"
-                style={{ fontSize: "clamp(40px, 6vw, 68px)" }}
+                style={{ fontSize: "clamp(28px, 6vw, 68px)" }}
               >
                 Asisten yang mengerti
                 <br />
@@ -267,12 +267,12 @@ function FeaturesSection() {
   ];
 
   return (
-    <section id="features" className="bg-gray-50 py-28">
-      <div className="max-w-6xl mx-auto px-6">
-        <div className="mb-16">
+    <section id="features" className="bg-gray-50 py-16 sm:py-28">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6">
+        <div className="mb-10 sm:mb-16">
           <FadeInHeading
             heading={
-              <h2 className="text-5xl sm:text-6xl font-black text-gray-900 tracking-tight leading-[1.05] mb-4">
+              <h2 className="text-3xl sm:text-5xl lg:text-6xl font-black text-gray-900 tracking-tight leading-[1.05] mb-4">
                 Semua yang Anda butuhkan.
                 <br />
                 <span className="text-blue-500">Tidak lebih, tidak kurang.</span>
@@ -287,11 +287,11 @@ function FeaturesSection() {
         </div>
 
         <StaggerFadeIn
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-px bg-gray-200 rounded-3xl overflow-hidden"
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-px bg-gray-200 rounded-2xl sm:rounded-3xl overflow-hidden"
           stagger={0.08}
         >
           {features.map((feat) => (
-            <div key={feat.title} className="bg-gray-50 hover:bg-white transition-colors duration-200 p-8 group">
+            <div key={feat.title} className="bg-gray-50 hover:bg-white transition-colors duration-200 p-5 sm:p-8 group">
               <div className="w-10 h-10 bg-gray-900 rounded-2xl flex items-center justify-center text-white mb-5 group-hover:bg-blue-600 transition-colors duration-200">
                 {feat.icon}
               </div>
@@ -329,12 +329,12 @@ function HowItWorksSection() {
   ];
 
   return (
-    <section id="how" className="bg-white py-28">
-      <div className="max-w-6xl mx-auto px-6">
-        <div className="mb-16">
+    <section id="how" className="bg-white py-16 sm:py-28">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6">
+        <div className="mb-10 sm:mb-16">
           <FadeInHeading
             heading={
-              <h2 className="text-5xl sm:text-6xl font-black text-gray-900 tracking-tight leading-[1.05] mb-4">
+              <h2 className="text-3xl sm:text-5xl lg:text-6xl font-black text-gray-900 tracking-tight leading-[1.05] mb-4">
                 Mulai dalam
                 <br />
                 3 langkah.
@@ -348,7 +348,7 @@ function HowItWorksSection() {
           />
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 sm:gap-12">
           {steps.map((step) => (
             <AnimatedStep
               key={step.number}
@@ -367,11 +367,11 @@ function HowItWorksSection() {
 /* ─── CTA ────────────────────────────────────────────────────── */
 function CTASection() {
   return (
-    <section id="contact" className="bg-blue-600 py-28">
-      <div className="max-w-6xl mx-auto px-6">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+    <section id="contact" className="bg-blue-600 py-16 sm:py-28">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 sm:gap-16 items-center">
           <FadeIn>
-            <h2 className="text-5xl sm:text-6xl font-black text-white tracking-tight leading-[1.05] mb-5">
+            <h2 className="text-3xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight leading-[1.05] mb-5">
               Siap membawa agensi Anda ke level berikutnya?
             </h2>
             <p className="text-blue-100 text-lg leading-relaxed">
@@ -382,7 +382,7 @@ function CTASection() {
           <FadeIn delay={0.15} className="flex flex-col gap-4">
             <Link
               href="mailto:hello@asistenqu.com"
-              className="group inline-flex items-center justify-between bg-white hover:bg-gray-50 text-blue-700 font-bold px-8 py-5 rounded-2xl transition-colors duration-200 text-lg"
+              className="group inline-flex items-center justify-between bg-white hover:bg-gray-50 text-blue-700 font-bold px-5 sm:px-8 py-4 sm:py-5 rounded-2xl transition-colors duration-200 text-base sm:text-lg"
             >
               <span className="flex items-center gap-3">
                 <PhoneCall className="h-5 w-5" />
@@ -392,7 +392,7 @@ function CTASection() {
             </Link>
             <Link
               href="/admin-agency/login"
-              className="inline-flex items-center justify-between bg-blue-500/40 hover:bg-blue-500/60 border border-white/20 text-white font-bold px-8 py-5 rounded-2xl transition-colors duration-200 text-lg"
+              className="inline-flex items-center justify-between bg-blue-500/40 hover:bg-blue-500/60 border border-white/20 text-white font-bold px-5 sm:px-8 py-4 sm:py-5 rounded-2xl transition-colors duration-200 text-base sm:text-lg"
             >
               Sudah punya akun? Masuk
               <ArrowRight className="h-5 w-5" />

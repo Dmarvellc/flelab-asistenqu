@@ -42,7 +42,7 @@ export default async function AgencyAgentsPage() {
                     <User className="h-3 w-3" />
                     <span>Daftar Agen Aktif</span>
                 </div>
-                <h1 className="text-3xl font-bold tracking-tight text-gray-900">Manajemen Agen</h1>
+                <h1 className="text-xl sm:text-3xl font-bold tracking-tight text-gray-900">Manajemen Agen</h1>
                 <p className="mt-1 text-sm text-gray-500">
                     Pantau informasi kontak, histori, dan status agen yang terdaftar di perusahaan Anda.
                 </p>
@@ -58,7 +58,7 @@ export default async function AgencyAgentsPage() {
                 </div>
 
                 <div className="overflow-x-auto">
-                    <Table>
+                    <Table className="min-w-[700px]">
                         <TableHeader>
                             <TableRow className="bg-gray-50/50 hover:bg-gray-50/50 border-gray-100">
                                 <TableHead className="px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider h-11">Nama Lengkap</TableHead>

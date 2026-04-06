@@ -390,7 +390,7 @@ export default function ClaimDetailPage() {
                                 </span>
                             )}
                         </div>
-                        <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900 mt-2">
+                        <h2 className="text-2xl sm:text-xl sm:text-3xl font-bold tracking-tight text-gray-900 mt-2">
                             {claim.claim_number || `Klaim #${claim.claim_id.slice(0, 8)}`}
                         </h2>
                     </div>

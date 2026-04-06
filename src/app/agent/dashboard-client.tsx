@@ -35,7 +35,7 @@ export function DashboardClient({ metrics, claims, initialAgentName, insuranceNa
             {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 pb-6 border-b border-gray-100">
                 <div className="flex flex-col gap-2">
-                    <h1 className="text-4xl font-bold tracking-tight text-gray-900 mt-2">Ringkasan Dashboard</h1>
+                    <h1 className="text-2xl sm:text-4xl font-bold tracking-tight text-gray-900 mt-2">Ringkasan Dashboard</h1>
                     <p className="mt-1 text-base text-gray-500">Pantau aktivitas, klaim, dan performa Anda secara ringkas hari ini.</p>
                 </div>
 
@@ -54,7 +54,7 @@ export function DashboardClient({ metrics, claims, initialAgentName, insuranceNa
             </div>
 
             {/* Stats */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
                 {stats.map((stat, i) => (
                     <div
                         key={stat.label}

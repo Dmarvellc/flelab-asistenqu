@@ -226,7 +226,7 @@ export default function AdminAgencySettingsPage() {
                         <Building2 className="h-4 w-4" />
                         Pengaturan Agensi
                     </p>
-                    <h1 className="text-4xl font-bold tracking-tight text-gray-900 mt-2">Profil Perusahaan</h1>
+                    <h1 className="text-2xl sm:text-4xl font-bold tracking-tight text-gray-900 mt-2">Profil Perusahaan</h1>
                     <p className="mt-1 text-base text-gray-500">Kelola informasi operasional dan identitas agensi asuransi Anda secara profesional.</p>
                 </div>
             </div>

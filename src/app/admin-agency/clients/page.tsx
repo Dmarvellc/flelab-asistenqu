@@ -44,7 +44,7 @@ export default async function AdminClientsPage() {
                     <Users className="h-3 w-3" />
                     <span>Daftar Klien Agensi</span>
                 </div>
-                <h1 className="text-3xl font-bold tracking-tight text-gray-900">Manajemen Klien</h1>
+                <h1 className="text-xl sm:text-3xl font-bold tracking-tight text-gray-900">Manajemen Klien</h1>
                 <p className="mt-1 text-sm text-gray-500">
                     Kelola dan distribusikan kembali klien dan polis ke agen-agen di bawah agensi Anda.
                 </p>

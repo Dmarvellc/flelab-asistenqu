@@ -106,7 +106,7 @@ export default function ReferralPage({ initialData }: { initialData: ReferralDat
                         <Gift className="h-4 w-4" />
                         Program Referral
                     </p>
-                    <h1 className="text-4xl font-bold tracking-tight text-gray-900 mt-2">Kode Referral</h1>
+                    <h1 className="text-2xl sm:text-4xl font-bold tracking-tight text-gray-900 mt-2">Kode Referral</h1>
                     <p className="mt-1 text-base text-gray-500">
                         Bagikan kode unik Anda dan dapatkan reward setiap kali ada agen atau nasabah baru yang bergabung.
                     </p>
@@ -191,7 +191,7 @@ export default function ReferralPage({ initialData }: { initialData: ReferralDat
             </div>
 
             {/* Performance Stats */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
                 {[
                     { icon: Users, label: "Total Dibagikan", value: totalReferrals },
                     { icon: Check, label: "Berhasil Daftar", value: creditedCount },

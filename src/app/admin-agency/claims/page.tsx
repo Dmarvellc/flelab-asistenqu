@@ -42,7 +42,7 @@ export default async function AgencyClaimsPage() {
                     <FileText className="h-3 w-3" />
                     <span>Manajemen Klaim</span>
                 </div>
-                <h1 className="text-3xl font-bold tracking-tight text-gray-900">Validasi Klaim</h1>
+                <h1 className="text-xl sm:text-3xl font-bold tracking-tight text-gray-900">Validasi Klaim</h1>
                 <p className="mt-1 text-sm text-gray-500">
                     Daftar seluruh klaim yang diajukan oleh agen di bawah agensi Anda.
                 </p>

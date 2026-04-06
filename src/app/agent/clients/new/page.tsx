@@ -488,7 +488,7 @@ export default function NewClientPage() {
                                         <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
                                             <CalendarDays className="w-3.5 h-3.5" /> Detail Pertanggungan
                                         </h3>
-                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                                             <div className="space-y-1.5">
                                                 <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Tanggal Mulai</Label>
                                                 <Input type="date" value={formData.startDate} onChange={(e) => { setFormData({ ...formData, startDate: e.target.value }); if (fieldErrors.startDate) setFieldErrors({ ...fieldErrors, startDate: false }); }} className={cn("h-10 rounded-lg bg-background", fieldErrors.startDate && "border-red-500")} />

@@ -10,7 +10,7 @@ export default function PendingTransfersPage() {
                     <GitPullRequest className="h-3 w-3" />
                     <span>Permintaan Transfer Agensi</span>
                 </div>
-                <h1 className="text-3xl font-bold tracking-tight text-gray-900">Transfer Agen</h1>
+                <h1 className="text-xl sm:text-3xl font-bold tracking-tight text-gray-900">Transfer Agen</h1>
                 <p className="mt-1 text-sm text-gray-500">
                     Tinjau dan setujui permintaan pemindahan agen antar agensi di sini.
                 </p>

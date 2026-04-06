@@ -23,15 +23,15 @@ export default async function HospitalDashboardPage() {
   )
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4 sm:gap-6">
       <div>
-        <h2 className="text-3xl font-bold tracking-tight">Hospital Dashboard</h2>
+        <h2 className="text-2xl sm:text-xl sm:text-3xl font-bold tracking-tight">Hospital Dashboard</h2>
         <p className="text-muted-foreground">
           Manage patient admissions and insurance claims.
         </p>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-3 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
         <Card>
           <CardHeader>
             <CardTitle>Admitted Patients</CardTitle>

@@ -2,7 +2,7 @@
 
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useCallback, useEffect } from "react";
-import { DashboardLayout, DashboardSidebar, SidebarHeader, SidebarContent, SidebarFooter, NavItem } from "@/components/dashboard/dashboard-layout"
+import { DashboardLayout, DashboardSidebar, DashboardHeader, SidebarHeader, SidebarContent, SidebarFooter, NavItem } from "@/components/dashboard/dashboard-layout"
 import { LayoutDashboard, Shield, Settings, LogOut, Users, FileText, GitPullRequest, Trophy, Search } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
@@ -122,7 +122,21 @@ function AdminAgencyLayoutContent({ children }: { children: React.ReactNode }) {
 
   return (
     <>
-      <DashboardLayout sidebar={sidebar} isCollapsed={false}>
+      <DashboardLayout sidebar={sidebar} isCollapsed={false} header={
+        <div className="sm:hidden">
+          <DashboardHeader mobileSidebar={sidebar}>
+            <Link href="/admin-agency">
+              <Image
+                src="https://jzupwygwzatugbrmqjau.supabase.co/storage/v1/object/sign/image/m_tagadmin.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV82NWE4NDk3Zi1iNTdiLTQ1ZDMtOWI3ZC0yNDAxNzU4Njg1NTAiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJpbWFnZS9tX3RhZ2FkbWluLnBuZyIsImlhdCI6MTc3MTg5NzQwMSwiZXhwIjozMzI3NjM2MTQwMX0.O2gM-49fTWQWkUKRyDs_5tsEUF-l_RKJb3xft9UWg64"
+                alt="AsistenQu Admin"
+                width={140}
+                height={28}
+                className="h-6 w-auto object-contain"
+              />
+            </Link>
+          </DashboardHeader>
+        </div>
+      }>
         {children}
       </DashboardLayout>
       <CommandPalette isOpen={isCommandOpen} setIsOpen={setIsCommandOpen} />

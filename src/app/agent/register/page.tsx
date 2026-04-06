@@ -197,7 +197,7 @@ export default function AgentRegisterPage() {
 
                 {/* Header */}
                 <div className="flex flex-col items-center text-center w-full pb-8">
-                    <h1 className="text-3xl font-bold tracking-tight text-gray-900">{t.registerTitle}</h1>
+                    <h1 className="text-xl sm:text-3xl font-bold tracking-tight text-gray-900">{t.registerTitle}</h1>
                     <p className="text-sm text-gray-500 mt-2 max-w-md">
                         {t.registerSub}
                     </p>

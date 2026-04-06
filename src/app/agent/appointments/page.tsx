@@ -282,7 +282,7 @@ export default function AppointmentsPage() {
                         <CalendarCheck className="h-3 w-3" />
                         <span>Jadwal & Visit LOG</span>
                     </div>
-                    <h1 className="text-3xl font-bold tracking-tight text-gray-900">Jadwal Dokter</h1>
+                    <h1 className="text-xl sm:text-3xl font-bold tracking-tight text-gray-900">Jadwal Dokter</h1>
                     <p className="mt-1 text-sm text-gray-500">
                         Booking jadwal dan kirim notifikasi kunjungan ke rumah sakit.
                     </p>
@@ -307,7 +307,7 @@ export default function AppointmentsPage() {
             </div>
 
             {/* Stats */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
                 {[
                     { label: "Total", value: appointments.length },
                     { label: "Terjadwal", value: appointments.filter(a => a.status === "SCHEDULED").length },
@@ -323,7 +323,7 @@ export default function AppointmentsPage() {
 
             {/* Toolbar */}
             <div className="bg-white rounded-3xl border border-gray-100 overflow-hidden shadow-sm flex flex-col">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 p-8 border-b border-gray-50 bg-gray-50/30">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 p-4 sm:p-8 border-b border-gray-50 bg-gray-50/30">
                     <div className="relative flex-1 max-w-xs">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                         <Input
