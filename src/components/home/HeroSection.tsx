@@ -34,7 +34,7 @@ export function HeroSection() {
       <div className="absolute inset-y-0 left-0 w-full sm:w-[52%] bg-gradient-to-r from-[#080808] via-[#080808]/90 to-transparent pointer-events-none" />
 
       {/* Text block — explicit top padding for clear navbar gap */}
-      <div className="relative z-10 w-full max-w-6xl mx-auto px-5 sm:px-6 pt-36 sm:pt-52 pb-16 sm:pb-28">
+      <div className="relative z-10 w-full max-w-6xl mx-auto px-5 sm:px-6 pt-44 sm:pt-52 pb-16 sm:pb-28">
         <div className="max-w-full sm:max-w-[50%]">
 
           <motion.h1
