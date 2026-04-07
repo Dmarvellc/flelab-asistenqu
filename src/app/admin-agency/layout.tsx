@@ -3,7 +3,7 @@
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useCallback, useEffect } from "react";
 import { DashboardLayout, DashboardSidebar, DashboardHeader, SidebarHeader, SidebarContent, SidebarFooter, NavItem } from "@/components/dashboard/dashboard-layout"
-import { LayoutDashboard, Shield, Settings, LogOut, Users, FileText, GitPullRequest, Trophy, Search } from "lucide-react"
+import { LayoutDashboard, Shield, Settings, LogOut, Users, FileText, GitPullRequest, Trophy, Search, Globe2 } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 import { CommandPalette } from "@/components/admin-agency/command-palette"
@@ -101,6 +101,9 @@ function AdminAgencyLayoutContent({ children }: { children: React.ReactNode }) {
           </NavItem>
           <NavItem href="/admin-agency/performance" icon={Trophy} active={pathname.startsWith('/admin-agency/performance')} isCollapsed={false}>
             {t.agencyPerformance}
+          </NavItem>
+          <NavItem href="/admin-agency/network" icon={Globe2} active={pathname.startsWith('/admin-agency/network')} isCollapsed={false}>
+            Network RS
           </NavItem>
           <NavItem href="/admin-agency/settings" icon={Settings} active={pathname === '/admin-agency/settings'} isCollapsed={false}>
             {t.settings}

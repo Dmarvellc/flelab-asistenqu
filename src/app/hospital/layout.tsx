@@ -2,7 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import { DashboardLayout, DashboardSidebar, SidebarHeader, SidebarContent, SidebarFooter, NavItem, DashboardHeader } from "@/components/dashboard/dashboard-layout"
-import { LayoutDashboard, Activity, Users, LogOut, FileText, CalendarCheck } from "lucide-react"
+import { LayoutDashboard, Activity, Users, LogOut, FileText, CalendarCheck, Globe2 } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 import { Notifications } from "@/components/dashboard/notifications";
@@ -43,6 +43,9 @@ export default function HospitalLayout({ children }: { children: React.ReactNode
         </NavItem>
         <NavItem href="/hospital/claims" icon={FileText} active={pathname.startsWith("/hospital/claims")}>
           Klaim
+        </NavItem>
+        <NavItem href="/hospital/network" icon={Globe2} active={pathname.startsWith("/hospital/network")}>
+          Network RS
         </NavItem>
         <NavItem href="/hospital/reports" icon={Activity} active={pathname.startsWith("/hospital/reports")}>
           Laporan

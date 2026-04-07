@@ -114,7 +114,18 @@ export async function POST(request: Request) {
     applySessionCookie(response, session.sessionId, body.rememberMe);
     return response;
   } catch (error) {
-    console.error("Login failed", error);
-    return NextResponse.json({ error: "Login failed" }, { status: 500 });
+    const errMsg = error instanceof Error ? error.message : String(error);
+    console.error("Login failed:", errMsg, error);
+
+    // Surface helpful message in development; keep it generic in production
+    const detail =
+      process.env.NODE_ENV !== "production"
+        ? ` — ${errMsg}`
+        : "";
+
+    return NextResponse.json(
+      { error: `Login failed${detail}` },
+      { status: 500 }
+    );
   }
 }
