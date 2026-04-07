@@ -12,11 +12,11 @@ const ease = [0.16, 1, 0.3, 1] as const
 
 export function HeroSection() {
   return (
-    <section className="relative min-h-screen flex items-start bg-[#080808] overflow-hidden">
+    <section className="relative sm:min-h-screen flex items-start bg-[#080808] overflow-hidden">
 
-      {/* Banner — fills the right side, hidden on small mobile */}
+      {/* Banner — fills the right side, repositioned on mobile */}
       <motion.div
-        className="absolute right-0 inset-y-0 w-full sm:w-[72%] pointer-events-none select-none"
+        className="absolute right-0 bottom-0 w-[75%] h-[45%] sm:inset-y-0 sm:w-[72%] sm:h-auto pointer-events-none select-none"
         initial={{ opacity: 0, x: 48, scale: 0.97 }}
         animate={{ opacity: 1, x: 0, scale: 1 }}
         transition={{ duration: 1.2, ease, delay: 0.1 }}
@@ -25,21 +25,21 @@ export function HeroSection() {
           src={BANNER_URL}
           alt="AsistenQu"
           fill
-          className="object-contain object-right-center opacity-30 sm:opacity-100"
+          className="object-contain object-right-bottom sm:object-right-center opacity-20 sm:opacity-100"
           priority
         />
       </motion.div>
 
       {/* Left vignette */}
-      <div className="absolute inset-y-0 left-0 w-full sm:w-[52%] bg-gradient-to-r from-[#080808] via-[#080808]/90 to-transparent pointer-events-none" />
+      <div className="absolute inset-y-0 left-0 w-full sm:w-[52%] bg-gradient-to-r from-[#080808] via-[#080808]/80 to-transparent pointer-events-none" />
 
-      {/* Text block — explicit top padding for clear navbar gap */}
-      <div className="relative z-10 w-full max-w-6xl mx-auto px-5 sm:px-6 pt-44 sm:pt-52 pb-16 sm:pb-28">
+      {/* Text block */}
+      <div className="relative z-10 w-full max-w-6xl mx-auto px-5 sm:px-6 pt-36 sm:pt-52 pb-24 sm:pb-28">
         <div className="max-w-full sm:max-w-[50%]">
 
           <motion.h1
-            className="font-black text-white leading-[0.92] tracking-[-0.04em] mb-12"
-            style={{ fontSize: "clamp(36px, 7.8vw, 112px)" }}
+            className="font-black text-white leading-[0.95] tracking-[-0.03em] mb-6 sm:mb-12"
+            style={{ fontSize: "clamp(32px, 8vw, 112px)" }}
             initial={{ opacity: 0, y: 56 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.95, ease }}
@@ -50,12 +50,12 @@ export function HeroSection() {
           </motion.h1>
 
           <motion.div
-            className="flex flex-col sm:flex-row items-start sm:items-end gap-10 sm:gap-16"
+            className="flex flex-col sm:flex-row items-start sm:items-end gap-6 sm:gap-16"
             initial={{ opacity: 0, y: 32 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.85, ease, delay: 0.22 }}
           >
-            <p className="text-white/35 text-base leading-[1.8] max-w-[260px]">
+            <p className="text-white/40 text-sm sm:text-base leading-[1.7] sm:leading-[1.8] max-w-[280px] sm:max-w-[260px]">
               Menghubungkan agensi, agen, dan rumah sakit
               dalam satu workspace yang cerdas.
             </p>
