@@ -39,7 +39,14 @@ export async function consumeRateLimit({
   const key = buildRateLimitKey(namespace, identifier);
 
   try {
-    await ensureRedisConnection();
+    if (!redisClient) {
+      return { allowed: true, remaining: limit, retryAfterSeconds: 0 };
+    }
+    const ok = await ensureRedisConnection();
+    if (!ok) {
+      return { allowed: true, remaining: limit, retryAfterSeconds: 0 };
+    }
+
     const current = await redisClient.incr(key);
     if (current === 1) {
       await redisClient.expire(key, windowSeconds);
@@ -51,8 +58,8 @@ export async function consumeRateLimit({
       remaining: Math.max(limit - current, 0),
       retryAfterSeconds: ttl > 0 ? ttl : windowSeconds,
     };
-  } catch (error) {
-    console.error("Rate limit failed open", { namespace, error });
+  } catch {
+    // Rate limit fails open — allow the request
     return {
       allowed: true,
       remaining: limit,

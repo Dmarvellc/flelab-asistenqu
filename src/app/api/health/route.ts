@@ -15,9 +15,11 @@ export async function GET() {
   }
 
   try {
-    await ensureRedisConnection();
-    const pong = await redisClient.ping();
-    redisOk = pong === "PONG";
+    const connected = await ensureRedisConnection();
+    if (connected && redisClient) {
+      const pong = await redisClient.ping();
+      redisOk = pong === "PONG";
+    }
   } catch (error) {
     console.error("Redis health check failed", error);
   }

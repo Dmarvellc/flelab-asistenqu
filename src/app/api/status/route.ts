@@ -52,7 +52,8 @@ const HISTORY_MAX = 60   // keep last 60 check results per service
 
 async function saveHistory(id: string, status: ServiceStatus, latencyMs: number) {
   try {
-    await ensureRedisConnection()
+    const ok = await ensureRedisConnection()
+    if (!ok || !redisClient) return
     const entry: HistoryPoint = { s: status, l: latencyMs, t: Date.now() }
     const key = HISTORY_KEY(id)
     await redisClient.lPush(key, JSON.stringify(entry))
@@ -63,9 +64,9 @@ async function saveHistory(id: string, status: ServiceStatus, latencyMs: number)
 
 async function readHistory(id: string): Promise<HistoryPoint[]> {
   try {
-    await ensureRedisConnection()
+    const ok = await ensureRedisConnection()
+    if (!ok || !redisClient) return []
     const raw = await redisClient.lRange(HISTORY_KEY(id), 0, HISTORY_MAX - 1)
-    // lPush prepends, so index 0 = newest. Reverse to get oldest-first for the bar chart.
     return raw.map(r => JSON.parse(r) as HistoryPoint).reverse()
   } catch {
     return []
@@ -100,8 +101,10 @@ async function checkRedis(): Promise<Omit<ServiceCheck, "history" | "uptimePct">
   const t = Date.now()
   let ok = false
   try {
-    await ensureRedisConnection()
-    ok = (await withTimeout(redisClient.ping())) === "PONG"
+    const connected = await ensureRedisConnection()
+    if (connected && redisClient) {
+      ok = (await withTimeout(redisClient.ping())) === "PONG"
+    }
   } catch { /* silent */ }
   return {
     id: "cache", name: "Cache Layer", group: "Infrastructure",

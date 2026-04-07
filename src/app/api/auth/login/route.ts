@@ -111,7 +111,7 @@ export async function POST(request: Request) {
 
     clearLegacyAuthCookies(response);
     clearSessionCookie(response);
-    applySessionCookie(response, session.sessionId, body.rememberMe);
+    applySessionCookie(response, session.sessionId, body.rememberMe, body.portal);
     return response;
   } catch (error) {
     const errMsg = error instanceof Error ? error.message : String(error);

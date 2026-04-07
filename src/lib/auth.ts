@@ -104,37 +104,42 @@ function parseCachedSession(raw: string): AppSession | null {
 }
 
 async function cacheSession(session: AppSession) {
+  if (!redisClient) return;
   const ttlSeconds = Math.max(
     Math.ceil((new Date(session.expiresAt).getTime() - Date.now()) / 1000),
     1
   );
 
   try {
-    await ensureRedisConnection();
+    const ok = await ensureRedisConnection();
+    if (!ok) return;
     await redisClient.set(getSessionCacheKey(session.sessionId), JSON.stringify(session), {
       EX: ttlSeconds,
     });
-  } catch (error) {
-    console.error("Failed to cache auth session", { sessionId: session.sessionId, error });
+  } catch {
+    // Redis caching is optional — fail silently
   }
 }
 
 async function deleteSessionCache(sessionId: string) {
+  if (!redisClient) return;
   try {
-    await ensureRedisConnection();
+    const ok = await ensureRedisConnection();
+    if (!ok) return;
     await redisClient.del(getSessionCacheKey(sessionId));
-  } catch (error) {
-    console.error("Failed to delete auth session cache", { sessionId, error });
+  } catch {
+    // Fail silently
   }
 }
 
 async function getCachedSession(sessionId: string) {
+  if (!redisClient) return null;
   try {
-    await ensureRedisConnection();
+    const ok = await ensureRedisConnection();
+    if (!ok) return null;
     const raw = await redisClient.get(getSessionCacheKey(sessionId));
     return raw ? parseCachedSession(raw) : null;
-  } catch (error) {
-    console.error("Failed to read auth session cache", { sessionId, error });
+  } catch {
     return null;
   }
 }
@@ -508,13 +513,23 @@ export async function revokeUserSessions(userId: string, exceptSessionId?: strin
   await Promise.all(sessions.rows.map((row) => deleteSessionCache(row.session_id)));
 }
 
-export function applySessionCookie(response: NextResponse, sessionId: string, rememberMe?: boolean) {
+export function applySessionCookie(response: NextResponse, sessionId: string, rememberMe?: boolean, portal?: string | null) {
   const maxAge = rememberMe ? REMEMBER_ME_TTL_SECONDS : undefined;
   response.cookies.set(AUTH_SESSION_COOKIE, sessionId, getSessionCookieConfig(maxAge));
+
+  // Set a lightweight portal cookie so middleware can validate portal context
+  // without hitting DB/Redis on every request.
+  if (portal) {
+    response.cookies.set("session_portal", portal, getSessionCookieConfig(maxAge));
+  }
 }
 
 export function clearSessionCookie(response: NextResponse) {
   response.cookies.set(AUTH_SESSION_COOKIE, "", {
+    ...getSessionCookieConfig(),
+    maxAge: 0,
+  });
+  response.cookies.set("session_portal", "", {
     ...getSessionCookieConfig(),
     maxAge: 0,
   });
