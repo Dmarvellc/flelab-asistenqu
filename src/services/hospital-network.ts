@@ -62,6 +62,42 @@ export interface NetworkDoctor {
   hospital_id: string | null;
 }
 
+export interface DoctorHospitalLink {
+  id: string;
+  hospital_id: string;
+  hospital_name: string;
+  hospital_city: string;
+  hospital_country: string;
+  hospital_tier: string;
+  is_primary: boolean;
+  consultation_fee_min: number;
+  consultation_fee_max: number;
+  currency: string;
+  room_number: string | null;
+  floor: string | null;
+}
+
+export interface DoctorSchedule {
+  schedule_id: string;
+  hospital_id: string;
+  hospital_name: string;
+  day_of_week: number; // 0=Sun..6=Sat
+  start_time: string;
+  end_time: string;
+  slot_duration_minutes: number;
+  max_patients: number;
+  is_active: boolean;
+}
+
+export interface MarketplaceDoctor extends NetworkDoctor {
+  gender: string | null;
+  photo_url: string | null;
+  total_reviews: number;
+  patients_treated: number;
+  hospitals: DoctorHospitalLink[];
+  schedules: DoctorSchedule[];
+}
+
 export interface InsurancePanel {
   panel_id: string;
   insurance_name: string;
@@ -186,9 +222,9 @@ export async function searchHospitals(params: {
 
   const [rows, countResult] = await Promise.all([
     dbPool.query(
-      `SELECT h.*, COUNT(d.id) as doctor_count
+      `SELECT h.*, COUNT(DISTINCT dh.doctor_id) as doctor_count
        FROM public.hospital h
-       LEFT JOIN public.doctors d ON d.hospital_id = h.hospital_id
+       LEFT JOIN public.doctor_hospital dh ON dh.hospital_id = h.hospital_id
        ${where}
        GROUP BY h.hospital_id
        ORDER BY h.tier DESC, h.avg_rating DESC, h.total_reviews DESC
@@ -205,12 +241,9 @@ export async function searchHospitals(params: {
 }
 
 export async function getHospitalDetail(hospitalId: string) {
-  const [hospitalRes, doctorsRes, facilitiesRes, panelsRes] = await Promise.all([
+  const [hospitalRes, doctors, facilitiesRes, panelsRes] = await Promise.all([
     dbPool.query("SELECT * FROM public.hospital WHERE hospital_id = $1", [hospitalId]),
-    dbPool.query(
-      `SELECT * FROM public.doctors WHERE hospital_id = $1 ORDER BY is_featured DESC, rating DESC`,
-      [hospitalId]
-    ),
+    getDoctorsByHospital(hospitalId),
     dbPool.query(
       `SELECT * FROM public.hospital_facility WHERE hospital_id = $1 ORDER BY is_highlighted DESC, category`,
       [hospitalId]
@@ -225,7 +258,7 @@ export async function getHospitalDetail(hospitalId: string) {
 
   return {
     hospital: hospitalRes.rows[0] as NetworkHospital,
-    doctors: doctorsRes.rows as NetworkDoctor[],
+    doctors,
     facilities: facilitiesRes.rows as HospitalFacility[],
     insurance_panels: panelsRes.rows as InsurancePanel[],
   };
@@ -354,4 +387,159 @@ export async function getRecommendations(params: {
     doctors: doctors.rows,
     hospitals: hospitals.rows,
   };
+}
+
+// ─── Doctor Marketplace ──────────────────────────────────────
+
+export async function getDoctorDetail(doctorId: string): Promise<MarketplaceDoctor | null> {
+  const [doctorRes, hospitalsRes, schedulesRes] = await Promise.all([
+    dbPool.query("SELECT * FROM public.doctors WHERE id = $1", [doctorId]),
+    dbPool.query(
+      `SELECT dh.*, h.name as hospital_name, h.city as hospital_city,
+              h.country as hospital_country, h.tier as hospital_tier
+       FROM public.doctor_hospital dh
+       JOIN public.hospital h ON h.hospital_id = dh.hospital_id
+       WHERE dh.doctor_id = $1
+       ORDER BY dh.is_primary DESC`,
+      [doctorId]
+    ),
+    dbPool.query(
+      `SELECT ds.*, h.name as hospital_name
+       FROM public.doctor_schedule ds
+       JOIN public.hospital h ON h.hospital_id = ds.hospital_id
+       WHERE ds.doctor_id = $1 AND ds.is_active = true
+       ORDER BY ds.day_of_week, ds.start_time`,
+      [doctorId]
+    ),
+  ]);
+
+  if (doctorRes.rows.length === 0) return null;
+
+  const doctor = doctorRes.rows[0];
+
+  return {
+    ...doctor,
+    hospitals: hospitalsRes.rows as DoctorHospitalLink[],
+    schedules: schedulesRes.rows as DoctorSchedule[],
+  } as MarketplaceDoctor;
+}
+
+export async function searchMarketplaceDoctors(params: {
+  q?: string;
+  specialization?: string;
+  country?: string;
+  hospital?: string;
+  condition?: string;
+  procedure?: string;
+  telemedicine?: boolean;
+  featured?: boolean;
+  page?: number;
+  limit?: number;
+}): Promise<{
+  doctors: (NetworkDoctor & {
+    hospital_count: number;
+    primary_hospital_name: string | null;
+    primary_hospital_city: string | null;
+    primary_hospital_tier: string | null;
+  })[];
+  total: number;
+}> {
+  const conditions: string[] = [];
+  const values: (string | boolean | number)[] = [];
+  let idx = 1;
+
+  if (params.q) {
+    conditions.push(
+      `(d.name ILIKE $${idx} OR d.specialization ILIKE $${idx} OR d.hospital ILIKE $${idx} OR d.notable_for ILIKE $${idx} OR d.subspecialization ILIKE $${idx})`
+    );
+    values.push(`%${params.q}%`);
+    idx++;
+  }
+  if (params.specialization) {
+    conditions.push(`d.specialization ILIKE $${idx}`);
+    values.push(`%${params.specialization}%`);
+    idx++;
+  }
+  if (params.country) {
+    conditions.push(`d.country = $${idx}`);
+    values.push(params.country);
+    idx++;
+  }
+  if (params.hospital) {
+    conditions.push(`d.hospital ILIKE $${idx}`);
+    values.push(`%${params.hospital}%`);
+    idx++;
+  }
+  if (params.condition) {
+    conditions.push(`$${idx} = ANY(d.conditions_treated)`);
+    values.push(params.condition);
+    idx++;
+  }
+  if (params.procedure) {
+    conditions.push(`$${idx} = ANY(d.procedures_offered)`);
+    values.push(params.procedure);
+    idx++;
+  }
+  if (params.telemedicine) {
+    conditions.push(`d.telemedicine_available = true`);
+  }
+  if (params.featured) {
+    conditions.push(`d.is_featured = true`);
+  }
+
+  const where = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+  const limit = params.limit || 24;
+  const offset = ((params.page || 1) - 1) * limit;
+
+  const [rows, countResult] = await Promise.all([
+    dbPool.query(
+      `SELECT d.*,
+              h.name as primary_hospital_name,
+              h.city as primary_hospital_city,
+              h.tier as primary_hospital_tier,
+              (SELECT COUNT(*) FROM public.doctor_hospital WHERE doctor_id = d.id) as hospital_count
+       FROM public.doctors d
+       LEFT JOIN public.doctor_hospital dh ON dh.doctor_id = d.id AND dh.is_primary = true
+       LEFT JOIN public.hospital h ON h.hospital_id = dh.hospital_id
+       ${where}
+       ORDER BY d.is_featured DESC, d.rating DESC, d.experience_years DESC
+       LIMIT $${idx} OFFSET $${idx + 1}`,
+      [...values, limit, offset]
+    ),
+    dbPool.query(`SELECT COUNT(*) FROM public.doctors d ${where}`, values),
+  ]);
+
+  return {
+    doctors: rows.rows.map((r: Record<string, unknown>) => ({
+      ...r,
+      hospital_count: parseInt(r.hospital_count as string || "0"),
+    })) as (NetworkDoctor & { hospital_count: number; primary_hospital_name: string | null; primary_hospital_city: string | null; primary_hospital_tier: string | null })[],
+    total: parseInt(countResult.rows[0].count),
+  };
+}
+
+export async function getDoctorsByHospital(hospitalId: string): Promise<(NetworkDoctor & {
+  dh_fee_min: number;
+  dh_fee_max: number;
+  dh_currency: string;
+  room_number: string | null;
+  floor: string | null;
+  is_primary: boolean;
+})[]> {
+  const result = await dbPool.query(
+    `SELECT d.*,
+            dh.consultation_fee_min as dh_fee_min,
+            dh.consultation_fee_max as dh_fee_max,
+            dh.currency as dh_currency,
+            dh.room_number,
+            dh.floor,
+            dh.is_primary
+     FROM public.doctor_hospital dh
+     JOIN public.doctors d ON d.id = dh.doctor_id
+     WHERE dh.hospital_id = $1
+     ORDER BY dh.is_primary DESC, d.rating DESC`,
+    [hospitalId]
+  );
+
+  return result.rows;
 }

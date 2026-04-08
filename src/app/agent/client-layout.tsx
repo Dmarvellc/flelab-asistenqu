@@ -91,8 +91,7 @@ export function AgentLayoutClient({ children, initialBadges, serverUserName }: {
         { href: "/agent/claims", icon: FileText, label: t.claims, badge: badges.totalClaims || undefined },
         { href: "/agent/appointments", icon: CalendarCheck, label: t.appointments, badge: undefined },
         { href: "/agent/requests", icon: ClipboardList, label: t.requests, badge: badges.pendingContracts || undefined },
-        { href: "/agent/network", icon: Globe2, label: "Network RS", badge: undefined },
-        { href: "/agent/doctors", icon: Stethoscope, label: t.doctors, badge: undefined },
+        { href: "/agent/network", icon: Stethoscope, label: "Marketplace", badge: undefined },
         { href: "/agent/referral", icon: Gift, label: t.referral, badge: undefined },
         { href: "/agent/settings", icon: Settings, label: t.settings, badge: undefined },
     ];
