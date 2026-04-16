@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
 import { dbPool } from "@/lib/db";
-import { cookies } from "next/headers";
+import { getSession } from "@/lib/auth";
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
     const client = await dbPool.connect();
     try {
-        const cookieStore = await cookies();
-        const userId = cookieStore.get("session_agent_user_id")?.value;
-        if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        const session = await getSession();
+        if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        const userId = session.userId;
 
         const { id } = await params;
         const body = await req.json();
@@ -40,9 +40,9 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
     const client = await dbPool.connect();
     try {
-        const cookieStore = await cookies();
-        const userId = cookieStore.get("session_agent_user_id")?.value;
-        if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        const session = await getSession();
+        if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        const userId = session.userId;
 
         const { id } = await params;
         await client.query(

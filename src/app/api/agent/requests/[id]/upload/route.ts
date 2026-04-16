@@ -1,19 +1,18 @@
 import { NextResponse } from "next/server";
 import { dbPool } from "@/lib/db";
-import { cookies } from "next/headers";
 import { saveDocument } from "@/lib/file-upload";
+import { getSession } from "@/lib/auth";
 
 export async function POST(req: Request, props: { params: Promise<{ id: string }> }) {
   const params = await props.params;
   const client = await dbPool.connect();
 
   try {
-    const cookieStore = await cookies();
-    const userId = cookieStore.get("session_agent_user_id")?.value;
-
-    if (!userId) {
+    const session = await getSession();
+    if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+    const userId = session.userId;
 
     const formData = await req.formData();
     const file = formData.get("file") as File;

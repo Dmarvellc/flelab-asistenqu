@@ -40,6 +40,8 @@ export type AppSession = {
   status: string;
   portal: string | null;
   agencyId: string | null;
+  agencySlug: string | null;
+  agencyMemberRole: string | null;
   createdAt: string;
   expiresAt: string;
   validatedAt: number;
@@ -94,6 +96,8 @@ function parseCachedSession(raw: string): AppSession | null {
       status: parsed.status ?? "ACTIVE",
       portal: parsed.portal ?? null,
       agencyId: parsed.agencyId ?? null,
+      agencySlug: parsed.agencySlug ?? null,
+      agencyMemberRole: parsed.agencyMemberRole ?? null,
       createdAt: parsed.createdAt ?? new Date().toISOString(),
       expiresAt: parsed.expiresAt,
       validatedAt: parsed.validatedAt ?? 0,
@@ -157,9 +161,13 @@ async function loadSessionFromDatabase(sessionId: string): Promise<AppSession | 
        s.revoked,
        u.role AS current_role,
        u.status AS current_status,
-       u.agency_id
+       u.agency_id,
+       a.slug AS agency_slug,
+       am.role AS agency_member_role
      FROM public.auth_session s
      JOIN public.app_user u ON u.user_id = s.user_id
+     LEFT JOIN public.agency a ON a.agency_id = u.agency_id
+     LEFT JOIN public.agency_member am ON am.user_id = u.user_id AND am.agency_id = u.agency_id
      WHERE s.session_id = $1
      LIMIT 1`,
     [sessionId]
@@ -182,6 +190,8 @@ async function loadSessionFromDatabase(sessionId: string): Promise<AppSession | 
     current_role: string;
     current_status: string;
     agency_id: string | null;
+    agency_slug: string | null;
+    agency_member_role: string | null;
   };
 
   const role = normalizeRole(row.current_role);
@@ -203,6 +213,8 @@ async function loadSessionFromDatabase(sessionId: string): Promise<AppSession | 
     status: row.current_status,
     portal: row.portal,
     agencyId: row.agency_id,
+    agencySlug: row.agency_slug,
+    agencyMemberRole: row.agency_member_role,
     createdAt: new Date(row.created_at).toISOString(),
     expiresAt: new Date(row.expires_at).toISOString(),
     validatedAt: Date.now(),
@@ -358,7 +370,7 @@ export async function requireScopeAccess(resourceType: ScopeResourceType, resour
            FROM public.claim c
            JOIN public.user_role ur
              ON ur.scope_type = 'HOSPITAL'
-            AND ur.scope_id = c.hospital_id::text
+            AND ur.scope_id = c.hospital_id
            WHERE c.claim_id = $1
              AND ur.user_id = $2
            LIMIT 1`,
@@ -423,6 +435,8 @@ export async function createSession(params: {
   role: Role;
   status: string;
   agencyId?: string | null;
+  agencySlug?: string | null;
+  agencyMemberRole?: string | null;
   portal?: string | null;
   rememberMe?: boolean;
 }) {
@@ -460,6 +474,8 @@ export async function createSession(params: {
     status: params.status,
     portal: params.portal ?? null,
     agencyId: params.agencyId ?? null,
+    agencySlug: params.agencySlug ?? null,
+    agencyMemberRole: params.agencyMemberRole ?? null,
     createdAt: new Date().toISOString(),
     expiresAt: expiresAt.toISOString(),
     validatedAt: Date.now(),
@@ -513,7 +529,13 @@ export async function revokeUserSessions(userId: string, exceptSessionId?: strin
   await Promise.all(sessions.rows.map((row) => deleteSessionCache(row.session_id)));
 }
 
-export function applySessionCookie(response: NextResponse, sessionId: string, rememberMe?: boolean, portal?: string | null) {
+export function applySessionCookie(
+  response: NextResponse,
+  sessionId: string,
+  rememberMe?: boolean,
+  portal?: string | null,
+  agencySlug?: string | null
+) {
   const maxAge = rememberMe ? REMEMBER_ME_TTL_SECONDS : undefined;
   response.cookies.set(AUTH_SESSION_COOKIE, sessionId, getSessionCookieConfig(maxAge));
 
@@ -521,6 +543,11 @@ export function applySessionCookie(response: NextResponse, sessionId: string, re
   // without hitting DB/Redis on every request.
   if (portal) {
     response.cookies.set("session_portal", portal, getSessionCookieConfig(maxAge));
+  }
+
+  // Set agency slug cookie for dynamic routing
+  if (agencySlug) {
+    response.cookies.set("session_agency_slug", agencySlug, getSessionCookieConfig(maxAge));
   }
 }
 
@@ -530,6 +557,10 @@ export function clearSessionCookie(response: NextResponse) {
     maxAge: 0,
   });
   response.cookies.set("session_portal", "", {
+    ...getSessionCookieConfig(),
+    maxAge: 0,
+  });
+  response.cookies.set("session_agency_slug", "", {
     ...getSessionCookieConfig(),
     maxAge: 0,
   });

@@ -1,15 +1,14 @@
-import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import AgentRequestsPageClient from "./client-page";
 import { getAgentRequests } from "@/services/agent-requests";
+import { getSession } from "@/lib/auth";
 
 export default async function AgentRequestsPage() {
-    const cookieStore = await cookies();
-    const userId = cookieStore.get("session_agent_user_id")?.value;
-
-    if (!userId || userId.trim() === "") {
+    const session = await getSession();
+    if (!session) {
         redirect("/agent/login");
     }
+    const userId = session.userId;
 
     const initialRequests = await getAgentRequests(userId).catch(() => []);
 

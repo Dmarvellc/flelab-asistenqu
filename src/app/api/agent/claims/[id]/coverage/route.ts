@@ -1,14 +1,14 @@
 import { NextResponse } from "next/server";
 import { dbPool } from "@/lib/db";
-import { cookies } from "next/headers";
+import { getSession } from "@/lib/auth";
 
 // GET coverage periods for a claim
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
     const client = await dbPool.connect();
     try {
-        const cookieStore = await cookies();
-        const userId = cookieStore.get("session_agent_user_id")?.value;
-        if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        const session = await getSession();
+        if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        const userId = session.userId;
 
         const { id } = await params;
         const result = await client.query(`
@@ -31,9 +31,9 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
     const client = await dbPool.connect();
     try {
-        const cookieStore = await cookies();
-        const userId = cookieStore.get("session_agent_user_id")?.value;
-        if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        const session = await getSession();
+        if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        const userId = session.userId;
 
         const { id } = await params;
         const body = await req.json();
@@ -81,9 +81,9 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
     const client = await dbPool.connect();
     try {
-        const cookieStore = await cookies();
-        const userId = cookieStore.get("session_agent_user_id")?.value;
-        if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        const session = await getSession();
+        if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        const userId = session.userId;
 
         const { id } = await params;
         const { searchParams } = new URL(req.url);

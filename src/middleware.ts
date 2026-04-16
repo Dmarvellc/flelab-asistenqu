@@ -15,6 +15,14 @@ const ROUTE_TO_PORTAL: Record<string, string> = {
   "admin-agency": "admin_agency",
 };
 
+/**
+ * Known static route prefixes (NOT agency slugs).
+ */
+const KNOWN_PREFIXES = new Set([
+  "agent", "hospital", "developer", "admin-agency",
+  "api", "_next", "favicon.ico", "status",
+]);
+
 export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
 
@@ -35,22 +43,26 @@ export async function middleware(request: NextRequest) {
   // Determine which portal this route belongs to
   const segments = path.split("/").filter(Boolean);
   const routePrefix = segments[0] || "";
-  const expectedPortal = ROUTE_TO_PORTAL[routePrefix];
+
+  // Check if this is a dynamic agency slug route: /{agencySlug}/agent/...
+  const isDynamicAgentRoute = !KNOWN_PREFIXES.has(routePrefix) && segments.length >= 2 && segments[1] === "agent";
+  const expectedPortal = isDynamicAgentRoute ? "agent" : ROUTE_TO_PORTAL[routePrefix];
 
   if (isPublicPage) {
     if (hasSession && sessionId) {
-      // Verify that the session's portal matches this login page's portal.
-      // We read the portal from a lightweight cookie instead of hitting DB in middleware.
       const sessionPortal = request.cookies.get("session_portal")?.value;
 
       if (sessionPortal && sessionPortal === expectedPortal) {
-        // Session matches this portal — redirect to dashboard
+        // For dynamic routes, redirect to /{slug}/agent (dashboard)
+        if (isDynamicAgentRoute) {
+          const dashboardPath = `/${routePrefix}/agent`;
+          return NextResponse.redirect(new URL(dashboardPath, request.url));
+        }
+        // Static route — redirect to dashboard
         const dashboardPath = path.replace(/\/login$|\/register$/, "");
         return NextResponse.redirect(new URL(dashboardPath, request.url));
       }
 
-      // Session is for a different portal — let them access this login page
-      // (they can log in with a different account for this portal)
       return NextResponse.next();
     }
     return NextResponse.next();
@@ -58,6 +70,11 @@ export async function middleware(request: NextRequest) {
 
   // Protected page — must have session
   if (!hasSession) {
+    if (isDynamicAgentRoute) {
+      return NextResponse.redirect(
+        new URL(`/${routePrefix}/agent/login`, request.url)
+      );
+    }
     const moduleRoot = segments.length > 0 ? `/${segments[0]}` : "/";
     return NextResponse.redirect(
       new URL(`${moduleRoot}/login`, request.url)
@@ -68,11 +85,26 @@ export async function middleware(request: NextRequest) {
   const sessionPortal = request.cookies.get("session_portal")?.value;
 
   if (expectedPortal && sessionPortal && sessionPortal !== expectedPortal) {
-    // Session belongs to a different portal — redirect to this portal's login
+    if (isDynamicAgentRoute) {
+      return NextResponse.redirect(
+        new URL(`/${routePrefix}/agent/login`, request.url)
+      );
+    }
     const moduleRoot = `/${segments[0]}`;
     return NextResponse.redirect(
       new URL(`${moduleRoot}/login`, request.url)
     );
+  }
+
+  // For dynamic agent routes, also verify the session's agency slug matches the URL slug
+  if (isDynamicAgentRoute) {
+    const sessionAgencySlug = request.cookies.get("session_agency_slug")?.value;
+    if (sessionAgencySlug && sessionAgencySlug !== routePrefix) {
+      // Redirect to the correct agency's agent dashboard
+      return NextResponse.redirect(
+        new URL(`/${sessionAgencySlug}/agent`, request.url)
+      );
+    }
   }
 
   return NextResponse.next();

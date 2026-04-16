@@ -77,7 +77,7 @@ export async function GET(request: Request) {
           COUNT(DISTINCT ur.user_id) AS admin_count,
           COUNT(DISTINCT pr.request_id) AS patient_requests
         FROM public.hospital h
-        LEFT JOIN public.user_role ur ON ur.scope_id = h.hospital_id::text AND ur.scope_type = 'HOSPITAL'
+        LEFT JOIN public.user_role ur ON ur.scope_id = h.hospital_id AND ur.scope_type = 'HOSPITAL'
         LEFT JOIN public.patient_data_request pr ON pr.hospital_id = h.hospital_id
         ${whereClause}
         GROUP BY h.hospital_id, h.name, h.address, h.created_at
@@ -95,7 +95,7 @@ export async function GET(request: Request) {
             COUNT(DISTINCT ur.user_id) AS admin_count,
             0 AS patient_requests
           FROM public.hospital h
-          LEFT JOIN public.user_role ur ON ur.scope_id = h.hospital_id::text AND ur.scope_type = 'HOSPITAL'
+          LEFT JOIN public.user_role ur ON ur.scope_id = h.hospital_id AND ur.scope_type = 'HOSPITAL'
           ${whereClause}
           GROUP BY h.hospital_id, h.name, h.address, h.created_at
           ORDER BY h.created_at DESC

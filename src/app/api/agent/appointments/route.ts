@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
 import { dbPool } from "@/lib/db";
-import { cookies } from "next/headers";
+import { getSession } from "@/lib/auth";
 
 export async function GET() {
     const client = await dbPool.connect();
     try {
-        const cookieStore = await cookies();
-        const userId = cookieStore.get("session_agent_user_id")?.value;
-        if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        const session = await getSession();
+        if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        const userId = session.userId;
 
         const result = await client.query(`
       SELECT 
@@ -46,9 +46,9 @@ export async function GET() {
 export async function POST(req: Request) {
     const client = await dbPool.connect();
     try {
-        const cookieStore = await cookies();
-        const userId = cookieStore.get("session_agent_user_id")?.value;
-        if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        const session = await getSession();
+        if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        const userId = session.userId;
 
         const body = await req.json();
         const {

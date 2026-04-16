@@ -12,24 +12,34 @@ import {
     NavItem,
 } from "@/components/dashboard/dashboard-layout"
 
-import { LayoutDashboard, Users, FileText, LogOut, Settings, ClipboardList, Stethoscope, CalendarCheck, Gift, Globe, Search, Globe2 } from "lucide-react"
+import { LayoutDashboard, Users, FileText, LogOut, Settings, ClipboardList, Stethoscope, CalendarCheck, Gift, Globe, Search } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 import { I18nProvider, useTranslation } from "@/components/providers/i18n-provider"
+import { useAgencyBranding } from "@/components/providers/agency-branding-provider"
 import { CommandPalette } from "@/components/agent/command-palette"
 import { AIAssistantWidget } from "@/components/agent/ai-assistant-widget"
+
+const DEFAULT_LOGO = "https://jzupwygwzatugbrmqjau.supabase.co/storage/v1/object/sign/image/m_tagagent.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV82NWE4NDk3Zi1iNTdiLTQ1ZDMtOWI3ZC0yNDAxNzU4Njg1NTAiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJpbWFnZS9tX3RhZ2FnZW50LnBuZyIsImlhdCI6MTc3MTc2Mzk4NSwiZXhwIjozMzI3NjIyNzk4NX0.1mf2ApWgy64TXpQXboJXnSGFumPrOCvwn5u9p8EJmlI";
 
 export function AgentLayoutClient({ children, initialBadges, serverUserName }: { children: React.ReactNode, initialBadges: { pendingContracts: number, totalClaims: number }, serverUserName: string | null }) {
     const pathname = usePathname();
     const router = useRouter();
     const { t, lang, setLang } = useTranslation();
+    const branding = useAgencyBranding();
+    const logoUrl = branding.logoUrl || DEFAULT_LOGO;
+
+    // Determine base path (supports /{slug}/agent or /agent)
+    const pathSegments = pathname.split("/").filter(Boolean);
+    const isSlugRoute = pathSegments.length >= 2 && pathSegments[1] === "agent" && pathSegments[0] !== "agent";
+    const basePath = isSlugRoute ? `/${pathSegments[0]}/agent` : "/agent";
     const [isAuthorized, setIsAuthorized] = useState(false);
     const [isChecking, setIsChecking] = useState(true);
     const [userName, setUserName] = useState<string | null>(serverUserName);
     const [badges, setBadges] = useState(initialBadges);
     const [isCommandOpen, setIsCommandOpen] = useState(false);
 
-    const isPublicPage = pathname === "/agent/login" || pathname === "/agent/register";
+    const isPublicPage = pathname.endsWith("/login") || pathname.endsWith("/register");
 
     const handleLogout = useCallback(async () => {
         try {
@@ -39,8 +49,8 @@ export function AgentLayoutClient({ children, initialBadges, serverUserName }: {
         }
         localStorage.removeItem("user");
         setIsAuthorized(false);
-        router.push("/agent/login");
-    }, [router]);
+        router.push(`${basePath}/login`);
+    }, [router, basePath]);
 
     useEffect(() => {
         if (isPublicPage) {
@@ -82,18 +92,18 @@ export function AgentLayoutClient({ children, initialBadges, serverUserName }: {
     }
 
     if (isPublicPage) return <>{children}</>;
-    if (pathname === "/agent/verification") return <>{children}</>;
+    if (pathname === `${basePath}/verification`) return <>{children}</>;
     if (pathname.endsWith("/print")) return <>{children}</>;
 
     const navItems = [
-        { href: "/agent", icon: LayoutDashboard, label: t.dashboard, exact: true, badge: undefined },
-        { href: "/agent/clients", icon: Users, label: t.clients, badge: undefined },
-        { href: "/agent/claims", icon: FileText, label: t.claims, badge: badges.totalClaims || undefined },
-        { href: "/agent/appointments", icon: CalendarCheck, label: t.appointments, badge: undefined },
-        { href: "/agent/requests", icon: ClipboardList, label: t.requests, badge: badges.pendingContracts || undefined },
-        { href: "/agent/network", icon: Stethoscope, label: "Marketplace", badge: undefined },
-        { href: "/agent/referral", icon: Gift, label: t.referral, badge: undefined },
-        { href: "/agent/settings", icon: Settings, label: t.settings, badge: undefined },
+        { href: basePath, icon: LayoutDashboard, label: t.dashboard, exact: true, badge: undefined },
+        { href: `${basePath}/clients`, icon: Users, label: t.clients, badge: undefined },
+        { href: `${basePath}/claims`, icon: FileText, label: t.claims, badge: badges.totalClaims || undefined },
+        { href: `${basePath}/appointments`, icon: CalendarCheck, label: t.appointments, badge: undefined },
+        { href: `${basePath}/requests`, icon: ClipboardList, label: t.requests, badge: badges.pendingContracts || undefined },
+        { href: `${basePath}/network`, icon: Stethoscope, label: "Marketplace", badge: undefined },
+        { href: `${basePath}/referral`, icon: Gift, label: t.referral, badge: undefined },
+        { href: `${basePath}/settings`, icon: Settings, label: t.settings, badge: undefined },
     ];
 
     const isNavActive = (href: string, exact = false) => {
@@ -104,9 +114,9 @@ export function AgentLayoutClient({ children, initialBadges, serverUserName }: {
     const sidebar = (
         <DashboardSidebar>
             <SidebarHeader>
-                <Link href="/agent">
+                <Link href={basePath}>
                     <Image
-                        src="https://jzupwygwzatugbrmqjau.supabase.co/storage/v1/object/sign/image/m_tagagent.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV82NWE4NDk3Zi1iNTdiLTQ1ZDMtOWI3ZC0yNDAxNzU4Njg1NTAiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJpbWFnZS9tX3RhZ2FnZW50LnBuZyIsImlhdCI6MTc3MTc2Mzk4NSwiZXhwIjozMzI3NjIyNzk4NX0.1mf2ApWgy64TXpQXboJXnSGFumPrOCvwn5u9p8EJmlI"
+                        src={logoUrl}
                         alt="AsistenQu Agent"
                         width={200}
                         height={40}
@@ -185,9 +195,9 @@ export function AgentLayoutClient({ children, initialBadges, serverUserName }: {
         <>
             <DashboardLayout sidebar={sidebar} isCollapsed={false} header={
                 <DashboardHeader mobileSidebar={sidebar}>
-                    <Link href="/agent">
+                    <Link href={basePath}>
                         <Image
-                            src="https://jzupwygwzatugbrmqjau.supabase.co/storage/v1/object/sign/image/m_tagagent.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV82NWE4NDk3Zi1iNTdiLTQ1ZDMtOWI3ZC0yNDAxNzU4Njg1NTAiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJpbWFnZS9tX3RhZ2FnZW50LnBuZyIsImlhdCI6MTc3MTc2Mzk4NSwiZXhwIjozMzI3NjIyNzk4NX0.1mf2ApWgy64TXpQXboJXnSGFumPrOCvwn5u9p8EJmlI"
+                            src={logoUrl}
                             alt="AsistenQu Agent"
                             width={120}
                             height={24}

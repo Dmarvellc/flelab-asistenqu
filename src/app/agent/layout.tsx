@@ -1,17 +1,17 @@
-import { cookies } from "next/headers";
 import { I18nProvider } from "@/components/providers/i18n-provider";
 import { AgentLayoutClient } from "./client-layout";
 import { getAgentMetrics } from "@/services/agent-metrics";
 import { findUserWithProfile } from "@/lib/auth-queries";
+import { getSession } from "@/lib/auth";
 
 export default async function AgentLayout(props: { children: React.ReactNode }) {
-  const cookieStore = await cookies();
-  const userId = cookieStore.get("session_agent_user_id")?.value;
+  const session = await getSession();
+  const userId = session?.userId;
 
   let initialBadges = { pendingContracts: 0, totalClaims: 0 };
   let serverUserName: string | null = null;
 
-  if (userId && userId.trim() !== "") {
+  if (userId) {
     try {
       const [metrics, profile] = await Promise.all([
         getAgentMetrics(userId).catch(() => ({

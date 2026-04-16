@@ -215,6 +215,7 @@ export async function createActiveUser(params: {
   email: string;
   password: string;
   role: string;
+  organizationName?: string;
   approvedBy?: string | null;
   profile?: {
     fullName?: string;
@@ -285,7 +286,7 @@ export async function createActiveUser(params: {
     if (params.role === 'hospital_admin') {
       const hospitalRes = await client.query(
         `INSERT INTO public.hospital (name, address) VALUES ($1, $2) RETURNING hospital_id`,
-        [params.profile?.fullName || 'Hospital', params.profile?.address || null]
+        [params.organizationName || params.profile?.fullName || 'Hospital', params.profile?.address || null]
       );
       const hospitalId = hospitalRes.rows[0].hospital_id;
 
@@ -296,7 +297,7 @@ export async function createActiveUser(params: {
     } else if (params.role === 'admin_agency') {
       const agencyRes = await client.query(
         `INSERT INTO public.agency (name, address) VALUES ($1, $2) RETURNING agency_id`,
-        [params.profile?.fullName || 'Agency', params.profile?.address || null]
+        [params.organizationName || params.profile?.fullName || 'Agency', params.profile?.address || null]
       );
       const agencyId = agencyRes.rows[0].agency_id;
 

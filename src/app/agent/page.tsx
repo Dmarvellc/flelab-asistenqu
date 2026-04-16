@@ -1,18 +1,16 @@
-import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 import { getAgentClaims } from "@/services/claims"
 import { getAgentMetrics } from "@/services/agent-metrics"
 import { DashboardClient } from "./dashboard-client"
 import { findUserWithProfile } from "@/lib/auth-queries"
+import { getSession } from "@/lib/auth"
 
 export default async function AgentDashboardPage() {
-  const cookieStore = await cookies()
-  const userId = cookieStore.get("session_agent_user_id")?.value
-
-  // Cookie missing or empty → not logged in, redirect to login
-  if (!userId || userId.trim() === "") {
+  const session = await getSession()
+  if (!session) {
     redirect("/agent/login")
   }
+  const userId = session.userId
 
   // Fetch metrics & claims in parallel; never crash the whole page
   const [metrics, claims, userProfile] = await Promise.all([

@@ -12,6 +12,7 @@ import {
 } from "@/lib/auth";
 import { consumeRateLimit, getClientIp } from "@/lib/rate-limit";
 import { normalizeRole } from "@/lib/rbac";
+import { dbPool } from "@/lib/db";
 
 type LoginPortal = "agent" | "hospital" | "developer" | "admin_agency";
 
@@ -91,11 +92,36 @@ export async function POST(request: Request) {
       await revokeSession(existingSessionId).catch(() => {});
     }
 
+    // Fetch agency info for agents/admin_agency
+    const agencyId = "agency_id" in user ? (user.agency_id as string | null | undefined) ?? null : null;
+    let agencySlug: string | null = null;
+    let agencyMemberRole: string | null = null;
+    let agencyName: string | null = null;
+
+    if (agencyId) {
+      const agencyRes = await dbPool.query(
+        `SELECT a.slug, a.name, am.role AS member_role
+         FROM public.agency a
+         LEFT JOIN public.agency_member am ON am.agency_id = a.agency_id AND am.user_id = $1
+         WHERE a.agency_id = $2
+         LIMIT 1`,
+        [user.user_id, agencyId]
+      ).catch(() => ({ rows: [] }));
+
+      if (agencyRes.rows.length > 0) {
+        agencySlug = agencyRes.rows[0].slug;
+        agencyName = agencyRes.rows[0].name;
+        agencyMemberRole = agencyRes.rows[0].member_role;
+      }
+    }
+
     const session = await createSession({
       userId: user.user_id,
       role,
       status: user.status,
-      agencyId: "agency_id" in user ? (user.agency_id as string | null | undefined) ?? null : null,
+      agencyId,
+      agencySlug,
+      agencyMemberRole,
       portal: body.portal ?? null,
       rememberMe: body.rememberMe,
     });
@@ -106,12 +132,16 @@ export async function POST(request: Request) {
         email: user.email,
         role,
         status: user.status,
+        agency_id: agencyId,
+        agency_slug: agencySlug,
+        agency_name: agencyName,
+        agency_member_role: agencyMemberRole,
       },
     });
 
     clearLegacyAuthCookies(response);
     clearSessionCookie(response);
-    applySessionCookie(response, session.sessionId, body.rememberMe, body.portal);
+    applySessionCookie(response, session.sessionId, body.rememberMe, body.portal, agencySlug);
     return response;
   } catch (error) {
     const errMsg = error instanceof Error ? error.message : String(error);

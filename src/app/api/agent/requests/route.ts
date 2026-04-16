@@ -1,19 +1,17 @@
 import { NextResponse } from "next/server";
 import { dbPool } from "@/lib/db";
-import { cookies } from "next/headers";
+import { getSession } from "@/lib/auth";
 
 export async function GET(req: Request) {
   const client = await dbPool.connect();
 
   try {
-    const cookieStore = await cookies();
-    // Support both namespaced (new) and legacy cookie names
-    const userId = cookieStore.get("session_agent_user_id")?.value;
-
-    if (!userId) {
+    const session = await getSession();
+    if (!session) {
       // Return empty requests instead of 401 to avoid breaking the notification UI
       return NextResponse.json({ requests: [] });
     }
+    const userId = session.userId;
 
     // Resolve Agent ID from User ID
     const agentLookup = await client.query(`

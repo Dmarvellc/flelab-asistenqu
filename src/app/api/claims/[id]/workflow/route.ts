@@ -264,7 +264,7 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
                 FROM public.user_role ur
                 WHERE ur.user_id = $3
                   AND ur.scope_type = 'HOSPITAL'
-                  AND ur.scope_id = c.hospital_id::text
+                  AND ur.scope_id = c.hospital_id
               )
             )
             OR (

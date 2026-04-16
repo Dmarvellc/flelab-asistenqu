@@ -105,6 +105,9 @@ function AdminAgencyLayoutContent({ children }: { children: React.ReactNode }) {
           <NavItem href="/admin-agency/network" icon={Stethoscope} active={pathname.startsWith('/admin-agency/network')} isCollapsed={false}>
             Marketplace
           </NavItem>
+          <NavItem href="/admin-agency/team" icon={Users} active={pathname.startsWith('/admin-agency/team')} isCollapsed={false}>
+            Tim
+          </NavItem>
           <NavItem href="/admin-agency/settings" icon={Settings} active={pathname === '/admin-agency/settings'} isCollapsed={false}>
             {t.settings}
           </NavItem>

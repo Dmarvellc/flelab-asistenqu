@@ -39,10 +39,20 @@ export function normalizeRole(value?: string | null): Role | null {
 }
 
 export function getAllowedRolesForPath(pathname: string): Role[] | null {
+  // Check static routes first
   const match = routeRoleMap.find((route) =>
     pathname.startsWith(route.prefix)
   );
-  return match ? match.roles : null;
+  if (match) return match.roles;
+
+  // Check dynamic agency slug routes: /{slug}/agent/...
+  const segments = pathname.split("/").filter(Boolean);
+  if (segments.length >= 2 && segments[1] === "agent") {
+    // This is a /{agencySlug}/agent route — same roles as /agent
+    return ["super_admin", "agent_manager", "agent"];
+  }
+
+  return null;
 }
 
 export function isRoleAllowed(role: Role | null, pathname: string): boolean {

@@ -5,6 +5,7 @@ import { AnimatedStep } from "@/components/home/AnimatedStep";
 import { HospitalMarquee } from "@/components/home/HospitalMarquee";
 import { HeroSection } from "@/components/home/HeroSection";
 import { FadeIn, StaggerFadeIn, FadeInHeading } from "@/components/home/FadeIn";
+import { PixelDivider } from "@/components/home/PixelDivider";
 import Link from "next/link";
 import {
   ArrowRight,
@@ -27,9 +28,34 @@ export default function Home() {
           <HospitalMarquee />
           <StatsSection />
           <SolutionsSection />
+
+          {/* white → dark: grid transitions */}
+          <PixelDivider
+            fromClassName="bg-white"
+            pixelClassName="bg-[#080808]"
+            maxFill={1}
+          />
+
           <AISection />
+
+          {/* dark → gray: pixels reveal the features section */}
+          <PixelDivider
+            fromClassName="bg-[#080808]"
+            pixelClassName="bg-gray-50"
+            maxFill={1}
+          />
+
           <FeaturesSection />
+
           <HowItWorksSection />
+          
+          {/* white → blue: pixels reveal the CTA section */}
+          <PixelDivider
+            fromClassName="bg-white"
+            pixelClassName="bg-blue-600"
+            maxFill={1}
+          />
+
           <CTASection />
         </div>
       </MarketingLayout>
@@ -47,14 +73,26 @@ function StatsSection() {
   ];
 
   return (
-    <section className="bg-white border-b border-gray-100 py-10 sm:py-16">
+    <section className="bg-white py-10 sm:py-16">
       <div className="max-w-6xl mx-auto px-4 sm:px-6">
-        <FadeIn>
-          <div className="grid grid-cols-2 lg:grid-cols-4 divide-x divide-y lg:divide-y-0 divide-gray-100 border border-gray-100 rounded-2xl sm:rounded-3xl overflow-hidden">
-            {stats.map((s) => (
-              <div key={s.label} className="px-4 py-6 sm:px-10 sm:py-10 text-center">
-                <p className="text-3xl sm:text-5xl font-black text-gray-900 tracking-tight leading-none mb-1 sm:mb-2">{s.value}</p>
-                <p className="text-xs sm:text-sm text-gray-400 font-medium">{s.label}</p>
+        <FadeIn className="h-full">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+            {stats.map((s, i) => (
+              <div
+                key={s.label}
+                className="px-4 py-8 sm:px-10 sm:py-10 text-center relative bg-gray-50/50 rounded-none hover:bg-gray-50 transition-colors duration-300 h-full flex flex-col justify-center items-center"
+              >
+                <div
+                  className="absolute inset-0 opacity-20 mask-image-linear-to-b"
+                  style={{
+                    backgroundImage: "radial-gradient(rgba(37,99,235,0.18) 1px, transparent 1px)",
+                    backgroundSize: "16px 16px",
+                  }}
+                />
+                <p className="relative text-3xl sm:text-5xl font-black text-gray-900 tracking-tight leading-none mb-1 sm:mb-2">
+                  {s.value}
+                </p>
+                <p className="relative text-xs sm:text-sm text-gray-400 font-medium">{s.label}</p>
               </div>
             ))}
           </div>
@@ -125,27 +163,29 @@ function SolutionsSection() {
           />
         </div>
 
-        <StaggerFadeIn className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-5 items-stretch" stagger={0.12}>
-          {portals.map((p) => (
-            <Link
-              key={p.label}
-              href={p.href}
-              className={`group relative ${p.bg} rounded-2xl sm:rounded-3xl p-6 sm:p-8 overflow-hidden hover:brightness-110 transition-all duration-300 flex`}
-            >
-              <div className="relative z-10 flex flex-col w-full">
-                <div className={`w-12 h-12 ${p.iconBg} rounded-2xl flex items-center justify-center mb-8`}>
-                  {p.icon}
+        {/* Equal-height cards via grid + h-full */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-5">
+          {portals.map((p, i) => (
+            <FadeIn key={p.label} delay={i * 0.12} className="h-full">
+              <Link
+                href={p.href}
+                className={`group relative ${p.bg} rounded-none p-6 sm:p-8 overflow-hidden hover:brightness-110 transition-all duration-300 flex flex-col h-full min-h-[280px]`}
+              >
+                <div className="relative z-10 flex flex-col h-full">
+                  <div className={`w-12 h-12 ${p.iconBg} rounded-none flex items-center justify-center mb-8`}>
+                    {p.icon}
+                  </div>
+                  <p className={`${p.labelColor} text-xs font-bold uppercase tracking-widest mb-2`}>{p.label}</p>
+                  <h3 className="text-lg sm:text-[22px] font-black text-white leading-snug mb-2 sm:mb-3">{p.title}</h3>
+                  <p className="text-white/50 text-sm leading-relaxed flex-1 mb-5 sm:mb-8">{p.desc}</p>
+                  <span className={`inline-flex items-center gap-2 ${p.ctaColor} font-semibold text-sm group-hover:gap-3 transition-all duration-200 mt-auto`}>
+                    {p.cta} <ArrowRight className="h-4 w-4" />
+                  </span>
                 </div>
-                <p className={`${p.labelColor} text-xs font-bold uppercase tracking-widest mb-2`}>{p.label}</p>
-                <h3 className="text-lg sm:text-[22px] font-black text-white leading-snug mb-2 sm:mb-3">{p.title}</h3>
-                <p className="text-white/50 text-sm leading-relaxed flex-1 mb-5 sm:mb-8">{p.desc}</p>
-                <span className={`inline-flex items-center gap-2 ${p.ctaColor} font-semibold text-sm group-hover:gap-3 transition-all duration-200`}>
-                  {p.cta} <ArrowRight className="h-4 w-4" />
-                </span>
-              </div>
-            </Link>
+              </Link>
+            </FadeIn>
           ))}
-        </StaggerFadeIn>
+        </div>
       </div>
     </section>
   );
@@ -161,16 +201,15 @@ function AISection() {
   ];
 
   const stats = [
-    { value: "2×",  label: "Lebih cepat memproses klaim" },
+    { value: "2×",   label: "Lebih cepat memproses klaim" },
     { value: "24/7", label: "Selalu aktif, tanpa gangguan" },
-    { value: "<2s", label: "Rata-rata waktu respons AI" },
+    { value: "<2s",  label: "Rata-rata waktu respons AI" },
   ];
 
   return (
     <section className="bg-[#080808] py-16 sm:py-24 lg:py-32">
       <div className="max-w-6xl mx-auto px-4 sm:px-6">
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-10 sm:gap-16 mb-16 sm:mb-24">
-          {/* Left headline */}
           <div className="lg:col-span-3">
             <FadeIn>
               <h2
@@ -191,32 +230,29 @@ function AISection() {
             </FadeIn>
           </div>
 
-          {/* Right: numbered capabilities */}
           <div className="lg:col-span-2 flex flex-col justify-end">
-            <FadeIn delay={0.15}>
+            <FadeIn delay={0.15} className="space-y-3 h-full flex flex-col justify-center">
               {capabilities.map((item, i) => (
                 <div
                   key={item}
-                  className="border-t border-white/8 py-5 flex items-center gap-5 group hover:border-white/20 transition-colors duration-300"
+                  className="bg-white/[0.02] hover:bg-white/[0.05] p-5 rounded-none flex items-center gap-5 group transition-colors duration-300"
                 >
                   <span className="text-white/15 text-[10px] font-mono w-6 shrink-0">0{i + 1}</span>
-                  <span className="text-white/45 text-sm font-medium group-hover:text-white/70 transition-colors duration-300">
+                  <span className="text-white/50 text-sm font-medium group-hover:text-white/80 transition-colors duration-300">
                     {item}
                   </span>
                 </div>
               ))}
-              <div className="border-t border-white/8" />
             </FadeIn>
           </div>
         </div>
 
-        {/* Stats row */}
         <FadeIn delay={0.1}>
-          <div className="grid grid-cols-1 sm:grid-cols-3 border-t border-white/8">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
             {stats.map((s, i) => (
               <div
                 key={s.label}
-                className={`py-6 sm:py-10 ${i > 0 ? "border-t sm:border-t-0 sm:border-l border-white/8" : ""} ${i === 0 ? "sm:pr-8" : "sm:px-8"}`}
+                className="py-8 sm:py-10 px-8 bg-white/[0.02] rounded-none h-full flex flex-col justify-center"
               >
                 <p className="text-4xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight leading-none mb-2 sm:mb-3">
                   {s.value}
@@ -275,7 +311,7 @@ function FeaturesSection() {
               <h2 className="text-3xl sm:text-5xl lg:text-6xl font-black text-gray-900 tracking-tight leading-[1.05] mb-4">
                 Semua yang Anda butuhkan.
                 <br />
-                <span className="text-blue-500">Tidak lebih, tidak kurang.</span>
+                <span className="text-blue-600">Tidak lebih, tidak kurang.</span>
               </h2>
             }
             sub={
@@ -287,16 +323,16 @@ function FeaturesSection() {
         </div>
 
         <StaggerFadeIn
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-px bg-gray-200 rounded-2xl sm:rounded-3xl overflow-hidden"
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6 items-stretch"
           stagger={0.08}
         >
           {features.map((feat) => (
-            <div key={feat.title} className="bg-gray-50 hover:bg-white transition-colors duration-200 p-5 sm:p-8 group">
-              <div className="w-10 h-10 bg-gray-900 rounded-2xl flex items-center justify-center text-white mb-5 group-hover:bg-blue-600 transition-colors duration-200">
+            <div key={feat.title} className="bg-white rounded-none shadow-[0_4px_24px_rgba(0,0,0,0.02)] hover:shadow-[0_8px_32px_rgba(0,0,0,0.04)] transition-shadow duration-300 p-6 sm:p-8 group h-full flex flex-col">
+              <div className="w-10 h-10 bg-gray-50 rounded-none flex items-center justify-center text-gray-900 mb-5 group-hover:bg-blue-50 group-hover:text-blue-600 transition-colors duration-300 shrink-0">
                 {feat.icon}
               </div>
               <h3 className="text-base font-bold text-gray-900 mb-2">{feat.title}</h3>
-              <p className="text-gray-400 text-sm leading-relaxed">{feat.desc}</p>
+              <p className="text-gray-400 text-sm leading-relaxed flex-1">{feat.desc}</p>
             </div>
           ))}
         </StaggerFadeIn>
@@ -348,15 +384,19 @@ function HowItWorksSection() {
           />
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 sm:gap-12">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
           {steps.map((step) => (
-            <AnimatedStep
+            <div
               key={step.number}
-              number={step.number}
-              title={step.title}
-              desc={step.desc}
-              delay={step.delay}
-            />
+              className="p-8 sm:p-10 bg-gray-50/50 rounded-none h-full flex flex-col"
+            >
+              <AnimatedStep
+                number={step.number}
+                title={step.title}
+                desc={step.desc}
+                delay={step.delay}
+              />
+            </div>
           ))}
         </div>
       </div>
@@ -382,7 +422,7 @@ function CTASection() {
           <FadeIn delay={0.15} className="flex flex-col gap-4">
             <Link
               href="mailto:hello@asistenqu.com"
-              className="group inline-flex items-center justify-between bg-white hover:bg-gray-50 text-blue-700 font-bold px-5 sm:px-8 py-4 sm:py-5 rounded-2xl transition-colors duration-200 text-base sm:text-lg"
+              className="group inline-flex items-center justify-between bg-white hover:bg-gray-50 text-blue-700 font-bold px-5 sm:px-8 py-4 sm:py-5 rounded-none transition-colors duration-200 text-base sm:text-lg"
             >
               <span className="flex items-center gap-3">
                 <PhoneCall className="h-5 w-5" />
@@ -392,7 +432,7 @@ function CTASection() {
             </Link>
             <Link
               href="/admin-agency/login"
-              className="inline-flex items-center justify-between bg-blue-500/40 hover:bg-blue-500/60 border border-white/20 text-white font-bold px-5 sm:px-8 py-4 sm:py-5 rounded-2xl transition-colors duration-200 text-base sm:text-lg"
+              className="inline-flex items-center justify-between bg-blue-500/20 hover:bg-blue-500/30 text-blue-100 font-bold px-5 sm:px-8 py-4 sm:py-5 rounded-none transition-colors duration-200 text-base sm:text-lg"
             >
               Sudah punya akun? Masuk
               <ArrowRight className="h-5 w-5" />

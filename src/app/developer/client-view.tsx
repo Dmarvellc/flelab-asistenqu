@@ -109,46 +109,51 @@ function Sparkline({ data, color = "#1a56db" }: { data: number[]; color?: string
 /* ─── Stat Card w/ Sparkline + Delta ───────────────────────────── */
 function StatCard({
   label, value, icon: Icon, color = "text-gray-900", accent = "#111827",
-  spark, delta, loading, href,
+  spark, delta, loading, href, bgClass = "bg-white",
 }: {
   label: string; value: number | string | undefined
   icon: React.ElementType; color?: string; accent?: string
   spark?: number[]; delta?: number; loading?: boolean; href?: string
+  bgClass?: string
 }) {
   const showDelta = typeof delta === "number" && !loading
   const deltaPositive = (delta ?? 0) >= 0
 
   const content = (
-    <div className={`group relative bg-white rounded-2xl border border-gray-100 shadow-sm px-5 py-4 flex flex-col gap-2.5 overflow-hidden ${href ? "hover:border-gray-200 hover:shadow-md transition-all" : ""}`}>
-      <div className="flex items-center justify-between">
-        <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">{label}</span>
-        <div className="w-7 h-7 rounded-lg bg-gray-50 flex items-center justify-center">
-          <Icon className={`h-3.5 w-3.5 ${color}`} />
-        </div>
-      </div>
-      {loading
-        ? <div className="h-8 w-20 bg-gray-100 animate-pulse rounded-lg" />
-        : (
-          <div className="flex items-baseline gap-2">
-            <p className={`text-3xl font-black tracking-tight leading-none ${color}`}>{value ?? "—"}</p>
-            {showDelta && delta !== 0 && (
-              <span className={`inline-flex items-center gap-0.5 text-[10px] font-bold tabular-nums ${deltaPositive ? "text-emerald-600" : "text-red-500"}`}>
-                {deltaPositive ? <TrendingUp className="h-2.5 w-2.5" /> : <TrendingDown className="h-2.5 w-2.5" />}
-                {deltaPositive ? "+" : ""}{delta}%
-              </span>
-            )}
+    <div className={`group relative rounded-2xl border border-gray-100/50 shadow-sm px-5 py-4 flex flex-col justify-between h-full overflow-hidden ${bgClass} ${href ? "hover:border-gray-200 hover:shadow-md transition-all scale-100 hover:scale-[1.02]" : ""}`}>
+      <div className="flex flex-col gap-2.5">
+        <div className="flex items-center justify-between">
+          <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">{label}</span>
+          <div className="w-7 h-7 rounded-lg bg-white shadow-sm flex items-center justify-center">
+            <Icon className={`h-3.5 w-3.5 ${color}`} />
           </div>
-        )
-      }
-      {spark && spark.length > 0 && !loading && (
-        <div className="-mx-1 opacity-70 group-hover:opacity-100 transition-opacity">
-          <Sparkline data={spark} color={accent} />
         </div>
-      )}
+        {loading
+          ? <div className="h-8 w-20 bg-gray-100 animate-pulse rounded-lg" />
+          : (
+            <div className="flex items-baseline gap-2">
+              <p className={`text-3xl font-black tracking-tight leading-none ${color}`}>{value ?? "—"}</p>
+              {showDelta && delta !== 0 && (
+                <span className={`inline-flex items-center gap-0.5 text-[10px] font-bold tabular-nums ${deltaPositive ? "text-emerald-600" : "text-red-500"}`}>
+                  {deltaPositive ? <TrendingUp className="h-2.5 w-2.5" /> : <TrendingDown className="h-2.5 w-2.5" />}
+                  {deltaPositive ? "+" : ""}{delta}%
+                </span>
+              )}
+            </div>
+          )
+        }
+      </div>
+      <div>
+        {spark && spark.length > 0 && !loading && (
+          <div className="-mx-1 mt-3 opacity-70 group-hover:opacity-100 transition-opacity">
+            <Sparkline data={spark} color={accent} />
+          </div>
+        )}
+      </div>
     </div>
   )
 
-  return href ? <Link href={href}>{content}</Link> : content
+  return href ? <Link href={href} className="block h-full">{content}</Link> : <div className="h-full">{content}</div>
 }
 
 /* ─── Bar Tooltip ───────────────────────────────────────────────── */
@@ -228,10 +233,10 @@ function buildInsights(data: Analytics | null): Array<{ tone: "warn" | "good" | 
 }
 
 /* ─── Page ───────────────────────────────────────────────────────── */
-export function DeveloperClientView() {
-  const [data, setData]       = useState<Analytics | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [lastUpdate, setLastUpdate] = useState<Date | null>(null)
+export function DeveloperClientView({ initialData }: { initialData?: Analytics | null }) {
+  const [data, setData]       = useState<Analytics | null>(initialData ?? null)
+  const [loading, setLoading] = useState(!initialData)
+  const [lastUpdate, setLastUpdate] = useState<Date | null>(new Date())
 
   const fetchAnalytics = useCallback(async () => {
     try {
@@ -282,20 +287,7 @@ export function DeveloperClientView() {
         <div className="min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <h1 className="text-xl sm:text-2xl font-black tracking-tight text-gray-900">Developer Console</h1>
-            <span className="inline-flex items-center gap-1 bg-gray-900 text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
-              Production
-            </span>
-            <span className="inline-flex items-center gap-1.5 bg-emerald-50 border border-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full">
-              <span className="relative flex h-1.5 w-1.5">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500" />
-              </span>
-              LIVE
-            </span>
           </div>
-          <p className="text-sm text-gray-400 mt-1">
-            {lastUpdate ? `Diperbarui ${fmtRelative(lastUpdate.toISOString())} · auto-refresh 60s` : "Memuat data…"}
-          </p>
         </div>
         <div className="flex items-center gap-2">
           <span className="hidden md:inline-flex items-center gap-1.5 text-[11px] text-gray-400 border border-gray-200 rounded-lg px-2 py-1">
@@ -311,61 +303,61 @@ export function DeveloperClientView() {
         </div>
       </div>
 
-      {/* ── Velocity Hero Strip ─────────────────────────────────── */}
-      <div className="bg-gradient-to-r from-gray-900 via-gray-900 to-blue-950 rounded-2xl px-4 sm:px-6 py-4 sm:py-5 text-white flex items-center justify-between flex-wrap gap-3 sm:gap-4 shadow-sm">
-        <div className="flex items-center gap-3 sm:gap-5 flex-wrap">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center">
-              <Zap className="h-5 w-5 text-amber-300" />
+      {/* ── Velocity Hero Strip (Clean Minimal) ─────────────────── */}
+      <div className="bg-white rounded-2xl px-6 py-6 border border-gray-100 shadow-sm flex items-center justify-between flex-wrap gap-4">
+        <div className="flex items-center gap-6 sm:gap-10 flex-wrap">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-gray-50 border border-gray-100 flex items-center justify-center">
+              <Zap className="h-5 w-5 text-gray-900" />
             </div>
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-white/50">Velocity 7d</p>
-              <p className="text-xl font-black tabular-nums">{velocity7d} <span className="text-xs text-white/60 font-medium">user/hari</span></p>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Velocity 7d</p>
+              <p className="text-2xl font-black tabular-nums text-gray-900">{velocity7d} <span className="text-xs text-gray-400 font-medium">user/hari</span></p>
             </div>
           </div>
-          <div className="h-10 w-px bg-white/10" />
+          <div className="h-10 w-px bg-gray-100" />
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-widest text-white/50">This Week</p>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">This Week</p>
             <div className="flex items-baseline gap-2">
-              <p className="text-xl font-black tabular-nums">{data?.wow?.current ?? 0}</p>
+              <p className="text-2xl font-black tabular-nums text-gray-900">{data?.wow?.current ?? 0}</p>
               {typeof wowDelta === "number" && (
-                <span className={`inline-flex items-center gap-0.5 text-[10px] font-bold ${wowDelta >= 0 ? "text-emerald-300" : "text-red-300"}`}>
+                <span className={`inline-flex items-center gap-0.5 text-[10px] font-bold ${wowDelta >= 0 ? "text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded" : "text-red-500 bg-red-50 px-1.5 py-0.5 rounded"}`}>
                   {wowDelta >= 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
                   {wowDelta >= 0 ? "+" : ""}{wowDelta}% WoW
                 </span>
               )}
             </div>
           </div>
-          <div className="h-10 w-px bg-white/10 hidden sm:block" />
+          <div className="h-10 w-px bg-gray-100 hidden sm:block" />
           <div className="hidden sm:block">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-white/50">Approval 30d</p>
-            <p className="text-xl font-black tabular-nums">{approvalPct}%</p>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Approval 30d</p>
+            <p className="text-2xl font-black tabular-nums text-gray-900">{approvalPct}%</p>
           </div>
-          <div className="h-10 w-px bg-white/10 hidden lg:block" />
+          <div className="h-10 w-px bg-gray-100 hidden lg:block" />
           <div className="hidden lg:block">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-white/50">Peak Hour</p>
-            <p className="text-xl font-black tabular-nums">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Peak Hour</p>
+            <p className="text-2xl font-black tabular-nums text-gray-900">
               {data?.peakHour ? `${String(data.peakHour.hour).padStart(2,"0")}:00` : "—"}
             </p>
           </div>
         </div>
         <Link href="/developer/analytics"
-          className="inline-flex items-center gap-2 bg-white/10 hover:bg-white/20 backdrop-blur text-white text-xs font-semibold px-4 py-2 rounded-xl transition-all">
+          className="inline-flex items-center gap-2 bg-gray-900 hover:bg-black text-white text-xs font-semibold px-5 py-2.5 rounded-xl transition-all shadow-md">
           Deep Analytics <ArrowRight className="h-3.5 w-3.5" />
         </Link>
       </div>
 
       {/* ── Stat Cards with Sparklines ─────────────────────────── */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-        <StatCard label="Total Users"  value={pt?.totalUsers}   icon={Users}      loading={loading}
-          spark={data?.sparklines?.users} delta={wowDelta} accent="#111827" />
-        <StatCard label="Active"       value={pt?.activeUsers}  icon={Activity}   color="text-emerald-600" accent="#059669" loading={loading} />
-        <StatCard label="Pending"      value={pt?.pendingUsers} icon={Clock}      color="text-amber-600"   accent="#d97706" loading={loading} href="/developer/pending" />
-        <StatCard label="Agents"       value={pt?.activeAgents} icon={Users}      color="text-blue-600"    accent="#1a56db" loading={loading}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 items-stretch">
+        <StatCard label="Total Users"  value={pt?.totalUsers}   icon={Users}      loading={loading} bgClass="bg-blue-50/40"
+          spark={data?.sparklines?.users} delta={wowDelta} accent="#1e3a8a" color="text-blue-900" />
+        <StatCard label="Active"       value={pt?.activeUsers}  icon={Activity}   color="text-emerald-700" accent="#047857" loading={loading} bgClass="bg-emerald-50/40" />
+        <StatCard label="Pending"      value={pt?.pendingUsers} icon={Clock}      color="text-amber-700"   accent="#b45309" loading={loading} href="/developer/pending" bgClass="bg-amber-50/40" />
+        <StatCard label="Agents"       value={pt?.activeAgents} icon={Users}      color="text-indigo-700"  accent="#4338ca" loading={loading} bgClass="bg-indigo-50/40"
           spark={data?.sparklines?.agents} />
-        <StatCard label="Agencies"     value={pt?.agencies}     icon={Briefcase}  color="text-violet-600"  accent="#7c3aed" loading={loading} href="/developer/agencies"
+        <StatCard label="Agencies"     value={pt?.agencies}     icon={Briefcase}  color="text-fuchsia-700" accent="#a21caf" loading={loading} href="/developer/agencies" bgClass="bg-fuchsia-50/40"
           spark={data?.sparklines?.agencies} />
-        <StatCard label="Hospitals"    value={pt?.hospitals}    icon={Building2}  color="text-teal-600"    accent="#0d9488" loading={loading} href="/developer/hospitals"
+        <StatCard label="Hospitals"    value={pt?.hospitals}    icon={Building2}  color="text-teal-700"    accent="#0f766e" loading={loading} href="/developer/hospitals" bgClass="bg-teal-50/40"
           spark={data?.sparklines?.hospitals} />
       </div>
 
@@ -549,42 +541,97 @@ export function DeveloperClientView() {
             )}
           </div>
 
-          {/* Approval Rate Card */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-            <div className="flex items-center justify-between mb-4">
+          {/* Member Hierarchy Tree */}
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex flex-col items-stretch">
+            <div className="p-6 border-b border-gray-50 flex items-center justify-between">
               <div>
-                <h2 className="text-sm font-bold text-gray-900">Approval Rate</h2>
-                <p className="text-xs text-gray-400 mt-0.5">30 hari terakhir</p>
+                <h2 className="text-sm font-bold text-gray-900">Member Hierarchy</h2>
+                <p className="text-xs text-gray-400 mt-0.5">Korelasi distribusi pengguna</p>
               </div>
-              <span className={`text-lg font-black ${approvalPct >= 80 ? "text-emerald-600" : approvalPct >= 50 ? "text-amber-600" : "text-red-600"}`}>
-                {loading ? "—" : `${approvalPct}%`}
-              </span>
+              <div className="flex gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+                <span className="w-2 h-2 rounded-full bg-blue-400"></span>
+                <span className="w-2 h-2 rounded-full bg-fuchsia-400"></span>
+              </div>
             </div>
-            {loading ? (
-              <div className="h-2 bg-gray-100 rounded-full animate-pulse" />
-            ) : (
-              <>
-                <div className="h-2 bg-gray-100 rounded-full overflow-hidden mb-4">
-                  <div
-                    className="h-full bg-emerald-400 rounded-full transition-all duration-700"
-                    style={{ width: `${approvalPct}%` }}
-                  />
-                </div>
-                <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
-                  {[
-                    { label: "Approved", count: ar?.approved, icon: CheckCircle2, color: "text-emerald-600" },
-                    { label: "Rejected", count: ar?.rejected, icon: XCircle,     color: "text-red-500"     },
-                    { label: "Pending",  count: ar?.pending,  icon: AlertTriangle,color: "text-amber-600"  },
-                  ].map(({ label, count, icon: Icon, color }) => (
-                    <div key={label} className="text-center">
-                      <Icon className={`h-4 w-4 ${color} mx-auto mb-1`} />
-                      <p className="text-sm font-black text-gray-900">{count ?? 0}</p>
-                      <p className="text-[10px] text-gray-400">{label}</p>
+            
+            <div className="p-6 flex-1 flex flex-col justify-center">
+              {loading ? (
+                 <div className="space-y-4">
+                  {[1,2,3].map(i => <div key={i} className="h-10 bg-gray-50 rounded-xl animate-pulse" />)}
+                 </div>
+              ) : (
+                <div className="relative pl-4 border-l-2 border-gray-100 space-y-5 py-2">
+                  
+                  {/* Agency Node */}
+                  <div className="relative">
+                    <div className="absolute w-4 h-0.5 bg-gray-100 -left-4 top-4"></div>
+                    <div className="absolute w-2 h-2 rounded-full bg-fuchsia-400 -left-[21px] top-3 border-2 border-white"></div>
+                    <div className="flex items-center gap-3">
+                      <div className="bg-fuchsia-50 p-2 rounded-lg">
+                        <Briefcase className="h-4 w-4 text-fuchsia-600" />
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-gray-900">Root Agencies</p>
+                        <p className="text-[10px] text-gray-500">{pt?.agencies ?? 0} Instansi Terdaftar</p>
+                      </div>
                     </div>
-                  ))}
+                  </div>
+
+                  {/* Hospital/Admin Node */}
+                  <div className="relative pl-6">
+                    <div className="absolute w-6 h-0.5 bg-gray-100 left-0 top-4"></div>
+                    <div className="absolute w-0.5 h-16 bg-gray-100 left-0 -top-12"></div>
+                    <div className="absolute w-2 h-2 rounded-full bg-teal-400 -left-[3px] top-3 border-2 border-white"></div>
+                    <div className="flex items-center gap-3">
+                      <div className="bg-teal-50 p-2 rounded-lg">
+                        <Building2 className="h-4 w-4 text-teal-600" />
+                      </div>
+                      <div>
+                         <p className="text-xs font-bold text-gray-900">Hospital Admins</p>
+                         <p className="text-[10px] text-gray-500">{pt?.hospitals ?? 0} Rumah Sakit Mitra</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Agent Node */}
+                  <div className="relative pl-12">
+                     <div className="absolute w-6 h-0.5 bg-gray-100 left-6 top-4"></div>
+                     <div className="absolute w-0.5 h-16 bg-gray-100 left-6 -top-12"></div>
+                     <div className="absolute w-2 h-2 rounded-full bg-blue-400 left-[21px] top-3 border-2 border-white"></div>
+                     <div className="flex items-center gap-3">
+                        <div className="bg-blue-50 p-2 rounded-lg">
+                          <Users className="h-4 w-4 text-blue-600" />
+                        </div>
+                        <div>
+                          <p className="text-xs font-bold text-gray-900">Active Agents</p>
+                          <p className="text-[10px] text-gray-500">{pt?.totalAgents ?? 0} Agen Lapangan</p>
+                        </div>
+                     </div>
+                  </div>
+
+                   {/* End Users Node */}
+                   <div className="relative pl-[4.5rem]">
+                     <div className="absolute w-6 h-0.5 bg-gray-100 left-12 top-4"></div>
+                     <div className="absolute w-0.5 h-16 bg-gray-100 left-12 -top-12"></div>
+                     <div className="absolute w-2 h-2 rounded-full bg-amber-400 left-[45px] top-3 border-2 border-white shadow-[0_0_8px_rgba(251,191,36,0.5)]"></div>
+                     <div className="flex items-center justify-between gap-3 p-3 bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl border border-amber-100">
+                        <div className="flex items-center gap-3">
+                          <div className="bg-white p-2 rounded-lg shadow-sm">
+                            <Activity className="h-4 w-4 text-amber-600" />
+                          </div>
+                          <div>
+                            <p className="text-xs font-bold text-gray-900">End Users</p>
+                            <p className="text-[10px] text-gray-500">{pt?.totalUsers ?? 0} Pasien / Klien</p>
+                          </div>
+                        </div>
+                        <span className="text-xs font-black text-amber-700">{pt?.activeUsers ?? 0} Aktif</span>
+                     </div>
+                  </div>
+                  
                 </div>
-              </>
-            )}
+              )}
+            </div>
           </div>
         </div>
       </div>

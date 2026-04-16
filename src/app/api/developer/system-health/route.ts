@@ -94,7 +94,7 @@ export async function GET() {
         COUNT(DISTINCT ur.user_id) AS admin_count,
         h.created_at
       FROM public.hospital h
-      LEFT JOIN public.user_role ur ON ur.scope_id = h.hospital_id::text AND ur.scope_type = 'HOSPITAL'
+      LEFT JOIN public.user_role ur ON ur.scope_id = h.hospital_id AND ur.scope_type = 'HOSPITAL'
       GROUP BY h.hospital_id, h.name, h.created_at
       ORDER BY h.created_at DESC
       LIMIT 10

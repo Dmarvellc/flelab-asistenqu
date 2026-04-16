@@ -16,6 +16,7 @@ export async function POST(request: Request) {
     email?: string;
     password?: string;
     role?: string;
+    organizationName?: string;
     fullName?: string;
     nik?: string;
     phoneNumber?: string;
@@ -42,6 +43,7 @@ export async function POST(request: Request) {
       email: body.email,
       password: body.password,
       role: body.role,
+      organizationName: body.organizationName,
       approvedBy,
       profile: {
         fullName: body.fullName,

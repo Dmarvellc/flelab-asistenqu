@@ -1,27 +1,10 @@
 "use client"
 
-import { useState, useRef, useEffect, useCallback, KeyboardEvent } from "react"
-import { ChevronUp, ChevronDown, Minus, Copy, Trash2, Loader2, TerminalIcon } from "lucide-react"
-
-/* ─── Types ─────────────────────────────────────────────────── */
-type LineType = "command" | "success" | "error" | "info" | "warn" | "muted" | "blank" | "heading"
-
-interface OutputLine {
-  id: string
-  type: LineType
-  text: string
-  ts: Date
-}
-
-type StatData = {
-  total_users?: number
-  active_users?: number
-  pending_users?: number
-  total_claims?: number
-  total_agents?: number
-  total_agencies?: number
-  total_hospitals?: number
-}
+import { useState, useEffect } from "react"
+import {
+  Users, UserCheck, Building2, Briefcase, Activity,
+  CheckCircle2, XCircle, Plus, Loader2, X, RefreshCw, TerminalIcon, Maximize2, Minimize2, ChevronUp, ChevronDown
+} from "lucide-react"
 
 type PendingUser = {
   user_id: string
@@ -30,411 +13,287 @@ type PendingUser = {
   full_name?: string
 }
 
-/* ─── Helpers ───────────────────────────────────────────────── */
-let lineId = 0
-function mkLine(type: LineType, text: string): OutputLine {
-  return { id: String(++lineId), type, text, ts: new Date() }
+interface QuickForm {
+  open: boolean
+  role: "agent" | "agency" | "hospital" | null
+  organizationName: string
+  email: string
+  password: string
+  fullName: string
+  phone: string
+  loading: boolean
+  result: string | null
 }
 
-function tokenize(raw: string): string[] {
-  const tokens: string[] = []
-  let cur = ""
-  let inQ = false
-  for (const ch of raw.trim()) {
-    if (ch === '"') { inQ = !inQ }
-    else if (ch === " " && !inQ) { if (cur) { tokens.push(cur); cur = "" } }
-    else { cur += ch }
-  }
-  if (cur) tokens.push(cur)
-  return tokens
-}
-
-function parseFlags(tokens: string[]): Record<string, string> {
-  const flags: Record<string, string> = {}
-  for (let i = 0; i < tokens.length; i++) {
-    if (tokens[i].startsWith("--")) {
-      const key = tokens[i].slice(2)
-      if (i + 1 < tokens.length && !tokens[i + 1].startsWith("--")) {
-        flags[key] = tokens[i + 1]; i++
-      } else { flags[key] = "true" }
-    }
-  }
-  return flags
-}
-
-function ts(d: Date) {
-  return d.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", second: "2-digit" })
-}
-
-const COMMANDS = [
-  "help", "status", "ping",
-  "list pending", "list users",
-  "create agent", "create agency", "create hospital",
-  "approve", "reject",
-  "whoami", "clear",
-]
-
-const HELP_LINES: [string, string][] = [
-  ["help", "Show this help"],
-  ["status", "System stats"],
-  ["ping", "Check API health"],
-  ["list pending", "List pending users awaiting approval"],
-  ["create agent --email X --password X --name \"Name\"", "Create agent account"],
-  ["create agency --email X --password X --name \"Name\"", "Create agency admin"],
-  ["create hospital --email X --password X --name \"Name\"", "Create hospital admin"],
-  ["approve <userId>", "Approve pending user"],
-  ["reject <userId>", "Reject pending user"],
-  ["whoami", "Current session info"],
-  ["clear", "Clear output"],
-]
-
-const lineColor: Record<LineType, string> = {
-  command: "text-white",
-  success: "text-emerald-400",
-  error:   "text-red-400",
-  info:    "text-blue-300",
-  warn:    "text-amber-400",
-  muted:   "text-white/30",
-  blank:   "",
-  heading: "text-white font-semibold",
-}
-
-/* ─── Component ─────────────────────────────────────────────── */
 export function DevTerminalDrawer() {
-  const [expanded, setExpanded] = useState(false)
-  const [lines, setLines] = useState<OutputLine[]>([
-    mkLine("muted", "AsistenQu Developer Terminal  —  type help for commands"),
-    mkLine("blank", ""),
-  ])
-  const [input, setInput] = useState("")
-  const [history, setHistory] = useState<string[]>([])
-  const [histIdx, setHistIdx] = useState(-1)
-  const [loading, setLoading] = useState(false)
+  const [size, setSize] = useState<"minimized" | "half" | "full">("minimized")
+  const [pending, setPending] = useState<PendingUser[]>([])
+  const [pendingLoading, setPendingLoading] = useState(false)
+  const [form, setForm] = useState<QuickForm>({
+    open: false, role: null,
+    organizationName: "", email: "", password: "", fullName: "", phone: "",
+    loading: false, result: null,
+  })
 
-  const outputRef = useRef<HTMLDivElement>(null)
-  const inputRef = useRef<HTMLInputElement>(null)
-
-  /* auto-scroll */
-  useEffect(() => {
-    if (expanded) {
-      outputRef.current?.scrollTo({ top: outputRef.current.scrollHeight, behavior: "smooth" })
-    }
-  }, [lines, expanded])
-
-  /* focus on expand */
-  useEffect(() => {
-    if (expanded) {
-      setTimeout(() => inputRef.current?.focus(), 150)
-    }
-  }, [expanded])
-
-  const push = useCallback((...newLines: OutputLine[]) => {
-    setLines(prev => [...prev, ...newLines])
-  }, [])
-
-  const run = useCallback(async (raw: string) => {
-    const trimmed = raw.trim()
-    if (!trimmed) return
-
-    setHistory(h => [trimmed, ...h.slice(0, 49)])
-    setHistIdx(-1)
-    push(mkLine("command", `$ ${trimmed}`))
-    setLoading(true)
-
-    const tokens = tokenize(trimmed)
-    const cmd = tokens[0]?.toLowerCase()
-    const sub = tokens[1]?.toLowerCase()
-    const flags = parseFlags(tokens)
-
+  async function fetchPending() {
+    setPendingLoading(true)
     try {
-      if (cmd === "help") {
-        push(mkLine("blank", ""), mkLine("heading", "Commands"))
-        for (const [c, d] of HELP_LINES) {
-          push(mkLine("info", `  ${c}`))
-          push(mkLine("muted", `    → ${d}`))
-        }
-        push(mkLine("blank", ""))
-      }
+      const r = await fetch("/api/developer/pending")
+      if (r.ok) { const d = await r.json(); setPending(d.pending ?? []) }
+    } finally { setPendingLoading(false) }
+  }
 
-      else if (cmd === "clear") {
-        setLines([mkLine("muted", "Cleared."), mkLine("blank", "")])
-        setLoading(false); return
-      }
-
-      else if (cmd === "ping") {
-        const t0 = Date.now()
-        const r = await fetch("/api/health")
-        const ms = Date.now() - t0
-        push(r.ok
-          ? mkLine("success", `✓ API healthy · ${ms}ms`)
-          : mkLine("error", `✗ API returned ${r.status} · ${ms}ms`))
-      }
-
-      else if (cmd === "whoami") {
-        try {
-          const user = JSON.parse(localStorage.getItem("user") || "{}")
-          if (user?.email) {
-            push(
-              mkLine("info",  `Email:  ${user.email}`),
-              mkLine("info",  `Role:   ${user.role}`),
-              mkLine("muted", `ID:     ${user.user_id ?? "—"}`),
-            )
-          } else {
-            push(mkLine("warn", "No session found."))
-          }
-        } catch {
-          push(mkLine("warn", "No session found."))
-        }
-      }
-
-      else if (cmd === "status") {
-        push(mkLine("muted", "Fetching stats…"))
-        const r = await fetch("/api/developer/stats")
-        const d = await r.json()
-        if (!r.ok) { push(mkLine("error", `✗ ${d.error}`)); setLoading(false); return }
-        const s: StatData = d.stats ?? d
-        push(
-          mkLine("blank", ""),
-          mkLine("heading", "System Status"),
-          mkLine("success", `  Total Users    ${s.total_users ?? "—"}`),
-          mkLine("success", `  Active Users   ${s.active_users ?? "—"}`),
-          mkLine("warn",    `  Pending        ${s.pending_users ?? "—"}`),
-          mkLine("info",    `  Agents         ${s.total_agents ?? "—"}`),
-          mkLine("info",    `  Agencies       ${s.total_agencies ?? "—"}`),
-          mkLine("info",    `  Hospitals      ${s.total_hospitals ?? "—"}`),
-          mkLine("info",    `  Claims         ${s.total_claims ?? "—"}`),
-          mkLine("blank", ""),
-        )
-      }
-
-      else if (cmd === "list") {
-        if (sub === "pending") {
-          push(mkLine("muted", "Fetching pending users…"))
-          const r = await fetch("/api/developer/pending")
-          const d = await r.json()
-          if (!r.ok) { push(mkLine("error", `✗ ${d.error}`)); setLoading(false); return }
-          const list: PendingUser[] = d.pending ?? []
-          if (list.length === 0) {
-            push(mkLine("muted", "  No pending users."))
-          } else {
-            push(mkLine("blank", ""), mkLine("heading", `Pending (${list.length})`))
-            for (const u of list) {
-              push(
-                mkLine("warn",  `  ${u.email}`),
-                mkLine("muted", `    ${u.role}  ·  ${u.full_name ?? "—"}  ·  ${u.user_id.slice(0, 12)}…`),
-              )
-            }
-            push(mkLine("blank", ""), mkLine("info", "  Use: approve <userId>"))
-          }
-          push(mkLine("blank", ""))
-        } else {
-          push(mkLine("error", "Usage: list pending"))
-        }
-      }
-
-      else if (cmd === "create") {
-        const roleMap: Record<string, string> = {
-          agent: "agent", agency: "admin_agency", hospital: "hospital_admin",
-        }
-        const apiRole = roleMap[sub ?? ""]
-        if (!apiRole) {
-          push(mkLine("error", `✗ Unknown type "${sub}". Use: agent | agency | hospital`))
-          setLoading(false); return
-        }
-        const email    = flags.email    || flags.e
-        const password = flags.password || flags.p
-        const fullName = flags.name     || flags.n
-        const phone    = flags.phone
-        if (!email || !password || !fullName) {
-          push(
-            mkLine("error", "✗ Missing required flags:"),
-            mkLine("muted", "  --email X  --password X  --name \"Full Name\""),
-          )
-          setLoading(false); return
-        }
-        push(mkLine("muted", `Creating ${sub} → ${email}…`))
-        const r = await fetch("/api/developer/create", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, password, role: apiRole, fullName, phoneNumber: phone }),
-        })
-        const d = await r.json()
-        if (!r.ok) {
-          push(mkLine("error", `✗ ${d.error}`))
-        } else {
-          push(
-            mkLine("blank", ""),
-            mkLine("success", `✓ Created ${sub}  ${d.user.user_id.slice(0, 12)}…`),
-            mkLine("info",    `  ${d.user.email}  →  ACTIVE`),
-            mkLine("blank", ""),
-          )
-        }
-      }
-
-      else if (cmd === "approve") {
-        const userId = tokens[1]
-        if (!userId) { push(mkLine("error", "Usage: approve <userId>")); setLoading(false); return }
-        push(mkLine("muted", `Approving ${userId.slice(0, 12)}…`))
-        const r = await fetch("/api/developer/approve", {
-          method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ userId }),
-        })
-        const d = await r.json()
-        if (!r.ok) push(mkLine("error", `✗ ${d.error}`))
-        else push(mkLine("success", `✓ User approved → ACTIVE`))
-      }
-
-      else if (cmd === "reject") {
-        const userId = tokens[1]
-        if (!userId) { push(mkLine("error", "Usage: reject <userId>")); setLoading(false); return }
-        push(mkLine("muted", `Rejecting ${userId.slice(0, 12)}…`))
-        const r = await fetch("/api/developer/reject", {
-          method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ userId }),
-        })
-        const d = await r.json()
-        if (!r.ok) push(mkLine("error", `✗ ${d.error}`))
-        else push(mkLine("warn", `✓ User rejected`))
-      }
-
-      else {
-        push(mkLine("error", `✗ Unknown command: "${cmd}". Type help.`))
-      }
-
-    } catch (err: unknown) {
-      push(mkLine("error", `✗ ${err instanceof Error ? err.message : String(err)}`))
+  useEffect(() => {
+    if (size !== "minimized") {
+      fetchPending()
     }
+  }, [size])
 
-    setLoading(false)
-  }, [push])
+  async function approveUser(userId: string) {
+    await fetch("/api/developer/approve", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId }),
+    })
+    fetchPending()
+  }
 
-  function onKeyDown(e: KeyboardEvent<HTMLInputElement>) {
-    if (e.key === "Enter") {
-      const val = input; setInput(""); run(val)
-    } else if (e.key === "ArrowUp") {
-      e.preventDefault()
-      const next = Math.min(histIdx + 1, history.length - 1)
-      setHistIdx(next); setInput(history[next] ?? "")
-    } else if (e.key === "ArrowDown") {
-      e.preventDefault()
-      const next = Math.max(histIdx - 1, -1)
-      setHistIdx(next); setInput(next === -1 ? "" : history[next] ?? "")
-    } else if (e.key === "Tab") {
-      e.preventDefault()
-      const match = COMMANDS.find(c => c.startsWith(input.toLowerCase()) && c !== input.toLowerCase())
-      if (match) setInput(match)
+  async function rejectUser(userId: string) {
+    await fetch("/api/developer/reject", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId }),
+    })
+    fetchPending()
+  }
+
+  async function submitCreate() {
+    const { role, organizationName, email, password, fullName, phone } = form
+    if (!email || !password || !fullName || !role) return
+    const roleMap: Record<string, string> = {
+      agent: "agent", agency: "admin_agency", hospital: "hospital_admin",
+    }
+    setForm(f => ({ ...f, loading: true, result: null }))
+    try {
+      const r = await fetch("/api/developer/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password, role: roleMap[role], organizationName, fullName, phoneNumber: phone }),
+      })
+      const d = await r.json()
+      if (!r.ok) {
+        setForm(f => ({ ...f, loading: false, result: `error:${d.error}` }))
+      } else {
+        setForm(f => ({ ...f, loading: false, result: `ok:${d.user.user_id}` }))
+        setTimeout(() => setForm(f => ({
+          ...f, open: false, organizationName: "", email: "", password: "", fullName: "", phone: "", result: null,
+        })), 1500)
+      }
+    } catch (err) {
+      setForm(f => ({ ...f, loading: false, result: `error:${String(err)}` }))
     }
   }
+
+  const isFullscreen = size === "full"
+  const isExpanded = size !== "minimized"
 
   return (
     <div
       className={[
-        "fixed bottom-0 right-0 left-0 sm:left-[260px] z-30",
-        "bg-[#0d0d0d] border-t border-white/[0.07]",
-        "flex flex-col transition-all duration-200 ease-out",
-        expanded ? "h-80" : "h-10",
+        "fixed bottom-0 right-0 left-0 sm:left-[260px] z-50",
+        "bg-white border-t border-gray-200 shadow-[0_-4px_24px_rgba(0,0,0,0.05)]",
+        "flex flex-col transition-all duration-300 ease-out",
+        size === "full" ? "h-screen" : size === "half" ? "h-[60vh]" : "h-11",
       ].join(" ")}
     >
       {/* ── Title bar ─────────────────────────────────────────── */}
       <div
-        className="flex items-center gap-3 h-10 px-4 shrink-0 cursor-pointer select-none group"
+        className={`flex items-center gap-3 h-11 px-4 shrink-0 cursor-pointer select-none group border-b transition-colors ${isExpanded ? "border-gray-100 bg-gray-50/50" : "border-transparent hover:bg-gray-50 bg-white"}`}
         onClick={() => {
-          setExpanded(v => !v)
+          if (size === "minimized") setSize("half")
+          else setSize("minimized")
         }}
       >
-        {/* macOS dots */}
-        <div className="flex gap-1.5 shrink-0">
-          <span className="w-2.5 h-2.5 rounded-full bg-[#ff5f57]/70" />
-          <span className="w-2.5 h-2.5 rounded-full bg-[#febc2e]/70" />
-          <span className="w-2.5 h-2.5 rounded-full bg-[#28c840]/70" />
-        </div>
-
-        <TerminalIcon className="h-3.5 w-3.5 text-white/25 shrink-0" />
-        <span className="text-white/30 text-xs font-mono tracking-wide flex-1">
-          asistenqu — developer terminal
+        <TerminalIcon className="h-4 w-4 text-emerald-500 shrink-0 group-hover:text-emerald-600 transition-colors" />
+        <span className="text-gray-900 font-bold tracking-wide flex-1 text-sm">
+          Developer Utilities
         </span>
 
-        {loading && <Loader2 className="h-3 w-3 text-blue-400 animate-spin shrink-0" />}
+        {pending.length > 0 && (
+          <span className="inline-flex items-center justify-center min-w-[20px] h-5 rounded-full bg-amber-100 text-amber-700 text-[11px] font-bold px-1.5 shrink-0">
+            {pending.length} Pending
+          </span>
+        )}
 
-        {/* Minimize / Expand */}
-        <button
-          onClick={(e) => { e.stopPropagation(); setExpanded(v => !v) }}
-          className="text-white/20 hover:text-white/60 transition-colors shrink-0 p-0.5"
-          title={expanded ? "Minimize" : "Expand"}
-        >
-          {expanded
-            ? <ChevronDown className="h-3.5 w-3.5" />
-            : <ChevronUp className="h-3.5 w-3.5" />}
-        </button>
+        {/* Maximize / Minimize controls */}
+        <div className="flex items-center gap-1">
+          {/* Fullscreen Toggle */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              setSize(s => s === "full" ? "half" : "full")
+            }}
+            className="text-gray-400 hover:text-gray-900 hover:bg-gray-200 rounded-md transition-colors shrink-0 p-1"
+            title={isFullscreen ? "Restore" : "Fullscreen"}
+          >
+            {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+          </button>
 
-        <button
-          onClick={(e) => {
-            e.stopPropagation()
-            setLines([mkLine("muted", "Cleared."), mkLine("blank", "")])
-          }}
-          className="text-white/15 hover:text-white/50 transition-colors shrink-0 p-0.5"
-          title="Clear"
-        >
-          <Trash2 className="h-3 w-3" />
-        </button>
+          {/* Expand / Collapse */}
+          <button
+            onClick={(e) => { e.stopPropagation(); setSize(s => s === "minimized" ? "half" : "minimized") }}
+            className="text-gray-400 hover:text-gray-900 hover:bg-gray-200 rounded-md transition-colors shrink-0 p-1"
+          >
+            {isExpanded
+              ? <ChevronDown className="h-4 w-4" />
+              : <ChevronUp className="h-4 w-4" />}
+          </button>
+        </div>
       </div>
 
-      {/* ── Body (shown only when expanded) ───────────────────── */}
-      {expanded && (
-        <div
-          className="flex flex-col flex-1 min-h-0 cursor-text"
-          onClick={() => inputRef.current?.focus()}
-        >
-          {/* Output */}
-          <div
-            ref={outputRef}
-            className="flex-1 overflow-y-auto px-4 py-2 font-mono text-[12px] leading-[1.65] space-y-0"
-          >
-            {lines.map(line => (
-              <div key={line.id} className={`group flex items-start gap-2 ${lineColor[line.type]}`}>
-                {line.type !== "blank" && (
-                  <span className="text-white/[0.12] text-[10px] mt-px shrink-0 w-14 select-none tabular-nums">
-                    {ts(line.ts)}
-                  </span>
-                )}
-                <span className="flex-1 whitespace-pre-wrap break-all">{line.text}</span>
-                {line.type === "command" && (
+      {/* ── Body ───────────────────── */}
+      {isExpanded && (
+        <div className="flex-1 overflow-y-auto bg-gray-50/30 p-4 sm:p-6 pb-20">
+          <div className="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+            {/* Quick Create */}
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden h-fit">
+              <div className="px-5 py-4 border-b border-gray-50 flex items-center justify-between">
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-900">Quick Create Role</h3>
+                  <p className="text-xs text-gray-400 mt-0.5">Setup new active accounts instantly</p>
+                </div>
+              </div>
+              <div className="p-5 space-y-3">
+                {(["agent", "agency", "hospital"] as const).map(role => (
                   <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      navigator.clipboard.writeText(line.text.slice(2)).catch(() => {})
-                    }}
-                    className="opacity-0 group-hover:opacity-100 text-white/20 hover:text-white/60 transition-all shrink-0 mt-px"
+                    key={role}
+                    onClick={() => setForm(f => ({
+                      ...f, open: true, role,
+                      organizationName: "", email: "", password: "", fullName: "", phone: "", result: null,
+                    }))}
+                    className="w-full flex items-center gap-3 rounded-xl border border-gray-100 bg-gray-50/50 hover:bg-white hover:border-blue-200 hover:shadow-sm text-gray-700 px-4 py-3 text-sm font-medium transition-all group"
                   >
-                    <Copy className="h-2.5 w-2.5" />
+                    <Plus className="h-4 w-4 text-emerald-500" />
+                    <span className="capitalize">New {role}</span>
+                    <span className="ml-auto text-[10px] uppercase font-bold tracking-widest text-gray-300">
+                      {role === "agent" ? "Agent User" : role === "agency" ? "Agency Admin" : "Hospital Admin"}
+                    </span>
                   </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Pending Approvals */}
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex flex-col h-fit md:h-[calc(100vh-160px)] max-h-[500px]">
+              <div className="px-5 py-4 border-b border-gray-50 flex items-center justify-between shrink-0">
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-900 border-b-0 space-x-2">
+                    Pending Approvals
+                    {pending.length > 0 && <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">{pending.length}</span>}
+                  </h3>
+                  <p className="text-xs text-gray-400 mt-0.5">Need attention</p>
+                </div>
+                <button onClick={fetchPending} className="text-gray-400 hover:text-gray-900">
+                  <RefreshCw className={`h-4 w-4 ${pendingLoading ? "animate-spin" : ""}`} />
+                </button>
+              </div>
+              
+              <div className="flex-1 overflow-y-auto p-5">
+                {pendingLoading ? (
+                  <div className="space-y-3">
+                    <div className="h-16 bg-gray-50 rounded-xl animate-pulse" />
+                    <div className="h-16 bg-gray-50 rounded-xl animate-pulse" />
+                  </div>
+                ) : pending.length === 0 ? (
+                  <div className="text-center py-10">
+                    <CheckCircle2 className="h-10 w-10 text-gray-200 mx-auto mb-3" />
+                    <p className="text-sm font-medium text-gray-500">All clear — no pending approvals</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {pending.map(u => (
+                      <div key={u.user_id} className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 rounded-xl border border-gray-100 bg-gray-50/50 p-4">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-bold text-gray-900 truncate">{u.email}</p>
+                          <p className="text-[11px] font-medium text-gray-500 uppercase tracking-widest mt-1">
+                            {u.role.replace("_", " ")} {u.full_name ? `• ${u.full_name}` : ""}
+                          </p>
+                        </div>
+                        <div className="flex gap-2 shrink-0">
+                          <button
+                            onClick={() => approveUser(u.user_id)}
+                            className="flex-1 sm:flex-none flex justify-center items-center gap-1.5 px-4 py-2 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-bold transition-colors"
+                          >
+                            <CheckCircle2 className="h-3.5 w-3.5" /> Approve
+                          </button>
+                          <button
+                            onClick={() => rejectUser(u.user_id)}
+                            className="flex-1 sm:flex-none flex justify-center items-center gap-1.5 px-4 py-2 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 text-xs font-bold transition-colors"
+                          >
+                            <XCircle className="h-3.5 w-3.5" /> Reject
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 )}
               </div>
-            ))}
-
-            {!loading && (
-              <div className="flex items-center gap-2 text-white/40 mt-1">
-                <span className="text-white/[0.12] text-[10px] w-14 select-none">{ts(new Date())}</span>
-                <span className="text-emerald-400 select-none font-mono">$</span>
-                <span className="w-1.5 h-3.5 bg-emerald-400/60 animate-cursor inline-block" />
-              </div>
-            )}
+            </div>
           </div>
+        </div>
+      )}
 
-          {/* Input */}
-          <div className="shrink-0 border-t border-white/[0.06] px-4 py-2 flex items-center gap-2.5">
-            <span className="text-emerald-400 font-mono text-[12px] shrink-0 select-none">›</span>
-            <input
-              ref={inputRef}
-              value={input}
-              onChange={e => setInput(e.target.value)}
-              onKeyDown={onKeyDown}
-              disabled={loading}
-              placeholder={loading ? "Running…" : "Enter command… (Tab autocomplete · ↑↓ history)"}
-              className="flex-1 bg-transparent text-white font-mono text-[12px] outline-none placeholder:text-white/[0.15] disabled:opacity-50"
-              spellCheck={false}
-              autoComplete="off"
-            />
+      {/* Quick Create Modal Overflow */}
+      {form.open && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden scale-in-95 duration-200">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-gray-50/50">
+              <div>
+                <p className="font-bold text-gray-900 capitalize text-sm">Create {form.role}</p>
+              </div>
+              <button onClick={() => setForm(f => ({ ...f, open: false }))} className="text-gray-400 hover:text-gray-900 bg-white shadow-sm border border-gray-100 p-1.5 rounded-lg">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              {[
+                ...(form.role === "hospital" || form.role === "agency" 
+                  ? [{ label: form.role === "hospital" ? "Hospital Name" : "Agency Name", key: "organizationName" as const, placeholder: "e.g., RS Bethesda", type: "text" }] 
+                  : []),
+                { label: form.role === "agent" ? "Full Name" : "Admin Full Name", key: "fullName"  as const, placeholder: "John Doe",        type: "text"     },
+                { label: "Email",             key: "email"     as const, placeholder: "user@email.com",  type: "email"    },
+                { label: "Password",          key: "password"  as const, placeholder: "Min. 8 characters", type: "password" },
+                { label: "Phone (optional)",  key: "phone"     as const, placeholder: "+628123456789",   type: "tel"      },
+              ].map(field => (
+                <div key={field.key}>
+                  <label className="block text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1.5">{field.label}</label>
+                  <input
+                    type={field.type}
+                    value={form[field.key]}
+                    onChange={e => setForm(f => ({ ...f, [field.key]: e.target.value }))}
+                    placeholder={field.placeholder}
+                    className="w-full h-11 rounded-xl border border-gray-200 bg-gray-50 px-4 text-sm text-gray-900 placeholder:text-gray-400 outline-none focus:border-blue-500 focus:bg-white transition-all font-medium"
+                  />
+                </div>
+              ))}
+
+              {form.result && (
+                <div className={`rounded-xl px-4 py-3 text-sm font-bold ${
+                  form.result.startsWith("ok:") ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700"
+                }`}>
+                  {form.result.startsWith("ok:") ? `✓ Created successfully` : `✗ ${form.result.slice(6)}`}
+                </div>
+              )}
+
+              <button
+                onClick={submitCreate}
+                disabled={form.loading || !form.email || !form.password || !form.fullName || ((form.role === 'hospital' || form.role === 'agency') && !form.organizationName)}
+                className="w-full h-11 mt-2 rounded-xl bg-gray-900 hover:bg-black disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold transition-all shadow-md flex items-center justify-center gap-2"
+              >
+                {form.loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+                {form.loading ? "Creating..." : `Create ${form.role}`}
+              </button>
+            </div>
           </div>
         </div>
       )}

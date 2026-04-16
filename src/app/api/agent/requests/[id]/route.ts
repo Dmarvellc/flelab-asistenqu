@@ -1,18 +1,17 @@
 import { NextResponse } from "next/server";
 import { dbPool } from "@/lib/db";
-import { cookies } from "next/headers";
+import { getSession } from "@/lib/auth";
 
 export async function GET(req: Request, props: { params: Promise<{ id: string }> }) {
   const params = await props.params;
   const client = await dbPool.connect();
 
   try {
-    const cookieStore = await cookies();
-    const userId = cookieStore.get("session_agent_user_id")?.value;
-
-    if (!userId) {
+    const session = await getSession();
+    if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+    const userId = session.userId;
 
     // Resolve Agent ID from User ID
     const agentLookup = await client.query(`
@@ -67,12 +66,11 @@ export async function PATCH(req: Request, props: { params: Promise<{ id: string 
   const client = await dbPool.connect();
 
   try {
-    const cookieStore = await cookies();
-    const userId = cookieStore.get("session_agent_user_id")?.value;
-
-    if (!userId) {
+    const session = await getSession();
+    if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+    const userId = session.userId;
 
     const { status } = await req.json();
 
@@ -124,12 +122,11 @@ export async function DELETE(req: Request, props: { params: Promise<{ id: string
   const client = await dbPool.connect();
 
   try {
-    const cookieStore = await cookies();
-    const userId = cookieStore.get("session_agent_user_id")?.value;
-
-    if (!userId) {
+    const session = await getSession();
+    if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+    const userId = session.userId;
 
     // Resolve Agent ID from User ID
     const agentLookup = await client.query(`

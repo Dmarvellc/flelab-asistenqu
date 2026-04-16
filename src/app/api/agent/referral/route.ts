@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { dbPool } from "@/lib/db";
-import { cookies } from "next/headers";
 import crypto from "crypto";
+import { getSession } from "@/lib/auth";
 
 function generateReferralCode() {
     return crypto.randomBytes(3).toString("hex").toUpperCase();
@@ -10,9 +10,9 @@ function generateReferralCode() {
 export async function GET() {
     const client = await dbPool.connect();
     try {
-        const cookieStore = await cookies();
-        const userId = cookieStore.get("session_agent_user_id")?.value;
-        if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        const session = await getSession();
+        if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        const userId = session.userId;
 
         // Get referral code (fallback to agent table if not in app_user, since we did a migration)
         const userRes = await client.query(
@@ -111,9 +111,9 @@ export async function GET() {
 export async function POST() {
     const client = await dbPool.connect();
     try {
-        const cookieStore = await cookies();
-        const userId = cookieStore.get("session_agent_user_id")?.value;
-        if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        const session = await getSession();
+        if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        const userId = session.userId;
 
         // Generate a unique code
         let newCode = "";

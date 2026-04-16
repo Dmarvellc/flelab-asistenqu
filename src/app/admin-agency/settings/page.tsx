@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, AlertCircle, RefreshCw, Edit2, Save, X, User, Mail, Phone, MapPin, Calendar, Shield, Building2, UploadCloud, FileText } from "lucide-react";
+import { Loader2, AlertCircle, RefreshCw, Edit2, Save, X, User, Mail, Phone, MapPin, Calendar, Shield, Building2, UploadCloud, FileText, Palette, Link2, Eye } from "lucide-react";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
@@ -83,6 +83,21 @@ export default function AdminAgencySettingsPage() {
     const [saving, setSaving] = useState(false);
     const [uploadingTemplate, setUploadingTemplate] = useState(false);
 
+    // Branding state
+    const [branding, setBranding] = useState({
+        slug: "",
+        logoUrl: "",
+        primaryColor: "#111827",
+        secondaryColor: "#374151",
+        accentColor: "#3B82F6",
+        sidebarBg: "#FFFFFF",
+        sidebarText: "#111827",
+        loginBg: "#F9FAFB",
+    });
+    const [brandingLoading, setBrandingLoading] = useState(true);
+    const [brandingSaving, setBrandingSaving] = useState(false);
+    const [showBrandingEdit, setShowBrandingEdit] = useState(false);
+
     const fetchProfile = async () => {
         try {
             setLoading(true);
@@ -113,8 +128,52 @@ export default function AdminAgencySettingsPage() {
         }
     };
 
+    const fetchBranding = async () => {
+        try {
+            setBrandingLoading(true);
+            const res = await fetch("/api/admin-agency/branding");
+            if (res.ok) {
+                const data = await res.json();
+                setBranding({
+                    slug: data.slug || "",
+                    logoUrl: data.logoUrl || "",
+                    primaryColor: data.primaryColor || "#111827",
+                    secondaryColor: data.secondaryColor || "#374151",
+                    accentColor: data.accentColor || "#3B82F6",
+                    sidebarBg: data.sidebarBg || "#FFFFFF",
+                    sidebarText: data.sidebarText || "#111827",
+                    loginBg: data.loginBg || "#F9FAFB",
+                });
+            }
+        } catch { /* ignore */ }
+        finally { setBrandingLoading(false); }
+    };
+
+    const handleBrandingSave = async () => {
+        setBrandingSaving(true);
+        try {
+            const res = await fetch("/api/admin-agency/branding", {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(branding),
+            });
+            if (!res.ok) {
+                const data = await res.json();
+                throw new Error(data.error || "Gagal menyimpan branding");
+            }
+            toast({ title: "Berhasil", description: "Branding berhasil diperbarui." });
+            setShowBrandingEdit(false);
+        } catch (err: unknown) {
+            const msg = err instanceof Error ? err.message : "Gagal menyimpan.";
+            toast({ title: "Gagal", description: msg, variant: "destructive" });
+        } finally {
+            setBrandingSaving(false);
+        }
+    };
+
     useEffect(() => {
         fetchProfile();
+        fetchBranding();
     }, []);
 
     const handleSave = async () => {
@@ -396,6 +455,164 @@ export default function AdminAgencySettingsPage() {
                     )}
                 </div>
             </div>
+
+            {/* Branding & Customization Section */}
+            {profile.agency_id && (
+                <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between px-8 py-6 border-b border-gray-50 bg-gray-50/30 gap-4">
+                        <div className="flex flex-col gap-1">
+                            <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                                <Palette className="h-5 w-5 text-gray-500" />
+                                Branding & Kustomisasi
+                            </h3>
+                            <p className="text-[14px] font-medium text-gray-500">Sesuaikan logo, warna, dan URL path untuk dashboard agent Anda.</p>
+                        </div>
+                        {!showBrandingEdit && (
+                            <button
+                                onClick={() => setShowBrandingEdit(true)}
+                                className="bg-gray-50 hover:bg-white text-gray-900 text-[14px] font-semibold h-10 px-5 rounded-xl border border-gray-200 flex items-center gap-2 shadow-sm hover:shadow-md transition-all"
+                            >
+                                <Edit2 className="h-4 w-4" />
+                                Edit Branding
+                            </button>
+                        )}
+                    </div>
+
+                    <div className="p-4 sm:p-8">
+                        {brandingLoading ? (
+                            <div className="flex items-center justify-center py-8">
+                                <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+                            </div>
+                        ) : (
+                            <div className="flex flex-col gap-6">
+                                {/* Agency Slug / Path */}
+                                <div className="flex flex-col gap-2">
+                                    <label className="text-xs font-medium text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
+                                        <Link2 className="h-3.5 w-3.5" /> Custom Path (URL)
+                                    </label>
+                                    {showBrandingEdit ? (
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-sm text-gray-400 font-mono">asistenqu.com/</span>
+                                            <Input
+                                                value={branding.slug}
+                                                onChange={e => setBranding({ ...branding, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "") })}
+                                                placeholder="nama-agensi"
+                                                className="rounded-xl max-w-xs font-mono text-sm"
+                                            />
+                                            <span className="text-sm text-gray-400 font-mono">/agent</span>
+                                        </div>
+                                    ) : (
+                                        <p className="text-sm text-gray-900 font-mono bg-gray-50 border border-gray-100 px-4 py-2.5 rounded-xl w-fit">
+                                            asistenqu.com/<span className="font-bold text-blue-600">{branding.slug || "—"}</span>/agent
+                                        </p>
+                                    )}
+                                </div>
+
+                                {/* Logo URL */}
+                                <div className="flex flex-col gap-2">
+                                    <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Logo URL</label>
+                                    {showBrandingEdit ? (
+                                        <Input
+                                            value={branding.logoUrl}
+                                            onChange={e => setBranding({ ...branding, logoUrl: e.target.value })}
+                                            placeholder="https://example.com/logo.png"
+                                            className="rounded-xl max-w-lg text-sm"
+                                        />
+                                    ) : (
+                                        <div className="flex items-center gap-4">
+                                            {branding.logoUrl ? (
+                                                <img src={branding.logoUrl} alt="Logo" className="h-10 w-auto object-contain bg-gray-50 border border-gray-100 rounded-lg px-3 py-1" />
+                                            ) : (
+                                                <p className="text-sm text-gray-400 italic">Belum ada logo — menggunakan default AsistenQu.</p>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Colors */}
+                                <div>
+                                    <label className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-3 block">Warna Dashboard</label>
+                                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                                        {[
+                                            { key: "primaryColor", label: "Primary", desc: "Warna utama (header, tombol)" },
+                                            { key: "accentColor", label: "Accent", desc: "Warna aksen (link, badge)" },
+                                            { key: "sidebarBg", label: "Sidebar BG", desc: "Background sidebar" },
+                                            { key: "sidebarText", label: "Sidebar Text", desc: "Teks sidebar" },
+                                            { key: "loginBg", label: "Login BG", desc: "Background halaman login" },
+                                            { key: "secondaryColor", label: "Secondary", desc: "Warna sekunder" },
+                                        ].map(({ key, label, desc }) => (
+                                            <div key={key} className="flex flex-col gap-1.5">
+                                                <div className="flex items-center gap-2">
+                                                    <div
+                                                        className="h-8 w-8 rounded-lg border border-gray-200 shadow-inner shrink-0"
+                                                        style={{ backgroundColor: branding[key as keyof typeof branding] }}
+                                                    />
+                                                    <div>
+                                                        <p className="text-xs font-semibold text-gray-700">{label}</p>
+                                                        <p className="text-[10px] text-gray-400">{desc}</p>
+                                                    </div>
+                                                </div>
+                                                {showBrandingEdit && (
+                                                    <div className="flex items-center gap-2">
+                                                        <input
+                                                            type="color"
+                                                            value={branding[key as keyof typeof branding]}
+                                                            onChange={e => setBranding({ ...branding, [key]: e.target.value })}
+                                                            className="h-8 w-10 rounded border border-gray-200 cursor-pointer"
+                                                        />
+                                                        <Input
+                                                            value={branding[key as keyof typeof branding]}
+                                                            onChange={e => setBranding({ ...branding, [key]: e.target.value })}
+                                                            className="rounded-lg text-xs font-mono h-8 max-w-[100px]"
+                                                        />
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Preview */}
+                                {showBrandingEdit && (
+                                    <div className="mt-4 p-4 border border-gray-200 rounded-2xl bg-gray-50/50">
+                                        <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                                            <Eye className="h-3.5 w-3.5" /> Preview Sidebar
+                                        </p>
+                                        <div
+                                            className="w-48 h-40 rounded-xl shadow-lg flex flex-col p-4 gap-2"
+                                            style={{ backgroundColor: branding.sidebarBg, color: branding.sidebarText }}
+                                        >
+                                            {branding.logoUrl ? (
+                                                <img src={branding.logoUrl} alt="Preview" className="h-6 w-auto object-contain" />
+                                            ) : (
+                                                <div className="text-sm font-bold" style={{ color: branding.primaryColor }}>Agency Logo</div>
+                                            )}
+                                            <div className="flex flex-col gap-1 mt-2">
+                                                <div className="h-3 rounded-full w-24" style={{ backgroundColor: branding.accentColor, opacity: 0.2 }} />
+                                                <div className="h-3 rounded-full w-20" style={{ backgroundColor: branding.sidebarText, opacity: 0.1 }} />
+                                                <div className="h-3 rounded-full w-28" style={{ backgroundColor: branding.sidebarText, opacity: 0.1 }} />
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Save/Cancel */}
+                                {showBrandingEdit && (
+                                    <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
+                                        <Button variant="outline" onClick={() => { setShowBrandingEdit(false); fetchBranding(); }} className="rounded-xl">
+                                            Batal
+                                        </Button>
+                                        <Button onClick={handleBrandingSave} disabled={brandingSaving} className="bg-gray-900 hover:bg-gray-800 rounded-xl gap-2">
+                                            {brandingSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                                            Simpan Branding
+                                        </Button>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

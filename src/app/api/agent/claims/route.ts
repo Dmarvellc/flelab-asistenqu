@@ -1,19 +1,18 @@
 import { NextResponse } from "next/server";
 import { dbPool } from "@/lib/db";
-import { cookies } from "next/headers";
 import { composeClaimNotes } from "@/lib/claim-form-meta";
 import { deleteCacheByPattern, deleteCacheKeys, getJsonCache, setJsonCache } from "@/lib/redis";
+import { getSession } from "@/lib/auth";
 
 export async function GET(req: Request) {
   const client = await dbPool.connect();
 
   try {
-    const cookieStore = await cookies();
-    const userId = cookieStore.get("session_agent_user_id")?.value;
-
-    if (!userId) {
+    const session = await getSession();
+    if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+    const userId = session.userId;
 
     const cacheKey = `claims:agent:list:${userId}`;
     const cached = await getJsonCache<{ claims: unknown[] }>(cacheKey);
@@ -60,12 +59,11 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   const client = await dbPool.connect();
   try {
-    const cookieStore = await cookies();
-    const userId = cookieStore.get("session_agent_user_id")?.value;
-
-    if (!userId) {
+    const session = await getSession();
+    if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+    const userId = session.userId;
 
     const body = await req.json();
     const { client_id, hospital_id, disease_id, claim_date, total_amount, notes, claim_meta } = body;

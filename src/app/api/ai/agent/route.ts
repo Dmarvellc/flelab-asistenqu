@@ -1,17 +1,17 @@
 import { openai } from "@ai-sdk/openai";
 import { streamText } from "ai";
-import { cookies } from "next/headers";
 import { getAgentMetrics } from "@/services/agent-metrics";
 import { findUserWithProfile } from "@/lib/auth-queries";
 import { dbPool } from "@/lib/db";
+import { getSession } from "@/lib/auth";
 
 export const maxDuration = 30;
 
 export async function POST(req: Request) {
     const { messages } = await req.json();
 
-    const cookieStore = await cookies();
-    const userId = cookieStore.get("session_agent_user_id")?.value;
+    const session = await getSession();
+    const userId = session?.userId;
 
     let systemContext = `Anda adalah "AsistenQu AI", AI asisten canggih untuk Agen Asuransi. 
 Karakter & Aturan Anda:

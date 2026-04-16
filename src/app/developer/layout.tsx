@@ -155,13 +155,6 @@ export default function DeveloperLayout({
         >
           Add Agency
         </NavItem>
-        <NavItem
-          href="/developer/terminal"
-          icon={Terminal}
-          active={pathname === "/developer/terminal"}
-        >
-          Terminal
-        </NavItem>
       </SidebarContent>
 
       <SidebarFooter>

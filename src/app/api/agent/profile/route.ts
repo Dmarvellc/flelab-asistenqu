@@ -1,16 +1,14 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
 import { findUserWithProfile, updateUserProfile } from "@/lib/auth-queries";
 import { saveBase64Image } from "@/lib/image-upload";
+import { getSession } from "@/lib/auth";
 
 export async function GET() {
-    const cookieStore = await cookies();
-    const userId =
-        cookieStore.get("session_agent_user_id")?.value;
-
-    if (!userId) {
+    const session = await getSession();
+    if (!session) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+    const userId = session.userId;
 
     try {
         const user = await findUserWithProfile(userId);
@@ -19,20 +17,7 @@ export async function GET() {
             return NextResponse.json({ error: "User not found" }, { status: 404 });
         }
 
-        const cookieStatus = cookieStore.get("session_agent_status")?.value;
-        const res = NextResponse.json(user);
-
-        // Auto-refresh cookie if status changed (e.g., admin approved them behind the scenes)
-        if (cookieStatus && cookieStatus !== user.status) {
-            res.cookies.set("session_agent_status", user.status, {
-                httpOnly: true,
-                path: "/",
-                sameSite: "lax",
-                maxAge: 30 * 24 * 60 * 60
-            });
-        }
-
-        return res;
+        return NextResponse.json(user);
     } catch (error) {
         console.error("Failed to fetch profile", error);
         return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
@@ -42,13 +27,11 @@ export async function GET() {
 
 
 export async function PUT(request: Request) {
-    const cookieStore = await cookies();
-    const userId =
-        cookieStore.get("session_agent_user_id")?.value;
-
-    if (!userId) {
+    const session = await getSession();
+    if (!session) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+    const userId = session.userId;
 
     try {
         const body = await request.json();

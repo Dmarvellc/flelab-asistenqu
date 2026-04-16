@@ -37,15 +37,20 @@ export function Navbar() {
     ];
 
     return (
-        <nav className={cn(
-            "fixed top-0 left-0 right-0 z-50 transition-all duration-500",
-            scrolled
-                ? "bg-black/90 backdrop-blur-xl border-b border-white/8"
-                : "bg-transparent"
-        )}>
-            <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+        <nav
+            className={cn(
+                "fixed top-0 left-0 right-0 z-50 transition-all duration-500 bg-white",
+                scrolled
+                    ? "shadow-[0_2px_24px_rgba(0,0,0,0.04)]"
+                    : ""
+            )}
+        >
+            <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
                 {/* Logo */}
-                <Link href="/" className="text-xl font-extrabold tracking-tighter text-white hover:opacity-80 transition-opacity">
+                <Link
+                    href="/"
+                    className="text-xl font-extrabold tracking-tighter text-gray-900 hover:text-blue-600 transition-colors duration-200"
+                >
                     AsistenQu
                 </Link>
 
@@ -55,7 +60,7 @@ export function Navbar() {
                         <Link
                             key={link.label}
                             href={link.href}
-                            className="text-white/70 hover:text-white transition-colors"
+                            className="text-gray-500 hover:text-gray-900 transition-colors"
                         >
                             {link.label}
                         </Link>
@@ -64,7 +69,7 @@ export function Navbar() {
                     {/* Masuk dropdown */}
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <button className="flex items-center gap-1 text-white/70 hover:text-white transition-colors">
+                            <button className="flex items-center gap-1 text-gray-500 hover:text-gray-900 transition-colors">
                                 Masuk <ChevronDown className="h-3.5 w-3.5" />
                             </button>
                         </DropdownMenuTrigger>
@@ -82,7 +87,7 @@ export function Navbar() {
                     {/* Language */}
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm" className="h-8 w-8 px-0 text-white/50 hover:text-white">
+                            <Button variant="ghost" size="sm" className="h-8 w-8 px-0 text-gray-400 hover:text-gray-700">
                                 <Globe className="h-4 w-4" />
                             </Button>
                         </DropdownMenuTrigger>
@@ -99,7 +104,7 @@ export function Navbar() {
 
                 {/* Mobile toggle */}
                 <button
-                    className="md:hidden text-white p-1"
+                    className="md:hidden text-gray-700 p-1"
                     onClick={() => setMobileOpen(!mobileOpen)}
                 >
                     {mobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
@@ -108,18 +113,18 @@ export function Navbar() {
 
             {/* Mobile menu */}
             {mobileOpen && (
-                <div className="md:hidden bg-black/98 border-t border-white/10 px-6 py-6 space-y-4">
+                <div className="md:hidden bg-white border-t border-gray-100 px-6 py-6 space-y-4">
                     {navLinks.map(link => (
                         <Link
                             key={link.label}
                             href={link.href}
-                            className="block text-white/70 hover:text-white font-medium py-1"
+                            className="block text-gray-600 hover:text-gray-900 font-medium py-1"
                             onClick={() => setMobileOpen(false)}
                         >
                             {link.label}
                         </Link>
                     ))}
-                    <div className="border-t border-white/10 pt-4 space-y-2">
+                    <div className="border-t border-gray-100 pt-4 space-y-2">
                         {portalLinks.map(p => (
                             <Link
                                 key={p.label}
@@ -133,7 +138,7 @@ export function Navbar() {
                     </div>
                     <Link
                         href="#contact"
-                        className="block w-full text-center px-5 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-2xl font-semibold transition-colors mt-2"
+                        className="block w-full text-center px-5 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-none font-semibold transition-colors mt-2"
                         onClick={() => setMobileOpen(false)}
                     >
                         Hubungi Kami

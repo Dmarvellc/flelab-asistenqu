@@ -131,7 +131,7 @@ async function getAuthorizedClaimSummary(
               FROM public.user_role ur
               WHERE ur.user_id = $3
                 AND ur.scope_type = 'HOSPITAL'
-                AND ur.scope_id = c.hospital_id::text
+                AND ur.scope_id = c.hospital_id
             )
           )
         )
@@ -186,7 +186,7 @@ async function getAuthorizedClaimDetail(
               FROM public.user_role ur
               WHERE ur.user_id = $3
                 AND ur.scope_type = 'HOSPITAL'
-                AND ur.scope_id = c.hospital_id::text
+                AND ur.scope_id = c.hospital_id
             )
           )
         )

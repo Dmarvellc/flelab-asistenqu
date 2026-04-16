@@ -38,10 +38,6 @@ export function Footer() {
         {/* Bottom row */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
           <p>© {new Date().getFullYear()} AsistenQu. Seluruh hak dilindungi.</p>
-          <Link href="/status" className="flex items-center gap-1.5 hover:text-white transition-colors">
-            <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-            <span>System Status</span>
-          </Link>
         </div>
       </div>
     </footer>
