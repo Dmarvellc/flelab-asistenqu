@@ -7,7 +7,11 @@ import { AuthError, requireSession } from "@/lib/auth";
 import { type Role } from "@/lib/rbac";
 import { dbPool } from "@/lib/db";
 import { deleteCacheByPattern, getJsonCache, setJsonCache } from "@/lib/redis";
-import { getSupabaseAdmin, hasSupabaseAdminConfig } from "@/lib/supabase-admin";
+import {
+  getSupabaseAdmin,
+  getSupabaseAdminConfigError,
+  hasSupabaseAdminConfig,
+} from "@/lib/supabase-admin";
 
 export const dynamic = "force-dynamic";
 
@@ -246,6 +250,9 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
     }
 
     if (!hasSupabaseAdminConfig()) {
+      console.error("Supabase admin config error during claim document upload", {
+        error: getSupabaseAdminConfigError(),
+      });
       throw new AgentClaimDocumentError(500, "Document upload is not configured on this deployment.");
     }
 

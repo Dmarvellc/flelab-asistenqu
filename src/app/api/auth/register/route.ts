@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { registerUser } from "@/lib/auth-queries";
-import { getSupabaseAdmin, hasSupabaseAdminConfig } from "@/lib/supabase-admin";
+import {
+  getSupabaseAdmin,
+  getSupabaseAdminConfigError,
+  hasSupabaseAdminConfig,
+} from "@/lib/supabase-admin";
 import { consumeRateLimit, getClientIp } from "@/lib/rate-limit";
 
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
@@ -98,6 +102,9 @@ export async function POST(request: Request) {
 
   try {
     if ((body.ktp_image || body.selfie_image) && !hasSupabaseAdminConfig()) {
+      console.error("Supabase admin config error during registration upload", {
+        error: getSupabaseAdminConfigError(),
+      });
       return NextResponse.json(
         { error: "Image upload is not configured on this deployment." },
         { status: 500 }
