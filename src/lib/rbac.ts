@@ -12,7 +12,7 @@ export type Role = (typeof roles)[number];
 
 const routeRoleMap: Array<{ prefix: string; roles: Role[] }> = [
   {
-    prefix: "/admin-agency-insurance",
+    prefix: "/admin-agency",
     roles: ["super_admin", "admin_agency", "insurance_admin"],
   },
   {

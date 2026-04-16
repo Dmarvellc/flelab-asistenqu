@@ -4,7 +4,7 @@ import { roles } from "@/lib/rbac";
 import { getRoleFromCookies, getUserIdFromCookies } from "@/lib/auth-cookies";
 
 const allowed = new Set(["developer", "super_admin"]);
-const creatableRoles = new Set(["hospital_admin", "insurance_admin", "admin_agency"]);
+const creatableRoles = new Set(["hospital_admin", "insurance_admin", "admin_agency", "agent"]);
 
 export async function POST(request: Request) {
   const role = await getRoleFromCookies();
@@ -32,27 +32,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid role" }, { status: 400 });
   }
 
-  // Developer can create agents, hospital admins, insurance admins
-  const extendedCreatableRoles = new Set([
-    "hospital_admin",
-    "insurance_admin",
-    "agent",
-    "admin_agency",
-    "developer" // maybe allowed for super_admin? keeping it flexible
-  ]);
-
-  // If the user role is purely 'developer', restrict what they can create 
-  // (adjust based on strict requirements, but 'creatableRoles' was limited before)
-  // For now let's allow what was requested: agent, hospital
-
-  if (!creatableRoles.has(body.role) && body.role !== 'agent') {
-    // Fallback to original check if not agent, just in case
-    if (!creatableRoles.has(body.role)) {
-      // Allow agent now
-      if (body.role !== 'agent') {
-        return NextResponse.json({ error: "Role not allowed" }, { status: 403 });
-      }
-    }
+  if (!creatableRoles.has(body.role)) {
+    return NextResponse.json({ error: "Role not allowed" }, { status: 403 });
   }
 
   try {
@@ -74,6 +55,16 @@ export async function POST(request: Request) {
     return NextResponse.json({ user });
   } catch (error: any) {
     console.error("Create user failed", error);
+    const dbError = error as { code?: string; constraint?: string; message?: string } | undefined;
+    if (dbError?.code === "23514" && dbError?.constraint === "person_phone_number_check") {
+      return NextResponse.json(
+        { error: "Phone number is invalid. Use format like +628123456789." },
+        { status: 400 }
+      );
+    }
+    if (error instanceof Error && error.message.toLowerCase().includes("phone number")) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
     return NextResponse.json({ error: "Create failed: " + (error?.message || String(error)) }, { status: 500 });
   }
 }

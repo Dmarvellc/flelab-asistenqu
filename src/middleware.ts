@@ -1,90 +1,81 @@
-import { NextResponse } from 'next/server'
-import type { NextRequest } from 'next/server'
-import { getAllowedRolesForPath, Role } from './lib/rbac'
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+import { getAllowedRolesForPath } from "./lib/rbac";
 
-export function middleware(request: NextRequest) {
-  const path = request.nextUrl.pathname
+const AUTH_SESSION_COOKIE = "session_id";
+
+/**
+ * Map route prefix → portal value stored in auth_session.
+ * Must match the "portal" enum sent by each login page.
+ */
+const ROUTE_TO_PORTAL: Record<string, string> = {
+  agent: "agent",
+  hospital: "hospital",
+  developer: "developer",
+  "admin-agency": "admin_agency",
+};
+
+export async function middleware(request: NextRequest) {
+  const path = request.nextUrl.pathname;
 
   // Check if current path requires specific roles
-  const allowedRoles = getAllowedRolesForPath(path)
+  const allowedRoles = getAllowedRolesForPath(path);
 
-  if (allowedRoles) {
-    const isLoginPage = path.endsWith('/login')
-    const isRegisterPage = path.endsWith('/register')
-    const isPublicPage = isLoginPage || isRegisterPage
-
-    // Helper to find valid role from cookies
-    let roleCookie: string | undefined;
-    let userStatus: string | undefined;
-
-    // Check cookies based on what roles are allowed (Context-aware check)
-    // 1. Super Admin (Global)
-    if (request.cookies.get('session_super_admin_role')?.value === 'super_admin') {
-      roleCookie = 'super_admin';
-      userStatus = request.cookies.get('session_super_admin_status')?.value;
-    }
-    // 2. Agent Context
-    else if (allowedRoles.includes('agent') || allowedRoles.includes('agent_manager')) {
-      const r = request.cookies.get('session_agent_role')?.value;
-      if (r && ['agent', 'agent_manager'].includes(r)) {
-        roleCookie = r;
-        userStatus = request.cookies.get('session_agent_status')?.value;
-      }
-    }
-    // 3. Hospital Context
-    else if (allowedRoles.includes('hospital_admin')) {
-      const r = request.cookies.get('session_hospital_role')?.value;
-      if (r === 'hospital_admin') {
-        roleCookie = r;
-        userStatus = request.cookies.get('session_hospital_status')?.value;
-      }
-    }
-    // 4. Developer Context
-    else if (allowedRoles.includes('developer')) {
-      const r = request.cookies.get('session_developer_role')?.value;
-      if (r === 'developer') {
-        roleCookie = r;
-        userStatus = request.cookies.get('session_developer_status')?.value;
-      }
-    }
-    // 5. Admin Agency Context
-    else if (allowedRoles.includes('admin_agency') || allowedRoles.includes('insurance_admin')) {
-      const r = request.cookies.get('session_admin_agency_role')?.value;
-      if (r && ['admin_agency', 'insurance_admin'].includes(r)) {
-        roleCookie = r;
-        userStatus = request.cookies.get('session_admin_agency_status')?.value;
-      }
-    }
-
-    if (isPublicPage) {
-      // If user is already logged in with an allowed role, redirect to dashboard
-      if (roleCookie && allowedRoles.includes(roleCookie as Role)) {
-        const dashboardPath = path.replace(/\/login$|\/register$/, '')
-        return NextResponse.redirect(new URL(dashboardPath, request.url))
-      }
-      return NextResponse.next()
-    }
-
-    // Protected Page Logic
-    if (!roleCookie || !allowedRoles.includes(roleCookie as Role)) {
-      // Redirect to login
-      const segments = path.split('/').filter(Boolean);
-      const moduleRoot = segments.length > 0 ? `/${segments[0]}` : '/';
-      return NextResponse.redirect(new URL(`${moduleRoot}/login`, request.url))
-    }
-
-    // Special Case: Agent with PENDING status
-    if (roleCookie === 'agent' && userStatus === 'PENDING') {
-      const allowedPendingPaths = ['/agent/verification', '/agent/settings']
-      const isAllowedPath = allowedPendingPaths.some(p => path.startsWith(p))
-
-      if (!isAllowedPath) {
-        return NextResponse.redirect(new URL('/agent/verification', request.url))
-      }
-    }
+  if (!allowedRoles) {
+    return NextResponse.next();
   }
 
-  return NextResponse.next()
+  const isLoginPage = path.endsWith("/login");
+  const isRegisterPage = path.endsWith("/register");
+  const isPublicPage = isLoginPage || isRegisterPage;
+
+  const sessionId = request.cookies.get(AUTH_SESSION_COOKIE)?.value;
+  const hasSession = Boolean(sessionId);
+
+  // Determine which portal this route belongs to
+  const segments = path.split("/").filter(Boolean);
+  const routePrefix = segments[0] || "";
+  const expectedPortal = ROUTE_TO_PORTAL[routePrefix];
+
+  if (isPublicPage) {
+    if (hasSession && sessionId) {
+      // Verify that the session's portal matches this login page's portal.
+      // We read the portal from a lightweight cookie instead of hitting DB in middleware.
+      const sessionPortal = request.cookies.get("session_portal")?.value;
+
+      if (sessionPortal && sessionPortal === expectedPortal) {
+        // Session matches this portal — redirect to dashboard
+        const dashboardPath = path.replace(/\/login$|\/register$/, "");
+        return NextResponse.redirect(new URL(dashboardPath, request.url));
+      }
+
+      // Session is for a different portal — let them access this login page
+      // (they can log in with a different account for this portal)
+      return NextResponse.next();
+    }
+    return NextResponse.next();
+  }
+
+  // Protected page — must have session
+  if (!hasSession) {
+    const moduleRoot = segments.length > 0 ? `/${segments[0]}` : "/";
+    return NextResponse.redirect(
+      new URL(`${moduleRoot}/login`, request.url)
+    );
+  }
+
+  // Verify portal match: the session must belong to this portal
+  const sessionPortal = request.cookies.get("session_portal")?.value;
+
+  if (expectedPortal && sessionPortal && sessionPortal !== expectedPortal) {
+    // Session belongs to a different portal — redirect to this portal's login
+    const moduleRoot = `/${segments[0]}`;
+    return NextResponse.redirect(
+      new URL(`${moduleRoot}/login`, request.url)
+    );
+  }
+
+  return NextResponse.next();
 }
 
 export const config = {
@@ -96,6 +87,6 @@ export const config = {
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
      */
-    '/((?!api|_next/static|_next/image|favicon.ico).*)',
+    "/((?!api|_next/static|_next/image|favicon.ico).*)",
   ],
-}
+};

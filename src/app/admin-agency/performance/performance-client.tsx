@@ -62,14 +62,14 @@ export default function AdminAgentPerformanceClient({ initialAgents }: { initial
                     <Trophy className="h-3 w-3" />
                     <span>Performa Agen</span>
                 </div>
-                <h1 className="text-3xl font-bold tracking-tight text-gray-900">Performa Agen</h1>
+                <h1 className="text-xl sm:text-3xl font-bold tracking-tight text-gray-900">Performa Agen</h1>
                 <p className="mt-1 text-sm text-gray-500">
                     Pantau kinerja, poin, rank, dan komisi agen dalam agensi Anda.
                 </p>
             </div>
 
             {/* Summary Stats */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
                 {[
                     { label: "Total Agen", value: totalAgents, icon: Users },
                     { label: "Avg Poin", value: avgPoints.toLocaleString("id-ID"), icon: Star },
@@ -204,7 +204,7 @@ export default function AdminAgentPerformanceClient({ initialAgents }: { initial
                                             exit={{ height: 0, opacity: 0 }}
                                             className="px-5 pb-4 bg-gray-50/40 border-t border-gray-50"
                                         >
-                                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-4">
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 pt-4">
                                                 <div>
                                                     <p className="text-xs text-gray-400">Total Klien</p>
                                                     <p className="text-lg font-bold text-gray-900 flex items-center gap-1">

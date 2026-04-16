@@ -75,7 +75,7 @@ export default function AgentClientsPage({ initialClients }: { initialClients: C
                         <Users className="h-4 w-4" />
                         {clients.length} {lang === 'en' ? 'Total Clients' : 'Total Klien'}
                     </p>
-                    <h1 className="text-4xl font-bold tracking-tight text-gray-900 mt-2">{t.clients}</h1>
+                    <h1 className="text-2xl sm:text-4xl font-bold tracking-tight text-gray-900 mt-2">{t.clients}</h1>
                     <p className="mt-1 text-base text-gray-500">
                         {lang === 'en' ? 'Manage your clients and their insurance policies in one integrated view.' : 'Kelola data nasabah dan polis asuransi mereka dalam satu tampilan terpadu.'}
                     </p>
@@ -89,7 +89,7 @@ export default function AgentClientsPage({ initialClients }: { initialClients: C
             </div>
 
             {/* Stats Row */}
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
                 {[
                     { label: lang === 'en' ? "Total Clients" : "Total Klien", value: clients.length },
                     { label: t.activeClients, value: activeCount },
@@ -105,7 +105,7 @@ export default function AgentClientsPage({ initialClients }: { initialClients: C
             {/* Table Card */}
             <div className="bg-white rounded-3xl border border-gray-100 overflow-hidden shadow-sm flex flex-col">
                 {/* Search Bar */}
-                <div className="flex flex-col lg:flex-row lg:items-center justify-between p-8 border-b border-gray-50 bg-gray-50/30 gap-4">
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between p-4 sm:p-8 border-b border-gray-50 bg-gray-50/30 gap-4">
                     <div className="relative w-full lg:max-w-md">
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                         <Input
@@ -124,7 +124,7 @@ export default function AgentClientsPage({ initialClients }: { initialClients: C
                 </div>
 
                 <div className="overflow-x-auto w-full">
-                    <Table>
+                    <Table className="min-w-[700px]">
                         <TableHeader>
                             <TableRow className="border-gray-50 hover:bg-transparent bg-gray-50/50">
                                 <TableHead className="text-[11px] font-bold uppercase tracking-widest text-gray-500 px-6 h-12">{lang === 'en' ? 'Client' : 'Nasabah'}</TableHead>

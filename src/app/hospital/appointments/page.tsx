@@ -38,6 +38,7 @@ type Appointment = {
     client_name: string;
     doctor_name: string | null;
     claim_number: string | null;
+    claim_id: string | null;
 };
 
 const statusConfig: Record<string, { label: string; icon: React.ReactNode; className: string }> = {
@@ -75,6 +76,7 @@ const typeLabels: Record<string, string> = {
     EMERGENCY: "Darurat",
     PRE_HOSPITALIZATION: "Pra Rawat Inap",
     POST_HOSPITALIZATION: "Pasca Rawat Inap",
+    VISIT_LOG: "Notif Kunjungan",
 };
 
 export default function HospitalAppointmentsPage() {
@@ -183,9 +185,9 @@ export default function HospitalAppointmentsPage() {
             {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 pb-6 border-b border-gray-100">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight text-gray-900">Jadwal Pasien</h1>
+                    <h1 className="text-xl sm:text-xl sm:text-3xl font-bold tracking-tight text-gray-900">Jadwal Pasien</h1>
                     <p className="mt-1 text-sm text-gray-500">
-                        Kelola permintaan janji temu dari agen asuransi.
+                        Kelola permintaan janji temu dan notifikasi kunjungan dari agen asuransi.
                     </p>
                 </div>
             </div>
@@ -375,8 +377,14 @@ function AppointmentRow({
             <div className="flex-1 min-w-0">
                 <div className="flex items-start gap-2 flex-wrap">
                     <p className="text-sm font-semibold text-gray-900">{apt.client_name}</p>
+                    {apt.appointment_type === "VISIT_LOG" && (
+                        <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">VISIT LOG</span>
+                    )}
                     {apt.claim_number && (
                         <span className="text-xs text-gray-400 font-mono">{apt.claim_number}</span>
+                    )}
+                    {apt.claim_id && !apt.claim_number && (
+                        <span className="text-xs text-green-600 font-medium">Sudah dikonversi ke klaim</span>
                     )}
                 </div>
                 <div className="flex flex-wrap items-center gap-3 mt-1">
@@ -388,7 +396,9 @@ function AppointmentRow({
                     <span className="text-xs text-gray-400">{typeLabels[apt.appointment_type] ?? apt.appointment_type}</span>
                 </div>
                 {apt.notes && (
-                    <p className="text-xs text-gray-400 mt-1">Agen: {apt.notes}</p>
+                    <p className="text-xs text-gray-400 mt-1">
+                        {apt.appointment_type === "VISIT_LOG" ? `Keluhan: ${apt.notes}` : `Agen: ${apt.notes}`}
+                    </p>
                 )}
                 {apt.hospital_notes && (
                     <p className="text-xs text-blue-600 mt-0.5">RS: {apt.hospital_notes}</p>
@@ -402,7 +412,7 @@ function AppointmentRow({
                     {cfg.label}
                 </span>
                 
-                {/* Actions only for SCHEMA / RESCHEDULED status if not past */}
+                {/* Actions only for SCHEDULED / RESCHEDULED status if not past */}
                 {!isPast && (apt.status === "SCHEDULED" || apt.status === "RESCHEDULED") && (
                     <div className="flex items-center gap-2 mt-2">
                         {onReschedule && (
@@ -416,8 +426,17 @@ function AppointmentRow({
                             </Button>
                         )}
                         {onConfirm && (
-                            <Button size="sm" className="h-7 text-xs px-3 bg-black hover:bg-gray-800 text-white" onClick={onConfirm}>
-                                Konfirmasi
+                            <Button
+                                size="sm"
+                                className={cn(
+                                    "h-7 text-xs px-3 text-white",
+                                    apt.appointment_type === "VISIT_LOG"
+                                        ? "bg-blue-600 hover:bg-blue-700"
+                                        : "bg-black hover:bg-gray-800"
+                                )}
+                                onClick={onConfirm}
+                            >
+                                {apt.appointment_type === "VISIT_LOG" ? "Terima Pasien" : "Konfirmasi"}
                             </Button>
                         )}
                     </div>

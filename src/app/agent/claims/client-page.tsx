@@ -99,7 +99,7 @@ export default function AgentClaimsPage({ initialClaims, agencyTemplateUrl }: { 
                         <FileText className="h-4 w-4" />
                         {claims.length} Total Klaim
                     </p>
-                    <h1 className="text-4xl font-bold tracking-tight text-gray-900 mt-2">Daftar Klaim</h1>
+                    <h1 className="text-2xl sm:text-4xl font-bold tracking-tight text-gray-900 mt-2">Daftar Klaim</h1>
                     <p className="mt-1 text-base text-gray-500">Kelola dan pantau pengajuan klaim asuransi klien Anda di satu tempat terpadu.</p>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-3 mt-4 sm:mt-0">
@@ -124,7 +124,7 @@ export default function AgentClaimsPage({ initialClaims, agencyTemplateUrl }: { 
             </div>
 
             {/* Stats */}
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
                 <div className="bg-white rounded-3xl border border-gray-100 p-8 shadow-sm hover:shadow-lg transition-all duration-300">
                     <p className="text-4xl font-bold tabular-nums text-gray-900 tracking-tight">{claims.length}</p>
                     <p className="text-[15px] font-medium text-gray-500 mt-2">Total Klaim</p>
@@ -144,7 +144,7 @@ export default function AgentClaimsPage({ initialClaims, agencyTemplateUrl }: { 
             {/* Table wrapper */}
             <div className="bg-white rounded-3xl border border-gray-100 overflow-hidden shadow-sm flex flex-col">
                 {/* Toolbar */}
-                <div className="flex flex-col lg:flex-row lg:items-center gap-6 p-8 border-b border-gray-50 bg-gray-50/30">
+                <div className="flex flex-col lg:flex-row lg:items-center gap-4 sm:gap-6 p-4 sm:p-8 border-b border-gray-50 bg-gray-50/30">
                     <div className="relative flex-1 max-w-md">
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                         <Input

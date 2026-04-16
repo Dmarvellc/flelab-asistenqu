@@ -71,10 +71,10 @@ export default function HospitalClaimsPage() {
     };
 
     return (
-        <div className="space-y-6">
-            <div className="flex items-center justify-between">
+        <div className="space-y-4 sm:space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div>
-                    <h2 className="text-3xl font-bold tracking-tight">Daftar Klaim Masuk</h2>
+                    <h2 className="text-2xl sm:text-xl sm:text-3xl font-bold tracking-tight">Daftar Klaim Masuk</h2>
                     <p className="text-muted-foreground">
                         Kelola klaim asuransi yang masuk dari agen.
                     </p>
@@ -94,8 +94,8 @@ export default function HospitalClaimsPage() {
                 </div>
             </div>
 
-            <div className="rounded-md border bg-white">
-                <Table>
+            <div className="rounded-md border bg-white overflow-x-auto">
+                <Table className="min-w-[700px]">
                     <TableHeader>
                         <TableRow>
                             <TableHead>Nasabah</TableHead>

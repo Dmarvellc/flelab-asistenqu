@@ -96,7 +96,7 @@ export default function ClientDetailPage() {
                                 Bergabung {new Date(client.created_at).toLocaleDateString("id-ID", { month: 'long', year: 'numeric' })}
                             </span>
                         </div>
-                        <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900 mt-1">
+                        <h2 className="text-2xl sm:text-xl sm:text-3xl font-bold tracking-tight text-gray-900 mt-1">
                             {client.full_name}
                         </h2>
                     </div>
@@ -192,7 +192,7 @@ export default function ClientDetailPage() {
                                         )}
                                     </div>
 
-                                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 bg-gray-50/50 p-5 rounded-2xl border border-gray-50">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 bg-gray-50/50 p-5 rounded-2xl border border-gray-50">
                                         <div className="space-y-1.5">
                                             <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-1.5">
                                                 <Calendar className="w-3 h-3" /> Mulai

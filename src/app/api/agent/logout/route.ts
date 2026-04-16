@@ -1,13 +1,21 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
+import {
+  AUTH_SESSION_COOKIE,
+  clearLegacyAuthCookies,
+  clearSessionCookie,
+  revokeSession,
+} from "@/lib/auth";
 
 export async function POST() {
     const cookieStore = await cookies();
-    cookieStore.delete("session_agent_role");
-    cookieStore.delete("session_agent_user_id");
-    cookieStore.delete("session_agent_status");
-    cookieStore.delete("app_user_id");
-    cookieStore.delete("rbac_role");
-    cookieStore.delete("user_status");
-    return NextResponse.json({ success: true });
+    const sessionId = cookieStore.get(AUTH_SESSION_COOKIE)?.value;
+    if (sessionId) {
+        await revokeSession(sessionId).catch(() => {});
+    }
+
+    const response = NextResponse.json({ success: true });
+    clearLegacyAuthCookies(response);
+    clearSessionCookie(response);
+    return response;
 }

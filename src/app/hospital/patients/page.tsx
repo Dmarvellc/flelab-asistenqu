@@ -170,10 +170,10 @@ export default function HospitalPatientsPage() {
     };
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
             <div className="flex items-center justify-between">
                 <div>
-                    <h2 className="text-3xl font-bold tracking-tight">Data Pasien</h2>
+                    <h2 className="text-2xl sm:text-xl sm:text-3xl font-bold tracking-tight">Data Pasien</h2>
                     <p className="text-muted-foreground">
                         Kelola permintaan data pasien ke agen asuransi.
                     </p>
@@ -257,8 +257,8 @@ export default function HospitalPatientsPage() {
                 </Dialog>
             </div>
 
-            <div className="rounded-md border bg-white">
-                <Table>
+            <div className="rounded-md border bg-white overflow-x-auto">
+                <Table className="min-w-[700px]">
                     <TableHeader>
                         <TableRow>
                             <TableHead>Nama Pasien</TableHead>

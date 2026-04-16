@@ -16,7 +16,7 @@ export async function GET() {
         }
 
         const result = await client.query(`
-      SELECT 
+      SELECT
         a.appointment_id,
         a.appointment_date,
         a.appointment_time,
@@ -26,6 +26,7 @@ export async function GET() {
         a.hospital_notes,
         a.confirmed_at,
         a.created_at,
+        a.claim_id,
         p.full_name  AS client_name,
         d.full_name  AS doctor_name,
         c.claim_number

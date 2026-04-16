@@ -47,7 +47,7 @@ export function UserRoleChart({ data }: { data: Record<string, number> }) {
                 ))}
             </Pie>
             <Tooltip 
-                formatter={(value: number | undefined) => [value, "Users"]}
+                formatter={(value: number | string | undefined) => [value ?? 0, "Users"] as const}
                 contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
             />
             <Legend verticalAlign="bottom" height={36}/>

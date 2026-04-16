@@ -1,45 +1,25 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
+import {
+  AUTH_SESSION_COOKIE,
+  clearLegacyAuthCookies,
+  clearSessionCookie,
+  revokeSession,
+} from "@/lib/auth";
 
-function clearCookiesForPrefix(response: NextResponse, prefix: string) {
-  response.cookies.set(`${prefix}_role`, "", { path: "/", maxAge: 0 });
-  response.cookies.set(`${prefix}_user_id`, "", { path: "/", maxAge: 0 });
-  response.cookies.set(`${prefix}_status`, "", { path: "/", maxAge: 0 });
-}
-
-function clearAllCookies(response: NextResponse) {
-  const prefixes = [
-    "session_agent",
-    "session_hospital",
-    "session_developer",
-    "session_admin_agency",
-    "session_super_admin",
-    "session_generic"
-  ];
-  prefixes.forEach(p => clearCookiesForPrefix(response, p));
-
-  // Legacy
-  response.cookies.set("rbac_role", "", { path: "/", maxAge: 0 });
-  response.cookies.set("app_user_id", "", { path: "/", maxAge: 0 });
-  response.cookies.set("user_status", "", { path: "/", maxAge: 0 });
+async function revokeCurrentSession() {
+  const cookieStore = await cookies();
+  const sessionId = cookieStore.get(AUTH_SESSION_COOKIE)?.value;
+  if (sessionId) {
+    await revokeSession(sessionId).catch(() => {});
+  }
 }
 
 export async function POST(request: Request) {
   const response = NextResponse.json({ ok: true });
-  const referer = request.headers.get("referer") || "";
-
-  if (referer.includes("/agent")) {
-    clearCookiesForPrefix(response, "session_agent");
-  } else if (referer.includes("/hospital")) {
-    clearCookiesForPrefix(response, "session_hospital");
-  } else if (referer.includes("/developer")) {
-    clearCookiesForPrefix(response, "session_developer");
-  } else if (referer.includes("/admin-agency")) {
-    clearCookiesForPrefix(response, "session_admin_agency");
-  } else {
-    // If we can't determine context, or if it is a general logout, clear all?
-    // Let's be safe and clear all if we can't determine.
-    clearAllCookies(response);
-  }
+  await revokeCurrentSession();
+  clearLegacyAuthCookies(response);
+  clearSessionCookie(response);
 
   return response;
 }
@@ -67,12 +47,10 @@ export async function GET(request: Request) {
   }
 
   const response = NextResponse.redirect(new URL(redirectUrl, request.url));
-
-  if (prefixToClear === "session_generic") {
-    clearAllCookies(response);
-  } else {
-    clearCookiesForPrefix(response, prefixToClear);
-  }
+  void prefixToClear;
+  await revokeCurrentSession();
+  clearLegacyAuthCookies(response);
+  clearSessionCookie(response);
 
   return response;
 }

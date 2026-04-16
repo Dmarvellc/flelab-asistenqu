@@ -87,7 +87,7 @@ export default function AgentRequestsPage({ initialRequests }: { initialRequests
                             Semua permintaan tertangani
                         </p>
                     )}
-                    <h1 className="text-4xl font-bold tracking-tight text-gray-900 mt-2">Permintaan Data Pasien</h1>
+                    <h1 className="text-2xl sm:text-4xl font-bold tracking-tight text-gray-900 mt-2">Permintaan Data Pasien</h1>
                     <p className="mt-1 text-base text-gray-500">
                         Daftar permintaan data medis dari Rumah Sakit untuk klien Anda.
                     </p>
@@ -95,7 +95,7 @@ export default function AgentRequestsPage({ initialRequests }: { initialRequests
             </div>
 
             {/* Stats */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 {[
                     { label: "Total", value: requests.length },
                     { label: "Menunggu", value: counts['PENDING'] || 0 },
@@ -112,7 +112,7 @@ export default function AgentRequestsPage({ initialRequests }: { initialRequests
             {/* Content Wrapper */}
             <div className="bg-white rounded-3xl border border-gray-100 overflow-hidden shadow-sm flex flex-col">
                 {/* Search + Filters */}
-                <div className="flex flex-col lg:flex-row lg:items-center justify-between p-8 border-b border-gray-50 bg-gray-50/30 gap-6">
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between p-4 sm:p-8 border-b border-gray-50 bg-gray-50/30 gap-6">
                     <div className="relative w-full lg:max-w-md">
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                         <Input

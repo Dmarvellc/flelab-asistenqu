@@ -2,6 +2,45 @@ import "server-only";
 import bcrypt from "bcryptjs";
 import { dbPool } from "@/lib/db";
 
+const E164_PHONE_REGEX = /^\+?[1-9]\d{6,14}$/;
+
+function normalizePhoneNumber(phone?: string | null): string | null {
+  if (!phone) return null;
+
+  const trimmed = phone.trim();
+  if (!trimmed) return null;
+
+  let normalized = trimmed.replace(/[^\d+]/g, "");
+
+  if (normalized.startsWith("00")) {
+    normalized = `+${normalized.slice(2)}`;
+  }
+
+  if (normalized.startsWith("+")) {
+    normalized = `+${normalized.slice(1).replace(/\+/g, "")}`;
+  } else {
+    normalized = normalized.replace(/\+/g, "");
+
+    // Common Indonesian local format (08xx...) -> +628xx...
+    if (normalized.startsWith("0")) {
+      normalized = `+62${normalized.slice(1)}`;
+    } else if (normalized.startsWith("62")) {
+      normalized = `+${normalized}`;
+    }
+  }
+
+  return E164_PHONE_REGEX.test(normalized) ? normalized : null;
+}
+
+function parsePhoneNumberOrThrow(phone?: string | null): string | null {
+  if (!phone || !phone.trim()) return null;
+  const normalized = normalizePhoneNumber(phone);
+  if (!normalized) {
+    throw new Error("Invalid phone number format. Use international format like +628123456789.");
+  }
+  return normalized;
+}
+
 export type AppUser = {
   user_id: string;
   email: string;
@@ -67,6 +106,7 @@ export async function registerUser(params: {
     // 3. Create Person (if details provided)
     let personId = null;
     if (params.fullName) {
+      const normalizedPhone = parsePhoneNumberOrThrow(params.phoneNumber);
       const personRes = await client.query(
         `insert into public.person (full_name, id_card, phone_number, address, birth_date, gender, ktp_image_path, selfie_image_path)
          values ($1, $2, $3, $4, $5, $6, $7, $8)
@@ -74,7 +114,7 @@ export async function registerUser(params: {
         [
           params.fullName,
           params.nik,
-          params.phoneNumber,
+          normalizedPhone,
           params.address,
           params.birthDate || null,
           params.gender,
@@ -201,7 +241,7 @@ export async function createActiveUser(params: {
         VALUES ($1, $2, $3, 'authenticated', 'authenticated', NOW(), NOW())
     `, [userId, params.email.toLowerCase(), passwordHash]);
 
-    // Insert into app_user
+    // Insert into app_user (agency_id set later if admin_agency)
     const result = await client.query(
       `insert into public.app_user (user_id, email, password_hash, role, status, approved_at, approved_by)
          values ($1, $2, $3, $4, 'ACTIVE', now(), $5)
@@ -217,6 +257,7 @@ export async function createActiveUser(params: {
 
     // Create Person (if profile details provided)
     if (params.profile && (params.profile.fullName || params.profile.nik)) {
+      const normalizedPhone = parsePhoneNumberOrThrow(params.profile.phoneNumber);
       const personRes = await client.query(
         `insert into public.person (full_name, id_card, phone_number, address, birth_date, gender)
          values ($1, $2, $3, $4, $5, $6)
@@ -224,7 +265,7 @@ export async function createActiveUser(params: {
         [
           params.profile.fullName,
           params.profile.nik,
-          params.profile.phoneNumber,
+          normalizedPhone,
           params.profile.address,
           params.profile.birthDate || null,
           params.profile.gender,
@@ -237,6 +278,31 @@ export async function createActiveUser(params: {
         `insert into public.user_person_link (user_id, person_id, relation_type)
          values ($1, $2, 'OWNER')`,
         [userId, personId]
+      );
+    }
+
+    // Create entity record and role mapping based on role
+    if (params.role === 'hospital_admin') {
+      const hospitalRes = await client.query(
+        `INSERT INTO public.hospital (name, address) VALUES ($1, $2) RETURNING hospital_id`,
+        [params.profile?.fullName || 'Hospital', params.profile?.address || null]
+      );
+      const hospitalId = hospitalRes.rows[0].hospital_id;
+
+      await client.query(
+        `INSERT INTO public.user_role (user_id, scope_type, scope_id) VALUES ($1, 'HOSPITAL', $2)`,
+        [userId, hospitalId]
+      );
+    } else if (params.role === 'admin_agency') {
+      const agencyRes = await client.query(
+        `INSERT INTO public.agency (name, address) VALUES ($1, $2) RETURNING agency_id`,
+        [params.profile?.fullName || 'Agency', params.profile?.address || null]
+      );
+      const agencyId = agencyRes.rows[0].agency_id;
+
+      await client.query(
+        `UPDATE public.app_user SET agency_id = $1 WHERE user_id = $2`,
+        [agencyId, userId]
       );
     }
 
@@ -400,6 +466,7 @@ export async function updateUserProfile(userId: string, data: {
   const client = await dbPool.connect();
   try {
     await client.query("BEGIN");
+    const normalizedPhone = parsePhoneNumberOrThrow(data.phone);
 
     // Check if link exists
     const linkRes = await client.query(
@@ -415,7 +482,7 @@ export async function updateUserProfile(userId: string, data: {
         `insert into public.person (full_name, id_card, phone_number, address, birth_date, gender, ktp_image_path, selfie_image_path)
          values ($1, $2, $3, $4, $5, $6, $7, $8)
          returning person_id`,
-        [data.fullName, data.nik, data.phone, data.address, data.birthDate || null, data.gender, data.ktpImagePath || null, data.selfieImagePath || null]
+        [data.fullName, data.nik, normalizedPhone, data.address, data.birthDate || null, data.gender, data.ktpImagePath || null, data.selfieImagePath || null]
       );
       personId = personRes.rows[0].person_id;
 
@@ -434,7 +501,7 @@ export async function updateUserProfile(userId: string, data: {
              ktp_image_path = coalesce($7, ktp_image_path),
              selfie_image_path = coalesce($8, selfie_image_path)
          where person_id = $9`,
-        [data.fullName, data.nik, data.phone, data.address, data.birthDate || null, data.gender, data.ktpImagePath || null, data.selfieImagePath || null, personId]
+        [data.fullName, data.nik, normalizedPhone, data.address, data.birthDate || null, data.gender, data.ktpImagePath || null, data.selfieImagePath || null, personId]
       );
     }
 

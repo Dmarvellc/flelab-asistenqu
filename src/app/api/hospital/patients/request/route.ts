@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { dbPool } from "@/lib/db";
 import { cookies } from "next/headers";
+import { getHospitalIdByUserId } from "@/services/claims";
 
 export async function GET(req: Request) {
   const client = await dbPool.connect();
@@ -10,12 +11,16 @@ export async function GET(req: Request) {
     const userId = cookieStore.get("session_hospital_user_id")?.value;
 
     if (!userId) {
-      // Return empty requests instead of 401 to avoid breaking the notification UI
+      return NextResponse.json({ requests: [] });
+    }
+
+    const hospitalId = await getHospitalIdByUserId(userId);
+    if (!hospitalId) {
       return NextResponse.json({ requests: [] });
     }
 
     const result = await client.query(`
-      SELECT 
+      SELECT
         r.request_id,
         r.person_id,
         r.status,
@@ -28,7 +33,7 @@ export async function GET(req: Request) {
       JOIN public.person p ON r.person_id = p.person_id
       WHERE r.hospital_id = $1
       ORDER BY r.created_at DESC
-    `, [userId]);
+    `, [hospitalId]);
 
     return NextResponse.json({ requests: result.rows });
 
@@ -51,6 +56,11 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const hospitalId = await getHospitalIdByUserId(userId);
+    if (!hospitalId) {
+      return NextResponse.json({ error: "Hospital not found for this account" }, { status: 403 });
+    }
+
     const { person_id, additional_data_request } = await req.json();
 
     if (!person_id) {
@@ -70,10 +80,10 @@ export async function POST(req: Request) {
     const agent_id = agentResult.rows[0].agent_id;
 
     const result = await client.query(
-      `INSERT INTO public.patient_data_request (hospital_id, agent_id, person_id, additional_data_request) 
-         VALUES ($1, $2, $3, $4) 
+      `INSERT INTO public.patient_data_request (hospital_id, agent_id, person_id, additional_data_request)
+         VALUES ($1, $2, $3, $4)
          RETURNING request_id`,
-      [userId, agent_id, person_id, additional_data_request || '']
+      [hospitalId, agent_id, person_id, additional_data_request || '']
     );
 
     return NextResponse.json({ success: true, request_id: result.rows[0].request_id });

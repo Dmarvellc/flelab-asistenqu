@@ -1,146 +1,472 @@
-import { NextResponse } from "next/server";
-import { dbPool } from "@/lib/db";
-import { cookies } from "next/headers";
-import { mkdir, writeFile } from "fs/promises";
+import crypto from "crypto";
 import path from "path";
+import { NextResponse } from "next/server";
+import { z } from "zod";
+import { type PoolClient } from "pg";
+import { AuthError, requireSession } from "@/lib/auth";
+import { type Role } from "@/lib/rbac";
+import { dbPool } from "@/lib/db";
 import { deleteCacheByPattern, getJsonCache, setJsonCache } from "@/lib/redis";
+import { getSupabaseAdmin, hasSupabaseAdminConfig } from "@/lib/supabase-admin";
 
-export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const client = await dbPool.connect();
-  try {
-    const cookieStore = await cookies();
-    const userId = cookieStore.get("session_agent_user_id")?.value;
+export const dynamic = "force-dynamic";
 
-    if (!userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+const claimIdSchema = z.string().uuid();
+const allowedRoles = ["agent", "agent_manager", "super_admin", "developer"] as const;
+const CLAIM_DOCUMENTS_BUCKET =
+  process.env.SUPABASE_CLAIM_DOCUMENTS_BUCKET ?? "claim-documents";
+const MAX_DOCUMENT_BYTES = 10 * 1024 * 1024;
 
-    const { id } = await params;
-    const formData = await req.formData();
-    const file = formData.get("file") as File;
+const allowedDocumentMimeTypes = new Map<string, string>([
+  ["application/pdf", "pdf"],
+  ["image/jpeg", "jpg"],
+  ["image/png", "png"],
+  ["image/webp", "webp"],
+]);
 
-    if (!file) {
-      return NextResponse.json({ error: "No file uploaded" }, { status: 400 });
-    }
+const preferredDocTypeOrder = [
+  "CLAIM_FORM",
+  "MEDICAL_DOCUMENT",
+  "SUPPORTING_DOC",
+  "OTHER",
+  "DOKUMEN_PENDUKUNG",
+] as const;
 
-    const uploadsDir = path.join(process.cwd(), "public", "uploads");
-    await mkdir(uploadsDir, { recursive: true });
+type AllowedRole = (typeof allowedRoles)[number];
 
-    const safeOriginalName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
-    const storedFileName = `${Date.now()}-${crypto.randomUUID()}-${safeOriginalName}`;
-    const diskPath = path.join(uploadsDir, storedFileName);
-    const fileBuffer = Buffer.from(await file.arrayBuffer());
-    await writeFile(diskPath, fileBuffer);
-    const publicUrl = `/uploads/${storedFileName}`;
+type AuthorizedClaimSummary = {
+  claim_id: string;
+  status: string;
+  stage: string | null;
+  updated_at: string;
+};
 
-    const enumRes = await client.query(
-      `
+type DocumentRow = {
+  document_id: string;
+  doc_type: string;
+  file_url: string;
+  created_at: string;
+  status: string | null;
+};
+
+class AgentClaimDocumentError extends Error {
+  status: number;
+
+  constructor(status: number, message: string) {
+    super(message);
+    this.name = "AgentClaimDocumentError";
+    this.status = status;
+  }
+}
+
+function toErrorResponse(error: unknown) {
+  if (error instanceof AuthError) {
+    return NextResponse.json({ error: error.message }, { status: error.status });
+  }
+
+  if (error instanceof AgentClaimDocumentError) {
+    return NextResponse.json({ error: error.message }, { status: error.status });
+  }
+
+  if (error instanceof z.ZodError) {
+    return NextResponse.json({ error: "Invalid request payload" }, { status: 400 });
+  }
+
+  console.error("Agent claim documents route failed", error);
+  return NextResponse.json({ error: "Request failed" }, { status: 500 });
+}
+
+function assertAllowedRole(role: Role): asserts role is AllowedRole {
+  if (!allowedRoles.includes(role as AllowedRole)) {
+    throw new AuthError(403, "Forbidden");
+  }
+}
+
+function sanitizeBaseFileName(fileName: string) {
+  const baseName = path.basename(fileName, path.extname(fileName));
+  const sanitized = baseName.replace(/[^a-zA-Z0-9._-]/g, "_").replace(/_+/g, "_");
+  return sanitized.slice(0, 80) || "document";
+}
+
+function getSafeExtension(file: File) {
+  const mimeExtension = allowedDocumentMimeTypes.get(file.type);
+  if (mimeExtension) {
+    return mimeExtension;
+  }
+
+  const rawExtension = path.extname(file.name).replace(".", "").toLowerCase();
+  if (["pdf", "jpg", "jpeg", "png", "webp"].includes(rawExtension)) {
+    return rawExtension === "jpeg" ? "jpg" : rawExtension;
+  }
+
+  return null;
+}
+
+function validateUploadedFile(file: unknown) {
+  if (!(file instanceof File)) {
+    throw new AgentClaimDocumentError(400, "No file uploaded");
+  }
+
+  if (file.size <= 0) {
+    throw new AgentClaimDocumentError(400, "Uploaded file is empty");
+  }
+
+  if (file.size > MAX_DOCUMENT_BYTES) {
+    throw new AgentClaimDocumentError(400, "Document exceeds maximum allowed size");
+  }
+
+  if (!allowedDocumentMimeTypes.has(file.type)) {
+    throw new AgentClaimDocumentError(400, "Unsupported document type");
+  }
+
+  const safeExtension = getSafeExtension(file);
+  if (!safeExtension) {
+    throw new AgentClaimDocumentError(400, "Unsupported file extension");
+  }
+
+  return {
+    file,
+    safeExtension,
+    sanitizedBaseName: sanitizeBaseFileName(file.name),
+  };
+}
+
+async function getAuthorizedAgentClaim(
+  client: PoolClient,
+  claimId: string,
+  session: { role: Role; userId: string },
+  options?: { forUpdate?: boolean }
+) {
+  const lockClause = options?.forUpdate ? "FOR UPDATE OF c" : "";
+
+  const result = await client.query<AuthorizedClaimSummary>(
+    `
+      SELECT
+        c.claim_id,
+        c.status,
+        c.stage,
+        c.updated_at
+      FROM public.claim c
+      LEFT JOIN public.client cl ON cl.client_id = c.client_id
+      WHERE c.claim_id = $1
+        AND (
+          $2 IN ('super_admin', 'developer')
+          OR (
+            $2 IN ('agent', 'agent_manager')
+            AND (
+              c.created_by_user_id = $3
+              OR c.assigned_agent_id = $3
+              OR cl.agent_id = $3
+            )
+          )
+        )
+      ${lockClause}
+    `,
+    [claimId, session.role, session.userId]
+  );
+
+  return result.rows[0] ?? null;
+}
+
+async function getAvailableDocumentTypes(client: PoolClient, claimId: string) {
+  const enumRes = await client.query<{ enumlabel: string }>(
+    `
       SELECT e.enumlabel
       FROM pg_type t
       JOIN pg_enum e ON e.enumtypid = t.oid
       WHERE t.typname = 'claim_doc_type'
       ORDER BY e.enumsortorder
-      `
-    );
-    const availableDocTypes = enumRes.rows.map((row) => row.enumlabel as string);
-    const preferredDocTypeOrder = [
-      "CLAIM_FORM",
-      "MEDICAL_DOCUMENT",
-      "SUPPORTING_DOC",
-      "OTHER",
-      "DOKUMEN_PENDUKUNG",
-    ];
+    `
+  );
 
-    const orderedDocTypes = [
-      ...preferredDocTypeOrder.filter((candidate) => availableDocTypes.includes(candidate)),
-      ...availableDocTypes.filter((candidate) => !preferredDocTypeOrder.includes(candidate)),
-    ];
+  const availableDocTypes = enumRes.rows.map((row) => row.enumlabel);
+  const orderedDocTypes = [
+    ...preferredDocTypeOrder.filter((candidate) => availableDocTypes.includes(candidate)),
+    ...availableDocTypes.filter((candidate) => !preferredDocTypeOrder.includes(candidate as never)),
+  ];
 
-    const usedDocTypeRes = await client.query(
-      `
+  const usedDocTypeRes = await client.query<{ doc_type: string }>(
+    `
       SELECT doc_type::text AS doc_type
       FROM public.claim_document
       WHERE claim_id = $1
-      `,
-      [id]
-    );
-    const usedDocTypes = new Set(usedDocTypeRes.rows.map((row) => row.doc_type as string));
+    `,
+    [claimId]
+  );
 
-    const candidateDocTypes = orderedDocTypes.filter((candidate) => !usedDocTypes.has(candidate));
+  const usedDocTypes = new Set(usedDocTypeRes.rows.map((row) => row.doc_type));
+  return orderedDocTypes.filter((candidate) => !usedDocTypes.has(candidate));
+}
+
+async function getOptionalClaimDocumentColumns(client: PoolClient) {
+  const result = await client.query<{ column_name: string }>(
+    `
+      SELECT column_name
+      FROM information_schema.columns
+      WHERE table_schema = 'public'
+        AND table_name = 'claim_document'
+    `
+  );
+
+  return new Set(result.rows.map((row) => row.column_name));
+}
+
+async function cleanupUploadedDocument(storagePath: string) {
+  if (!hasSupabaseAdminConfig()) {
+    return;
+  }
+
+  try {
+    const supabaseAdmin = getSupabaseAdmin();
+    await supabaseAdmin.storage.from(CLAIM_DOCUMENTS_BUCKET).remove([storagePath]);
+  } catch (error) {
+    console.error("Failed to clean up uploaded claim document", { storagePath, error });
+  }
+}
+
+export async function POST(request: Request, context: { params: Promise<{ id: string }> }) {
+  const client = await dbPool.connect();
+  let uploadedStoragePath: string | null = null;
+
+  try {
+    const session = await requireSession();
+    assertAllowedRole(session.role);
+
+    const { id } = await context.params;
+    const claimId = claimIdSchema.parse(id);
+
+    const formData = await request.formData();
+    const uploadedFile = formData.get("file");
+    const validatedFile = validateUploadedFile(uploadedFile);
+    const file = validatedFile.file;
+
+    const preflightClaim = await getAuthorizedAgentClaim(client, claimId, session);
+    if (!preflightClaim) {
+      throw new AgentClaimDocumentError(404, "Claim not found");
+    }
+
+    if (!hasSupabaseAdminConfig()) {
+      throw new AgentClaimDocumentError(500, "Document upload is not configured on this deployment.");
+    }
+
+    const buffer = Buffer.from(await file.arrayBuffer());
+    const storageFileName = `${Date.now()}-${crypto.randomUUID()}-${validatedFile.sanitizedBaseName}.${validatedFile.safeExtension}`;
+    uploadedStoragePath = `claims/${claimId}/documents/${storageFileName}`;
+
+    const supabaseAdmin = getSupabaseAdmin();
+    const uploadResult = await supabaseAdmin.storage
+      .from(CLAIM_DOCUMENTS_BUCKET)
+      .upload(uploadedStoragePath, buffer, {
+        contentType: file.type,
+        cacheControl: "3600",
+        upsert: false,
+      });
+
+    if (uploadResult.error) {
+      throw new AgentClaimDocumentError(500, "Failed to upload document");
+    }
+
+    const {
+      data: { publicUrl },
+    } = supabaseAdmin.storage.from(CLAIM_DOCUMENTS_BUCKET).getPublicUrl(uploadedStoragePath);
+
+    await client.query("BEGIN");
+
+    const claim = await getAuthorizedAgentClaim(client, claimId, session, { forUpdate: true });
+    if (!claim) {
+      throw new AgentClaimDocumentError(404, "Claim not found");
+    }
+
+    const candidateDocTypes = await getAvailableDocumentTypes(client, claimId);
     if (candidateDocTypes.length === 0) {
-      return NextResponse.json(
-        { error: "Semua tipe dokumen untuk klaim ini sudah terpakai. Hapus/replace salah satu dokumen lama jika ingin upload lagi." },
-        { status: 400 }
+      throw new AgentClaimDocumentError(
+        409,
+        "Semua tipe dokumen untuk klaim ini sudah terpakai. Hapus atau ganti dokumen lama jika ingin upload lagi."
       );
     }
 
-    // Try each available doc type. This avoids duplicate-key race when uploads happen close together.
-    for (const docType of candidateDocTypes) {
-      const result = await client.query(
-        `
-        INSERT INTO public.claim_document (
-          claim_id, doc_type, file_url, uploaded_by_user_id, is_required
-        ) VALUES ($1, $2::claim_doc_type, $3, $4, false)
-        ON CONFLICT (claim_id, doc_type) DO NOTHING
-        RETURNING document_id, file_url, created_at
-        `,
-        [id, docType, publicUrl, userId]
-      );
+    const availableColumns = await getOptionalClaimDocumentColumns(client);
+    const optionalMetadata = [
+      { column: "original_file_name", value: file.name },
+      { column: "file_name", value: storageFileName },
+      { column: "mime_type", value: file.type },
+      { column: "content_type", value: file.type },
+      { column: "file_size", value: file.size },
+      { column: "file_size_bytes", value: file.size },
+      { column: "storage_path", value: uploadedStoragePath },
+      { column: "storage_bucket", value: CLAIM_DOCUMENTS_BUCKET },
+    ].filter((entry) => availableColumns.has(entry.column));
 
-      if (result.rows.length > 0) {
-        await deleteCacheByPattern(`claims:agent:documents:${id}`);
-        await deleteCacheByPattern(`claims:agent:detail:${id}:*`);
-        await deleteCacheByPattern(`claims:hospital:detail:${id}`);
-        await deleteCacheByPattern("claims:hospital:list:*");
-        return NextResponse.json({ document: result.rows[0] });
+    let insertedDocument: DocumentRow | null = null;
+    let assignedDocType: string | null = null;
+
+    for (const docType of candidateDocTypes) {
+      const baseColumns = [
+        "claim_id",
+        "doc_type",
+        "file_url",
+        "uploaded_by_user_id",
+        "is_required",
+      ];
+      const columns = [...baseColumns, ...optionalMetadata.map((entry) => entry.column)];
+      const values = [
+        claimId,
+        docType,
+        publicUrl,
+        session.userId,
+        false,
+        ...optionalMetadata.map((entry) => entry.value),
+      ];
+      const placeholders = columns.map((_, index) => `$${index + 1}`).join(", ");
+
+      const insertResult = await client.query<DocumentRow>(
+        `
+          INSERT INTO public.claim_document (${columns.join(", ")})
+          VALUES (${placeholders})
+          ON CONFLICT (claim_id, doc_type) DO NOTHING
+          RETURNING document_id, doc_type::text AS doc_type, file_url, created_at, status
+        `
+      , values);
+
+      if (insertResult.rows.length > 0) {
+        insertedDocument = insertResult.rows[0];
+        assignedDocType = docType;
+        break;
       }
     }
 
-    return NextResponse.json(
-      { error: "Gagal memilih tipe dokumen unik. Coba ulang upload." },
-      { status: 409 }
-    );
-
-  } catch (error: any) {
-    console.error("Upload document failed", error);
-    if (error?.code === "22P02") {
-      return NextResponse.json(
-        { error: "Nilai enum dokumen tidak cocok dengan konfigurasi database." },
-        { status: 400 }
+    if (!insertedDocument || !assignedDocType) {
+      throw new AgentClaimDocumentError(
+        409,
+        "Gagal memilih tipe dokumen unik. Coba ulang upload."
       );
     }
-    return NextResponse.json(
-      { error: error?.message || "Failed to upload document" },
-      { status: 500 }
+
+    await client.query(
+      `
+        UPDATE public.claim
+        SET updated_at = NOW()
+        WHERE claim_id = $1
+      `,
+      [claimId]
     );
+
+    await client.query(
+      `
+        INSERT INTO public.claim_timeline (
+          claim_id,
+          event_type,
+          to_status,
+          actor_user_id,
+          note,
+          extra_data
+        )
+        VALUES ($1, 'DOCUMENT_UPLOADED', $2, $3, $4, $5)
+      `,
+      [
+        claimId,
+        claim.status,
+        session.userId,
+        `Document uploaded for claim: ${file.name}`,
+        JSON.stringify({
+          actorRole: session.role,
+          docType: assignedDocType,
+          originalFileName: file.name,
+          storedFileName: storageFileName,
+          mimeType: file.type,
+          fileSizeBytes: file.size,
+          storageBucket: CLAIM_DOCUMENTS_BUCKET,
+          storagePath: uploadedStoragePath,
+        }),
+      ]
+    );
+
+    await client.query("COMMIT");
+
+    await Promise.all([
+      deleteCacheByPattern(`claims:agent:documents:${claimId}`),
+      deleteCacheByPattern(`claims:agent:detail:${claimId}:*`),
+      deleteCacheByPattern(`claims:agent:info-request:${claimId}`),
+      deleteCacheByPattern(`claims:hospital:detail:${claimId}`),
+      deleteCacheByPattern(`claims:hospital:detail:${claimId}:*`),
+      deleteCacheByPattern(`claims:hospital:pending-info-request:${claimId}`),
+      deleteCacheByPattern(`claims:hospital:pending-info-request:${claimId}:*`),
+      deleteCacheByPattern("claims:agent:list:*"),
+      deleteCacheByPattern("claims:hospital:list:*"),
+    ]);
+
+    return NextResponse.json(
+      {
+        document: insertedDocument,
+      },
+      { status: 201 }
+    );
+  } catch (error) {
+    await client.query("ROLLBACK").catch(() => {});
+
+    if (uploadedStoragePath) {
+      await cleanupUploadedDocument(uploadedStoragePath);
+    }
+
+    return toErrorResponse(error);
   } finally {
     client.release();
   }
 }
 
-export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(_request: Request, context: { params: Promise<{ id: string }> }) {
   const client = await dbPool.connect();
+
   try {
-    const { id } = await params;
-    const cacheKey = `claims:agent:documents:${id}`;
-    const cached = await getJsonCache<{ documents: unknown[] }>(cacheKey);
-    if (cached) {
-      return NextResponse.json(cached);
+    const session = await requireSession();
+    assertAllowedRole(session.role);
+
+    const { id } = await context.params;
+    const claimId = claimIdSchema.parse(id);
+
+    const claim = await getAuthorizedAgentClaim(client, claimId, session);
+    if (!claim) {
+      throw new AgentClaimDocumentError(404, "Claim not found");
     }
 
-    const result = await client.query(`
-            SELECT document_id, doc_type, file_url, created_at, status
-            FROM public.claim_document
-            WHERE claim_id = $1
-            ORDER BY created_at DESC
-        `, [id]);
+    const cacheKey = `claims:agent:documents:${claimId}`;
+    const cached = await getJsonCache<{
+      version: string;
+      documents: DocumentRow[];
+    }>(cacheKey);
+
+    if (cached && cached.version === new Date(claim.updated_at).toISOString()) {
+      return NextResponse.json({ documents: cached.documents });
+    }
+
+    const result = await client.query<DocumentRow>(
+      `
+        SELECT
+          document_id,
+          doc_type::text AS doc_type,
+          file_url,
+          created_at,
+          status
+        FROM public.claim_document
+        WHERE claim_id = $1
+        ORDER BY created_at DESC
+      `,
+      [claimId]
+    );
 
     const response = { documents: result.rows };
-    await setJsonCache(cacheKey, response, 30);
+    await setJsonCache(
+      cacheKey,
+      {
+        version: new Date(claim.updated_at).toISOString(),
+        ...response,
+      },
+      30
+    );
+
     return NextResponse.json(response);
   } catch (error) {
-    console.error("Fetch documents failed", error);
-    return NextResponse.json({ error: "Failed to fetch documents" }, { status: 500 });
+    return toErrorResponse(error);
   } finally {
     client.release();
   }

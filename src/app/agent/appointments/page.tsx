@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -24,14 +25,15 @@ import {
     Plus,
     Clock,
     Building2,
-    User,
     CheckCircle2,
     XCircle,
     RotateCcw,
     Search,
-    Stethoscope,
     Filter,
     CalendarCheck,
+    FileText,
+    ArrowRight,
+    Stethoscope,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
@@ -49,6 +51,7 @@ type Appointment = {
     hospital_name: string | null;
     doctor_name: string | null;
     claim_number: string | null;
+    claim_id?: string | null;
 };
 
 type Client = { client_id: string; full_name: string };
@@ -89,18 +92,22 @@ const typeLabels: Record<string, string> = {
     EMERGENCY: "Darurat",
     PRE_HOSPITALIZATION: "Pra Rawat Inap",
     POST_HOSPITALIZATION: "Pasca Rawat Inap",
+    VISIT_LOG: "Notif Kunjungan",
 };
 
 export default function AppointmentsPage() {
+    const router = useRouter();
     const { toast } = useToast();
     const [appointments, setAppointments] = useState<Appointment[]>([]);
     const [loading, setLoading] = useState(true);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [isLogDialogOpen, setIsLogDialogOpen] = useState(false);
     const [search, setSearch] = useState("");
     const [statusFilter, setStatusFilter] = useState<string | null>(null);
     const [submitting, setSubmitting] = useState(false);
+    const [converting, setConverting] = useState<string | null>(null);
 
-    // Form state
+    // Regular appointment form
     const [clients, setClients] = useState<Client[]>([]);
     const [hospitals, setHospitals] = useState<Hospital[]>([]);
     const [form, setForm] = useState({
@@ -109,6 +116,15 @@ export default function AppointmentsPage() {
         appointment_date: new Date().toISOString().split("T")[0],
         appointment_time: "09:00",
         appointment_type: "CONSULTATION",
+        notes: "",
+    });
+
+    // Visit LOG form
+    const [logForm, setLogForm] = useState({
+        client_id: "",
+        hospital_id: "",
+        appointment_date: new Date().toISOString().split("T")[0],
+        appointment_time: "",
         notes: "",
     });
 
@@ -179,6 +195,41 @@ export default function AppointmentsPage() {
         }
     };
 
+    const handleCreateLog = async () => {
+        if (!logForm.client_id || !logForm.hospital_id || !logForm.appointment_date || !logForm.notes.trim()) {
+            toast({ title: "Data kurang", description: "Klien, rumah sakit, tanggal, dan keluhan wajib diisi.", variant: "destructive" });
+            return;
+        }
+        setSubmitting(true);
+        try {
+            const res = await fetch("/api/agent/appointments", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    ...logForm,
+                    appointment_type: "VISIT_LOG",
+                }),
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setAppointments(prev => [data.appointment, ...prev]);
+                setIsLogDialogOpen(false);
+                toast({ title: "LOG terkirim", description: "Rumah sakit akan menerima notifikasi kunjungan ini." });
+                setLogForm({
+                    client_id: "", hospital_id: "",
+                    appointment_date: new Date().toISOString().split("T")[0],
+                    appointment_time: "",
+                    notes: "",
+                });
+            } else {
+                const err = await res.json();
+                toast({ title: "Gagal", description: err.error, variant: "destructive" });
+            }
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
     const updateStatus = async (id: string, status: string) => {
         const res = await fetch(`/api/agent/appointments/${id}`, {
             method: "PATCH",
@@ -188,6 +239,25 @@ export default function AppointmentsPage() {
         if (res.ok) {
             setAppointments(prev => prev.map(a => a.appointment_id === id ? { ...a, status } : a));
             toast({ title: "Status diperbarui" });
+        }
+    };
+
+    const handleConvert = async (id: string) => {
+        setConverting(id);
+        try {
+            const res = await fetch(`/api/agent/appointments/${id}/convert`, { method: "POST" });
+            const data = await res.json();
+            if (res.ok) {
+                toast({ title: "Berhasil dikonversi", description: "LOG berhasil diubah menjadi klaim. Melanjutkan ke form klaim..." });
+                setAppointments(prev => prev.map(a =>
+                    a.appointment_id === id ? { ...a, status: "COMPLETED", claim_id: data.claim_id } : a
+                ));
+                setTimeout(() => router.push(`/agent/claims/${data.claim_id}`), 800);
+            } else {
+                toast({ title: "Gagal", description: data.error, variant: "destructive" });
+            }
+        } finally {
+            setConverting(null);
         }
     };
 
@@ -210,29 +280,39 @@ export default function AppointmentsPage() {
                 <div>
                     <div className="inline-flex items-center gap-2 bg-black text-white text-xs font-medium px-3 py-1 rounded-full mb-3">
                         <CalendarCheck className="h-3 w-3" />
-                        <span>Booking Jadwal</span>
+                        <span>Jadwal & Visit LOG</span>
                     </div>
-                    <h1 className="text-3xl font-bold tracking-tight text-gray-900">Jadwal Dokter</h1>
+                    <h1 className="text-xl sm:text-3xl font-bold tracking-tight text-gray-900">Jadwal Dokter</h1>
                     <p className="mt-1 text-sm text-gray-500">
-                        Booking dan kelola jadwal janjian dokter untuk nasabah Anda.
+                        Booking jadwal dan kirim notifikasi kunjungan ke rumah sakit.
                     </p>
                 </div>
-                <Button
-                    onClick={() => setIsDialogOpen(true)}
-                    className="bg-black hover:bg-gray-900 text-white gap-2 shadow-sm"
-                >
-                    <Plus className="h-4 w-4" />
-                    Buat Jadwal Baru
-                </Button>
+                <div className="flex items-center gap-2">
+                    <Button
+                        onClick={() => setIsLogDialogOpen(true)}
+                        variant="outline"
+                        className="gap-2 border-blue-200 text-blue-700 hover:bg-blue-50"
+                    >
+                        <FileText className="h-4 w-4" />
+                        Buat Visit LOG
+                    </Button>
+                    <Button
+                        onClick={() => setIsDialogOpen(true)}
+                        className="bg-black hover:bg-gray-900 text-white gap-2 shadow-sm"
+                    >
+                        <Plus className="h-4 w-4" />
+                        Buat Jadwal
+                    </Button>
+                </div>
             </div>
 
             {/* Stats */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
                 {[
-                    { label: "Total", value: appointments.length, cls: "" },
-                    { label: "Terjadwal", value: appointments.filter(a => a.status === "SCHEDULED").length, cls: "" },
-                    { label: "Dikonfirmasi", value: appointments.filter(a => a.status === "CONFIRMED").length, cls: "" },
-                    { label: "Selesai", value: appointments.filter(a => a.status === "COMPLETED").length, cls: "" },
+                    { label: "Total", value: appointments.length },
+                    { label: "Terjadwal", value: appointments.filter(a => a.status === "SCHEDULED").length },
+                    { label: "Dikonfirmasi", value: appointments.filter(a => a.status === "CONFIRMED").length },
+                    { label: "Visit LOG", value: appointments.filter(a => a.appointment_type === "VISIT_LOG").length },
                 ].map(stat => (
                     <div key={stat.label} className="bg-white rounded-3xl border border-gray-100 p-8 shadow-sm hover:shadow-lg transition-all duration-300">
                         <p className="text-4xl font-bold tabular-nums text-gray-900 tracking-tight">{stat.value}</p>
@@ -243,7 +323,7 @@ export default function AppointmentsPage() {
 
             {/* Toolbar */}
             <div className="bg-white rounded-3xl border border-gray-100 overflow-hidden shadow-sm flex flex-col">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 p-8 border-b border-gray-50 bg-gray-50/30">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 p-4 sm:p-8 border-b border-gray-50 bg-gray-50/30">
                     <div className="relative flex-1 max-w-xs">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                         <Input
@@ -282,30 +362,43 @@ export default function AppointmentsPage() {
                         </div>
                         <div className="text-center">
                             <p className="text-xl font-bold text-gray-900 mb-2">Belum ada jadwal</p>
-                            <p className="text-base text-gray-500 max-w-sm mx-auto leading-relaxed">Buat jadwal baru untuk nasabah Anda</p>
+                            <p className="text-base text-gray-500">Buat jadwal atau Visit LOG untuk nasabah Anda</p>
                         </div>
                     </div>
                 ) : (
                     <div className="divide-y divide-gray-50">
-                        {/* Upcoming */}
                         {upcoming.length > 0 && (
                             <div>
                                 <div className="px-8 py-4 bg-gray-50/50">
                                     <p className="text-[13px] font-bold text-gray-500 uppercase tracking-widest">Mendatang ({upcoming.length})</p>
                                 </div>
                                 {upcoming.map((apt, i) => (
-                                    <AppointmentRow key={apt.appointment_id} apt={apt} onStatusChange={updateStatus} index={i} />
+                                    <AppointmentRow
+                                        key={apt.appointment_id}
+                                        apt={apt}
+                                        onStatusChange={updateStatus}
+                                        onConvert={handleConvert}
+                                        converting={converting}
+                                        index={i}
+                                    />
                                 ))}
                             </div>
                         )}
-                        {/* Past */}
                         {past.length > 0 && (
                             <div>
                                 <div className="px-8 py-4 bg-gray-50/50 border-t border-gray-50">
                                     <p className="text-[13px] font-bold text-gray-500 uppercase tracking-widest">Riwayat ({past.length})</p>
                                 </div>
                                 {past.map((apt, i) => (
-                                    <AppointmentRow key={apt.appointment_id} apt={apt} onStatusChange={updateStatus} index={i} isPast />
+                                    <AppointmentRow
+                                        key={apt.appointment_id}
+                                        apt={apt}
+                                        onStatusChange={updateStatus}
+                                        onConvert={handleConvert}
+                                        converting={converting}
+                                        index={i}
+                                        isPast
+                                    />
                                 ))}
                             </div>
                         )}
@@ -313,7 +406,7 @@ export default function AppointmentsPage() {
                 )}
             </div>
 
-            {/* Create Dialog */}
+            {/* Regular Appointment Dialog */}
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                 <DialogContent className="sm:max-w-lg">
                     <DialogHeader>
@@ -336,7 +429,6 @@ export default function AppointmentsPage() {
                                 </SelectContent>
                             </Select>
                         </div>
-
                         <div className="space-y-1.5">
                             <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Rumah Sakit</Label>
                             <Select value={form.hospital_id} onValueChange={v => setForm({ ...form, hospital_id: v })}>
@@ -350,57 +442,107 @@ export default function AppointmentsPage() {
                                 </SelectContent>
                             </Select>
                         </div>
-
                         <div className="grid grid-cols-2 gap-3">
                             <div className="space-y-1.5">
                                 <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Tanggal *</Label>
-                                <Input
-                                    type="date"
-                                    value={form.appointment_date}
-                                    onChange={e => setForm({ ...form, appointment_date: e.target.value })}
-                                    className="rounded-xl"
-                                />
+                                <Input type="date" value={form.appointment_date} onChange={e => setForm({ ...form, appointment_date: e.target.value })} className="rounded-xl" />
                             </div>
                             <div className="space-y-1.5">
                                 <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Waktu</Label>
-                                <Input
-                                    type="time"
-                                    value={form.appointment_time}
-                                    onChange={e => setForm({ ...form, appointment_time: e.target.value })}
-                                    className="rounded-xl"
-                                />
+                                <Input type="time" value={form.appointment_time} onChange={e => setForm({ ...form, appointment_time: e.target.value })} className="rounded-xl" />
                             </div>
                         </div>
-
                         <div className="space-y-1.5">
                             <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Jenis Jadwal</Label>
                             <Select value={form.appointment_type} onValueChange={v => setForm({ ...form, appointment_type: v })}>
-                                <SelectTrigger className="rounded-xl">
-                                    <SelectValue />
-                                </SelectTrigger>
+                                <SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger>
                                 <SelectContent>
-                                    {Object.entries(typeLabels).map(([val, label]) => (
+                                    {Object.entries(typeLabels).filter(([v]) => v !== "VISIT_LOG").map(([val, label]) => (
                                         <SelectItem key={val} value={val}>{label}</SelectItem>
                                     ))}
                                 </SelectContent>
                             </Select>
                         </div>
-
                         <div className="space-y-1.5">
                             <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Catatan</Label>
-                            <Textarea
-                                placeholder="Masukkan catatan untuk jadwal ini..."
-                                value={form.notes}
-                                onChange={e => setForm({ ...form, notes: e.target.value })}
-                                className="rounded-xl resize-none"
-                                rows={3}
-                            />
+                            <Textarea placeholder="Catatan tambahan..." value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} className="rounded-xl resize-none" rows={3} />
                         </div>
                     </div>
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Batal</Button>
                         <Button onClick={handleCreate} disabled={submitting} className="bg-black text-white hover:bg-gray-900">
                             {submitting ? "Menyimpan..." : "Buat Jadwal"}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Visit LOG Dialog */}
+            <Dialog open={isLogDialogOpen} onOpenChange={setIsLogDialogOpen}>
+                <DialogContent className="sm:max-w-lg">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <FileText className="h-5 w-5 text-blue-600" />
+                            Buat Visit LOG
+                        </DialogTitle>
+                    </DialogHeader>
+                    <div className="rounded-xl bg-blue-50 border border-blue-100 p-3 mb-2">
+                        <p className="text-xs text-blue-700 leading-relaxed">
+                            Visit LOG adalah notifikasi ke rumah sakit bahwa Anda akan mengirim pasien. Jika pasien perlu rawat inap, LOG ini bisa langsung dikonversi ke klaim.
+                        </p>
+                    </div>
+                    <div className="space-y-4 py-2">
+                        <div className="space-y-1.5">
+                            <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Nasabah *</Label>
+                            <Select value={logForm.client_id} onValueChange={v => setLogForm({ ...logForm, client_id: v })}>
+                                <SelectTrigger className="rounded-xl">
+                                    <SelectValue placeholder="Pilih nasabah..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {clients.map(c => (
+                                        <SelectItem key={c.client_id} value={c.client_id}>{c.full_name}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="space-y-1.5">
+                            <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Rumah Sakit *</Label>
+                            <Select value={logForm.hospital_id} onValueChange={v => setLogForm({ ...logForm, hospital_id: v })}>
+                                <SelectTrigger className="rounded-xl">
+                                    <SelectValue placeholder="Pilih rumah sakit..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {hospitals.map(h => (
+                                        <SelectItem key={h.hospital_id} value={h.hospital_id}>{h.name}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                            <div className="space-y-1.5">
+                                <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Tanggal Kunjungan *</Label>
+                                <Input type="date" value={logForm.appointment_date} onChange={e => setLogForm({ ...logForm, appointment_date: e.target.value })} className="rounded-xl" />
+                            </div>
+                            <div className="space-y-1.5">
+                                <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Perkiraan Waktu</Label>
+                                <Input type="time" value={logForm.appointment_time} onChange={e => setLogForm({ ...logForm, appointment_time: e.target.value })} className="rounded-xl" />
+                            </div>
+                        </div>
+                        <div className="space-y-1.5">
+                            <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Keluhan / Kondisi Pasien *</Label>
+                            <Textarea
+                                placeholder="Contoh: Demam tinggi 3 hari, nyeri dada, sesak napas. Kemungkinan perlu rawat inap..."
+                                value={logForm.notes}
+                                onChange={e => setLogForm({ ...logForm, notes: e.target.value })}
+                                className="rounded-xl resize-none"
+                                rows={4}
+                            />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsLogDialogOpen(false)}>Batal</Button>
+                        <Button onClick={handleCreateLog} disabled={submitting} className="bg-blue-600 text-white hover:bg-blue-700">
+                            {submitting ? "Mengirim..." : "Kirim LOG ke RS"}
                         </Button>
                     </DialogFooter>
                 </DialogContent>
@@ -412,16 +554,22 @@ export default function AppointmentsPage() {
 function AppointmentRow({
     apt,
     onStatusChange,
+    onConvert,
+    converting,
     index,
     isPast = false,
 }: {
     apt: Appointment;
     onStatusChange: (id: string, status: string) => void;
+    onConvert: (id: string) => void;
+    converting: string | null;
     index: number;
     isPast?: boolean;
 }) {
     const cfg = statusConfig[apt.status] ?? { label: apt.status, icon: null, className: "bg-gray-100 text-gray-600" };
     const aptDate = new Date(apt.appointment_date);
+    const isVisitLog = apt.appointment_type === "VISIT_LOG";
+    const canConvert = isVisitLog && apt.status === "CONFIRMED" && !apt.claim_id;
 
     return (
         <motion.div
@@ -430,14 +578,15 @@ function AppointmentRow({
             transition={{ delay: index * 0.04 }}
             className={cn(
                 "flex flex-col sm:flex-row sm:items-center gap-6 p-6 sm:px-8 bg-white border-b border-gray-50 last:border-0 hover:bg-gray-50/60 transition-colors",
-                isPast && "opacity-70 grayscale-[20%]"
+                isPast && "opacity-70 grayscale-[20%]",
+                isVisitLog && !isPast && "border-l-2 border-l-blue-300"
             )}
         >
             {/* Date Block */}
             <div className="flex-shrink-0 w-14 text-center">
                 <div className={cn(
                     "rounded-xl py-2 px-1",
-                    isPast ? "bg-gray-100" : "bg-black"
+                    isPast ? "bg-gray-100" : isVisitLog ? "bg-blue-600" : "bg-black"
                 )}>
                     <p className={cn("text-xs font-medium", isPast ? "text-gray-500" : "text-white/70")}>
                         {aptDate.toLocaleDateString("id-ID", { month: "short" })}
@@ -452,6 +601,9 @@ function AppointmentRow({
             <div className="flex-1 min-w-0">
                 <div className="flex items-start gap-2 flex-wrap">
                     <p className="text-sm font-semibold text-gray-900">{apt.client_name}</p>
+                    {isVisitLog && (
+                        <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">VISIT LOG</span>
+                    )}
                     {apt.claim_number && (
                         <span className="text-xs text-gray-400 font-mono">{apt.claim_number}</span>
                     )}
@@ -470,7 +622,7 @@ function AppointmentRow({
                     <span className="text-xs text-gray-400">{typeLabels[apt.appointment_type] ?? apt.appointment_type}</span>
                 </div>
                 {apt.notes && (
-                    <p className="text-xs text-gray-400 mt-1 truncate">{apt.notes}</p>
+                    <p className="text-xs text-gray-400 mt-1 truncate">{isVisitLog ? `Keluhan: ${apt.notes}` : apt.notes}</p>
                 )}
                 {apt.hospital_notes && (
                     <p className="text-xs text-blue-600 mt-0.5 truncate">RS: {apt.hospital_notes}</p>
@@ -478,12 +630,30 @@ function AppointmentRow({
             </div>
 
             {/* Status + Actions */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap justify-end">
                 <span className={cn("inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full", cfg.className)}>
                     {cfg.icon}
                     {cfg.label}
                 </span>
-                {apt.status === "SCHEDULED" && (
+                {canConvert && (
+                    <Button
+                        size="sm"
+                        className="text-xs h-7 px-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white gap-1"
+                        disabled={converting === apt.appointment_id}
+                        onClick={() => onConvert(apt.appointment_id)}
+                    >
+                        {converting === apt.appointment_id ? (
+                            <span className="animate-pulse">Memproses...</span>
+                        ) : (
+                            <>
+                                <Stethoscope className="h-3 w-3" />
+                                Buat Klaim
+                                <ArrowRight className="h-3 w-3" />
+                            </>
+                        )}
+                    </Button>
+                )}
+                {apt.status === "SCHEDULED" && !isVisitLog && (
                     <Button
                         size="sm"
                         variant="outline"

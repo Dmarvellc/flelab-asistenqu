@@ -284,7 +284,7 @@ export default function AgentSettingsPage() {
                         <User className="h-4 w-4" />
                         Profil & Akun
                     </p>
-                    <h1 className="text-4xl font-bold tracking-tight text-gray-900 mt-2">Pengaturan</h1>
+                    <h1 className="text-2xl sm:text-4xl font-bold tracking-tight text-gray-900 mt-2">Pengaturan</h1>
                     <p className="mt-1 text-base text-gray-500">Kelola informasi akun dan data diri Anda dalam satu tempat.</p>
                 </div>
             </div>
@@ -339,7 +339,7 @@ export default function AgentSettingsPage() {
             {/* Section: Personal Info */}
             {activeSection === 'personal' && (
                 <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden flex flex-col">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between p-8 border-b border-gray-50 bg-gray-50/30 gap-6">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 sm:p-8 border-b border-gray-50 bg-gray-50/30 gap-6">
                         <div className="flex flex-col gap-1">
                             <h3 className="text-xl font-bold text-gray-900">Informasi Pribadi</h3>
                             <p className="text-[14px] font-medium text-gray-500">Ubah dan lengkapi data identitas serta kontak Anda</p>
