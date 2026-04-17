@@ -1,3 +1,4 @@
+import { getAdminAgencyUserIdFromCookies } from "@/lib/auth-cookies";
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { findUserWithProfile, updateUserProfile } from "@/lib/auth-queries";
@@ -5,7 +6,7 @@ import { dbPool } from "@/lib/db";
 
 export async function GET() {
     const cookieStore = await cookies();
-    const userId = cookieStore.get("session_admin_agency_user_id")?.value;
+    const userId = await getAdminAgencyUserIdFromCookies();
 
     if (!userId) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -27,7 +28,7 @@ export async function GET() {
 
 export async function PUT(request: Request) {
     const cookieStore = await cookies();
-    const userId = cookieStore.get("session_admin_agency_user_id")?.value;
+    const userId = await getAdminAgencyUserIdFromCookies();
 
     if (!userId) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

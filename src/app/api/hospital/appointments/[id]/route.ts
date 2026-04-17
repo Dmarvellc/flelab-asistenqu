@@ -1,3 +1,4 @@
+import { getHospitalUserIdFromCookies } from "@/lib/auth-cookies";
 import { NextResponse } from "next/server";
 import { dbPool } from "@/lib/db";
 import { cookies } from "next/headers";
@@ -10,7 +11,7 @@ export async function PATCH(
     const client = await dbPool.connect();
     try {
         const cookieStore = await cookies();
-        const userId = cookieStore.get("session_hospital_user_id")?.value;
+        const userId = await getHospitalUserIdFromCookies();
         if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
         const hospitalId = await getHospitalIdByUserId(userId);

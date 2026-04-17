@@ -1,3 +1,4 @@
+import { getAdminAgencyUserIdFromCookies } from "@/lib/auth-cookies";
 import { openai } from "@ai-sdk/openai";
 import { streamText } from "ai";
 import { cookies } from "next/headers";
@@ -10,7 +11,7 @@ export async function POST(req: Request) {
     const { messages } = await req.json();
 
     const cookieStore = await cookies();
-    const userIdCookie = cookieStore.get("session_admin_agency_user_id")?.value;
+    const userId = await getAdminAgencyUserIdFromCookies();
 
     let systemContext = `Anda adalah "AI Commander" untuk dashboard Admin Agensi Asuransi di platform AsistenQu. 
 Karakter Anda:
@@ -22,9 +23,9 @@ Karakter Anda:
 
 Tugas Anda: Mendampingi Pimpinan/Admin Agensi mengambil keputusan, menganalisis data tim (menyebut nama, NIK, telp jika diminta), memberikan motivasi kepada tim agen, atau memahami aturan asuransi.`;
 
-    if (userIdCookie) {
+    if (userId) {
         try {
-            const profile = await findUserWithProfile(userIdCookie).catch(() => null);
+            const profile = await findUserWithProfile(userId).catch(() => null);
 
             if (profile) {
                 systemContext += `\n\n=== Data Pribadi Pimpinan/Admin ===\nNama Anda: ${profile.full_name || 'Admin Agensi'}\nEmail Anda: ${profile.email}\nNIK Anda: ${profile.nik || 'Tidak ada'}\nNo. HP Anda: ${profile.phone_number || 'Tidak ada'}\nAgensi: ${profile.agency_name || 'Agensi Asuransi'}\nSapa pimpinan ini saat Anda pertama merespon jika relevan. Jika ditanya data pribadi (NIK, dll), jangan katakan tidak punya, gunakan data ini.`;

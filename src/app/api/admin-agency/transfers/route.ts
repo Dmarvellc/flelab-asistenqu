@@ -1,19 +1,20 @@
+import { getAdminAgencyUserIdFromCookies } from "@/lib/auth-cookies";
 import { NextResponse } from "next/server";
 import { dbPool } from "@/lib/db";
 import { cookies } from "next/headers";
 
 export async function GET() {
     const cookieStore = await cookies();
-    const userIdCookie = cookieStore.get("session_admin_agency_user_id");
+    const userId = await getAdminAgencyUserIdFromCookies();
 
-    if (!userIdCookie) {
+    if (!userId) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const client = await dbPool.connect();
     try {
         // 1. Get Admin's Agency
-        const adminRes = await client.query("SELECT agency_id FROM app_user WHERE user_id = $1", [userIdCookie.value]);
+        const adminRes = await client.query("SELECT agency_id FROM app_user WHERE user_id = $1", [userId]);
         const agencyId = adminRes.rows[0]?.agency_id;
 
         if (!agencyId) {

@@ -1,3 +1,4 @@
+import { getAdminAgencyUserIdFromCookies } from "@/lib/auth-cookies";
 import { ClaimsList } from "@/components/dashboard/claims-list"
 import { getAgencyClaims } from "@/services/admin-agency"
 import Link from "next/link"
@@ -8,7 +9,7 @@ import { Claim } from "@/lib/claims-data";
 
 export default async function AdminAgencyDashboardPage() {
   const cookieStore = await cookies();
-  const userId = cookieStore.get("session_admin_agency_user_id")?.value;
+  const userId = await getAdminAgencyUserIdFromCookies();
   let claims: Claim[] = [];
 
   const client = await dbPool.connect();

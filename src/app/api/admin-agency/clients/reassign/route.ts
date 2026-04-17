@@ -1,3 +1,4 @@
+import { getAdminAgencyUserIdFromCookies } from "@/lib/auth-cookies";
 import { NextResponse } from "next/server";
 import { reassignClient } from "@/services/admin-agency";
 import { cookies } from "next/headers";
@@ -5,9 +6,9 @@ import { dbPool } from "@/lib/db";
 
 export async function POST(req: Request) {
     const cookieStore = await cookies();
-    const userIdCookie = cookieStore.get("session_admin_agency_user_id");
+    const userId = await getAdminAgencyUserIdFromCookies();
 
-    if (!userIdCookie) {
+    if (!userId) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -21,7 +22,7 @@ export async function POST(req: Request) {
         // Validate that the admin has permission (e.g., both client and new agent belong to the admin's agency)
         const client = await dbPool.connect();
         try {
-            const adminRes = await client.query("SELECT agency_id FROM app_user WHERE user_id = $1", [userIdCookie.value]);
+            const adminRes = await client.query("SELECT agency_id FROM app_user WHERE user_id = $1", [userId]);
             const agencyId = adminRes.rows[0]?.agency_id;
 
             if (!agencyId) {

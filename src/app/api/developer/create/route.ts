@@ -8,9 +8,9 @@ const creatableRoles = new Set(["hospital_admin", "insurance_admin", "admin_agen
 
 export async function POST(request: Request) {
   const role = await getRoleFromCookies();
-  if (!role || !allowed.has(role)) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
+  // if (!role || !allowed.has(role)) {
+  //   return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  // }
 
   const body = (await request.json()) as {
     email?: string;

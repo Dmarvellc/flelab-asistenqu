@@ -1,3 +1,4 @@
+import { getAdminAgencyUserIdFromCookies } from "@/lib/auth-cookies";
 import { getClaimById } from "@/services/claim-detail";
 import { ClaimDetailView } from "@/components/admin/claim-detail-view";
 import { Button } from "@/components/ui/button";
@@ -13,9 +14,9 @@ export default async function AdminClaimDetailPage({ params }: { params: Promise
 
     // Secure Data Isolation Check for Admin Agency
     const cookieStore = await cookies();
-    const adminIdCookie = cookieStore.get("session_admin_agency_user_id");
+    const userId = await getAdminAgencyUserIdFromCookies();
 
-    if (!adminIdCookie) {
+    if (!userId) {
         notFound();
     }
 
@@ -30,7 +31,7 @@ export default async function AdminClaimDetailPage({ params }: { params: Promise
             JOIN public.app_user u ON cl.agent_id = u.user_id
             JOIN public.app_user admin ON admin.agency_id = u.agency_id
             WHERE c.claim_id = $1 AND admin.user_id = $2
-        `, [claimId, adminIdCookie.value]);
+        `, [claimId, userId]);
 
         isAuthorized = authRes.rows.length > 0;
     } finally {

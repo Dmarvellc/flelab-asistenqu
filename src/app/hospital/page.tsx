@@ -1,3 +1,4 @@
+import { getHospitalUserIdFromCookies } from "@/lib/auth-cookies";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ClaimsList } from "@/components/dashboard/claims-list"
 import { cookies } from "next/headers"
@@ -6,7 +7,7 @@ import { getHospitalClaims, getHospitalIdByUserId } from "@/services/claims"
 
 export default async function HospitalDashboardPage() {
   const cookieStore = await cookies()
-  const userId = cookieStore.get("session_hospital_user_id")?.value
+  const userId = await getHospitalUserIdFromCookies()
 
   // Cookie missing → not logged in, redirect to login
   if (!userId || userId.trim() === "") {

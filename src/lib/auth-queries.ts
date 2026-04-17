@@ -251,7 +251,7 @@ export async function createActiveUser(params: {
         userId,
         params.email.toLowerCase(),
         passwordHash,
-        params.role,
+        params.role.toUpperCase(),
         params.approvedBy ?? null,
       ]
     );
@@ -285,14 +285,14 @@ export async function createActiveUser(params: {
     // Create entity record and role mapping based on role
     if (params.role === 'hospital_admin') {
       const hospitalRes = await client.query(
-        `INSERT INTO public.hospital (name, address) VALUES ($1, $2) RETURNING hospital_id`,
+        `INSERT INTO public.hospital (name, address, is_partner, status) VALUES ($1, $2, true, 'ACTIVE') RETURNING hospital_id`,
         [params.organizationName || params.profile?.fullName || 'Hospital', params.profile?.address || null]
       );
       const hospitalId = hospitalRes.rows[0].hospital_id;
 
       await client.query(
-        `INSERT INTO public.user_role (user_id, scope_type, scope_id) VALUES ($1, 'HOSPITAL', $2)`,
-        [userId, hospitalId]
+        `INSERT INTO public.user_role (user_id, role, scope_type, scope_id) VALUES ($1, $2, 'HOSPITAL', $3)`,
+        [userId, params.role.toUpperCase(), hospitalId]
       );
     } else if (params.role === 'admin_agency') {
       const agencyRes = await client.query(

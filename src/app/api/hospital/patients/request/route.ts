@@ -1,3 +1,4 @@
+import { getHospitalUserIdFromCookies } from "@/lib/auth-cookies";
 import { NextResponse } from "next/server";
 import { dbPool } from "@/lib/db";
 import { cookies } from "next/headers";
@@ -8,7 +9,7 @@ export async function GET(req: Request) {
 
   try {
     const cookieStore = await cookies();
-    const userId = cookieStore.get("session_hospital_user_id")?.value;
+    const userId = await getHospitalUserIdFromCookies();
 
     if (!userId) {
       return NextResponse.json({ requests: [] });
@@ -50,7 +51,7 @@ export async function POST(req: Request) {
 
   try {
     const cookieStore = await cookies();
-    const userId = cookieStore.get("session_hospital_user_id")?.value;
+    const userId = await getHospitalUserIdFromCookies();
 
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

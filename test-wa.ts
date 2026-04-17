@@ -7,8 +7,8 @@ dotenv.config({ path: '.env.local' });
 async function run() {
   console.log("Sending WhatsApp Message...");
   const res = await sendWhatsAppMessage({ 
-    to: '61423777006', 
-    message: 'SELAMAT PAGII SAYANG SUDAH BISAAA WA KITAA!!!!' 
+    to: '6285179796656', 
+    message: 'Welcome to our whatsapp automation!!!!' 
   });
   console.log("Response written to wa-output.json");
   await fs.writeFile('wa-output.json', JSON.stringify(res, null, 2));
