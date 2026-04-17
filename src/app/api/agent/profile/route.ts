@@ -1,3 +1,4 @@
+import { getAgentUserIdFromCookies } from "@/lib/auth-cookies";
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { findUserWithProfile, updateUserProfile } from "@/lib/auth-queries";

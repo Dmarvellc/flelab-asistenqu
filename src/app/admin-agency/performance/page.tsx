@@ -1,3 +1,4 @@
+import { getAdminAgencyUserIdFromCookies } from "@/lib/auth-cookies";
 import { cookies } from "next/headers";
 import { dbPool } from "@/lib/db";
 import { getAgencyPerformance } from "@/services/admin-agency";
@@ -6,9 +7,9 @@ import { Users } from "lucide-react";
 
 export default async function AdminAgentPerformancePage() {
     const cookieStore = await cookies();
-    const userIdCookie = cookieStore.get("session_admin_agency_user_id");
+    const userId = await getAdminAgencyUserIdFromCookies();
 
-    if (!userIdCookie) {
+    if (!userId) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[50vh] gap-4">
                 <Users className="h-12 w-12 text-gray-200" />
@@ -21,7 +22,7 @@ export default async function AdminAgentPerformancePage() {
     const client = await dbPool.connect();
     let agencyId = null;
     try {
-        const res = await client.query("SELECT agency_id FROM app_user WHERE user_id = $1", [userIdCookie.value]);
+        const res = await client.query("SELECT agency_id FROM app_user WHERE user_id = $1", [userId]);
         agencyId = res.rows[0]?.agency_id || null;
     } finally {
         client.release();

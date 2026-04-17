@@ -1,3 +1,4 @@
+import { getHospitalUserIdFromCookies } from "@/lib/auth-cookies";
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { getJsonCache, setJsonCache } from "@/lib/redis";
@@ -6,7 +7,7 @@ import { getHospitalClaims, getHospitalIdByUserId } from "@/services/claims";
 export async function GET(req: Request) {
   try {
     const cookieStore = await cookies();
-    const userId = cookieStore.get("session_hospital_user_id")?.value;
+    const userId = await getHospitalUserIdFromCookies();
 
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

@@ -1,3 +1,4 @@
+import { getAgentUserIdFromCookies } from "@/lib/auth-cookies";
 import { NextResponse } from "next/server";
 import { dbPool } from "@/lib/db";
 import { cookies } from "next/headers";

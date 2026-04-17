@@ -1,3 +1,4 @@
+import { getAdminAgencyUserIdFromCookies } from "@/lib/auth-cookies";
 import { cookies } from "next/headers";
 import { dbPool } from "@/lib/db";
 import { getAgencyAgents, AgencyAgent } from "@/services/admin-agency";
@@ -7,13 +8,13 @@ import { ApproveAgentButton } from "@/components/admin/approve-agent-button";
 
 async function getAgencyId(): Promise<string | null> {
     const cookieStore = await cookies();
-    const userIdCookie = cookieStore.get("session_admin_agency_user_id");
+    const userId = await getAdminAgencyUserIdFromCookies();
 
-    if (!userIdCookie) return null;
+    if (!userId) return null;
 
     const client = await dbPool.connect();
     try {
-        const res = await client.query("SELECT agency_id FROM app_user WHERE user_id = $1", [userIdCookie.value]);
+        const res = await client.query("SELECT agency_id FROM app_user WHERE user_id = $1", [userId]);
         return res.rows[0]?.agency_id || null;
     } finally {
         client.release();
