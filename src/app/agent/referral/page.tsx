@@ -3,9 +3,10 @@ import { redirect } from "next/navigation";
 import ReferralPageClient from "./client-page";
 import { getAgentReferralData } from "@/services/agent-referral";
 
+import { getAgentUserIdFromCookies } from "@/lib/auth-cookies";
+
 export default async function ReferralPage() {
-    const cookieStore = await cookies();
-    const userId = cookieStore.get("session_agent_user_id")?.value;
+    const userId = await getAgentUserIdFromCookies();
 
     if (!userId || userId.trim() === "") {
         redirect("/agent/login");

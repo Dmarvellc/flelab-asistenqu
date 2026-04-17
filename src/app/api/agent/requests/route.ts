@@ -8,7 +8,7 @@ export async function GET(req: Request) {
   try {
     const cookieStore = await cookies();
     // Support both namespaced (new) and legacy cookie names
-    const userId = cookieStore.get("session_agent_user_id")?.value;
+    const userId = await getAgentUserIdFromCookies();
 
     if (!userId) {
       // Return empty requests instead of 401 to avoid breaking the notification UI

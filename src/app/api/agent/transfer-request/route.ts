@@ -2,15 +2,11 @@ import { NextResponse } from "next/server";
 import { dbPool } from "@/lib/db";
 import { headers } from "next/headers";
 
+import { getAgentUserIdFromCookies } from "@/lib/auth-cookies";
+
 export async function POST(req: Request) {
     const headersList = await headers();
-    // In a real app, middleware sets this; or we rely on session cookies.
-    // For now, let's trust the cookie or parse it.
-    // But wait, our middleware protects routes, but doesn't pass user_id in headers easily unless we modify middleware.
-    // We can read the cookie directly here.
-    const cookieStore = headersList.get("cookie") || "";
-    const userIdMatch = cookieStore.match(/session_agent_user_id=([^;]+)/);
-    const userId = userIdMatch ? userIdMatch[1] : null;
+    const userId = await getAgentUserIdFromCookies();
 
     if (!userId) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

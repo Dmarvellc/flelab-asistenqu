@@ -9,7 +9,7 @@ export async function POST(req: Request, props: { params: Promise<{ id: string }
 
   try {
     const cookieStore = await cookies();
-    const userId = cookieStore.get("session_agent_user_id")?.value;
+    const userId = await getAgentUserIdFromCookies();
 
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

@@ -3,9 +3,10 @@ import { redirect } from "next/navigation";
 import { getAgentClaims } from "@/services/claims";
 import AgentClaimsPageClient from "./client-page";
 
+import { getAgentUserIdFromCookies } from "@/lib/auth-cookies";
+
 export default async function AgentClaimsPage() {
-    const cookieStore = await cookies();
-    const userId = cookieStore.get("session_agent_user_id")?.value;
+    const userId = await getAgentUserIdFromCookies();
 
     if (!userId || userId.trim() === "") {
         redirect("/agent/login");

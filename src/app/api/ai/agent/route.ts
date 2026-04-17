@@ -7,11 +7,12 @@ import { dbPool } from "@/lib/db";
 
 export const maxDuration = 30;
 
+import { getAgentUserIdFromCookies } from "@/lib/auth-cookies";
+
 export async function POST(req: Request) {
     const { messages } = await req.json();
 
-    const cookieStore = await cookies();
-    const userId = cookieStore.get("session_agent_user_id")?.value;
+    const userId = await getAgentUserIdFromCookies();
 
     let systemContext = `Anda adalah "AsistenQu AI", AI asisten canggih untuk Agen Asuransi. 
 Karakter & Aturan Anda:

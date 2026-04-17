@@ -5,9 +5,10 @@ import { getAgentMetrics } from "@/services/agent-metrics"
 import { DashboardClient } from "./dashboard-client"
 import { findUserWithProfile } from "@/lib/auth-queries"
 
+import { getAgentUserIdFromCookies } from "@/lib/auth-cookies"
+
 export default async function AgentDashboardPage() {
-  const cookieStore = await cookies()
-  const userId = cookieStore.get("session_agent_user_id")?.value
+  const userId = await getAgentUserIdFromCookies()
 
   // Cookie missing or empty → not logged in, redirect to login
   if (!userId || userId.trim() === "") {
