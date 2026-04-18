@@ -13,6 +13,7 @@ import {
 import { consumeRateLimit, getClientIp } from "@/lib/rate-limit";
 import { normalizeRole } from "@/lib/rbac";
 import { dbPool } from "@/lib/db";
+import { logError } from "@/lib/logger";
 
 type LoginPortal = "agent" | "hospital" | "developer" | "admin_agency";
 
@@ -145,7 +146,11 @@ export async function POST(request: Request) {
     return response;
   } catch (error) {
     const errMsg = error instanceof Error ? error.message : String(error);
-    console.error("Login failed:", errMsg, error);
+    logError("api.auth.login", error, {
+      requestPath: "/api/auth/login",
+      requestMethod: "POST",
+      isPublicFacing: true,
+    });
 
     // Surface helpful message in development; keep it generic in production
     const detail =

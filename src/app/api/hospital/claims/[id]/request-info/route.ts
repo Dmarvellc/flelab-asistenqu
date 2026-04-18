@@ -5,6 +5,7 @@ import { AuthError, requireSession } from "@/lib/auth";
 import { type Role } from "@/lib/rbac";
 import { dbPool } from "@/lib/db";
 import { deleteCacheByPattern, getJsonCache, setJsonCache } from "@/lib/redis";
+import { logError } from "@/lib/logger";
 
 export const dynamic = "force-dynamic";
 
@@ -112,7 +113,10 @@ function toErrorResponse(error: unknown) {
     return NextResponse.json({ error: "Invalid request payload" }, { status: 400 });
   }
 
-  console.error("Hospital claim info-request route failed", error);
+  logError("api.hospital.claims.request-info", error, {
+    requestPath: "/api/hospital/claims/[id]/request-info",
+    isPublicFacing: true,
+  });
   return NextResponse.json({ error: "Request failed" }, { status: 500 });
 }
 

@@ -15,6 +15,9 @@ import {
 
 export const dynamic = "force-dynamic";
 
+// Cache claim_document column names in memory — schema doesn't change at runtime
+let claimDocumentColumnsCache: Set<string> | null = null;
+
 const claimIdSchema = z.string().uuid();
 const allowedRoles = ["agent", "agent_manager", "super_admin", "developer"] as const;
 const CLAIM_DOCUMENTS_BUCKET =
@@ -203,6 +206,8 @@ async function getAvailableDocumentTypes(client: PoolClient, claimId: string) {
 }
 
 async function getOptionalClaimDocumentColumns(client: PoolClient) {
+  if (claimDocumentColumnsCache) return claimDocumentColumnsCache;
+
   const result = await client.query<{ column_name: string }>(
     `
       SELECT column_name
@@ -212,7 +217,8 @@ async function getOptionalClaimDocumentColumns(client: PoolClient) {
     `
   );
 
-  return new Set(result.rows.map((row) => row.column_name));
+  claimDocumentColumnsCache = new Set(result.rows.map((row) => row.column_name));
+  return claimDocumentColumnsCache;
 }
 
 async function cleanupUploadedDocument(storagePath: string) {
@@ -250,13 +256,22 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
     }
 
     let publicUrl = "";
+    let storageFileName: string | null = null;
     if (!hasSupabaseAdminConfig()) {
-      console.warn("Supabase not configured, faking document upload for", file.name);
+      if (process.env.NODE_ENV === "production") {
+        // Never accept claim documents without real storage in production.
+        throw new AgentClaimDocumentError(
+          503,
+          "Document storage is not configured. Upload temporarily unavailable."
+        );
+      }
+      console.warn("Supabase not configured, faking document upload for", file.name, "(DEV ONLY)");
       publicUrl = "https://placehold.co/800x1200?text=Mock+Document";
       uploadedStoragePath = `claims/${claimId}/documents/mock-${Date.now()}`;
+      storageFileName = file.name;
     } else {
       const buffer = Buffer.from(await file.arrayBuffer());
-      const storageFileName = `${Date.now()}-${crypto.randomUUID()}-${validatedFile.sanitizedBaseName}.${validatedFile.safeExtension}`;
+      storageFileName = `${Date.now()}-${crypto.randomUUID()}-${validatedFile.sanitizedBaseName}.${validatedFile.safeExtension}`;
       uploadedStoragePath = `claims/${claimId}/documents/${storageFileName}`;
 
       const supabaseAdmin = getSupabaseAdmin();

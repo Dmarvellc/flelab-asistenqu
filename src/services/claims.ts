@@ -1,7 +1,12 @@
 import { dbPool } from "@/lib/db";
 import { Claim } from "@/lib/claims-data";
+import { cached, CacheKeys, TTL } from "@/lib/cache";
 
 export async function getHospitalIdByUserId(userId: string): Promise<string | null> {
+  return cached(CacheKeys.hospitalId(userId), TTL.REFERENCE, () => fetchHospitalIdByUserId(userId));
+}
+
+async function fetchHospitalIdByUserId(userId: string): Promise<string | null> {
   const client = await dbPool.connect();
   try {
     const roleRes = await client.query(`
@@ -21,6 +26,10 @@ export async function getHospitalIdByUserId(userId: string): Promise<string | nu
 }
 
 export async function getHospitalClaims(hospitalId: string | null): Promise<Claim[]> {
+  return cached(CacheKeys.hospitalClaims(hospitalId), TTL.SHORT, () => fetchHospitalClaims(hospitalId));
+}
+
+async function fetchHospitalClaims(hospitalId: string | null): Promise<Claim[]> {
   const client = await dbPool.connect();
   try {
     let query = `
@@ -89,6 +98,10 @@ export async function getAgentIdByUserId(userId: string): Promise<string | null>
 }
 
 export async function getAgentClaims(userId: string): Promise<Claim[]> {
+  return cached(CacheKeys.agentClaims(userId), TTL.SHORT, () => fetchAgentClaims(userId));
+}
+
+async function fetchAgentClaims(userId: string): Promise<Claim[]> {
   const client = await dbPool.connect();
   try {
     const query = `

@@ -7,6 +7,7 @@ import {
   hasSupabaseAdminConfig,
 } from "@/lib/supabase-admin";
 import { consumeRateLimit, getClientIp } from "@/lib/rate-limit";
+import { logError } from "@/lib/logger";
 
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 const allowedImageTypes = new Set(["image/jpeg", "image/png", "image/webp", "image/jpg"]);
@@ -45,7 +46,11 @@ async function saveBase64Image(base64Data: string, prefix: string): Promise<stri
   }
   
   if (!hasSupabaseAdminConfig()) {
-    console.warn("Supabase not configured, faking image upload for registration");
+    if (process.env.NODE_ENV === "production") {
+      // Hard fail in prod — never silently store a placeholder for KYC images.
+      throw new Error("Image storage is not configured. Cannot complete registration.");
+    }
+    console.warn("Supabase not configured, faking image upload for registration (DEV ONLY)");
     return "https://placehold.co/800x800?text=Mock+Image";
   }
 
@@ -133,7 +138,11 @@ export async function POST(request: Request) {
     });
     return NextResponse.json({ user });
   } catch (error) {
-    console.error("Register failed", error);
+    logError("api.auth.register", error, {
+      requestPath: "/api/auth/register",
+      requestMethod: "POST",
+      isPublicFacing: true,
+    });
     const dbError = error as { code?: string; constraint?: string; message?: string } | undefined;
     if (dbError?.code === "23514" && dbError?.constraint === "person_phone_number_check") {
       return NextResponse.json(

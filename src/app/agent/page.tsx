@@ -4,6 +4,21 @@ import { getAgentMetrics } from "@/services/agent-metrics"
 import { DashboardClient } from "./dashboard-client"
 import { findUserWithProfile } from "@/lib/auth-queries"
 import { getSession } from "@/lib/auth"
+import { dbPool } from "@/lib/db"
+
+async function getInsuranceName(userId: string): Promise<string | null> {
+  try {
+    const res = await dbPool.query(`
+      SELECT i.insurance_name
+      FROM public.agent a
+      JOIN public.insurance i ON a.insurance_id = i.insurance_id
+      WHERE a.agent_id = $1
+    `, [userId]);
+    return res.rows[0]?.insurance_name ?? null;
+  } catch {
+    return null;
+  }
+}
 
 export default async function AgentDashboardPage() {
   const session = await getSession()
@@ -12,8 +27,8 @@ export default async function AgentDashboardPage() {
   }
   const userId = session.userId
 
-  // Fetch metrics & claims in parallel; never crash the whole page
-  const [metrics, claims, userProfile] = await Promise.all([
+  // Fetch all data in parallel
+  const [metrics, claims, userProfile, insuranceName] = await Promise.all([
     getAgentMetrics(userId).catch(() => ({
       activeClients: 0,
       pendingContracts: 0,
@@ -23,23 +38,8 @@ export default async function AgentDashboardPage() {
     })),
     getAgentClaims(userId).catch(() => []),
     findUserWithProfile(userId).catch(() => null),
+    getInsuranceName(userId),
   ]);
-
-  let insuranceName = null;
-  try {
-    const { dbPool } = await import("@/lib/db");
-    const res = await dbPool.query(`
-      SELECT i.insurance_name 
-      FROM public.agent a 
-      JOIN public.insurance i ON a.insurance_id = i.insurance_id 
-      WHERE a.agent_id = $1
-    `, [userId]);
-    if (res.rows.length > 0) {
-      insuranceName = res.rows[0].insurance_name;
-    }
-  } catch (e) {
-    console.error("Failed to fetch insurance name:", e);
-  }
 
   const agentName = userProfile?.full_name || "Agent";
 

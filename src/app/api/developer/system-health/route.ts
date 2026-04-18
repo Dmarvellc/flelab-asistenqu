@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { dbPool } from "@/lib/db";
 import { getRoleFromCookies } from "@/lib/auth-cookies";
+import { getCacheStats } from "@/lib/cache";
+import { getCriticalAlerts, getLogSummary, getRecentErrors, logError } from "@/lib/logger";
 
 export const dynamic = "force-dynamic";
 
@@ -118,6 +120,14 @@ export async function GET() {
       LIMIT 10
     `).catch(() => ({ rows: [] }));
 
+        // Observability: cache stats + error/alert rollups pulled in parallel.
+        const [cacheStats, logSummary, criticalAlerts, recentErrors] = await Promise.all([
+            getCacheStats(),
+            getLogSummary(),
+            getCriticalAlerts(5),
+            getRecentErrors({ sinceHours: 24, limit: 20 }),
+        ]);
+
         return NextResponse.json({
             dbLatency,
             dbSize: dbSizeRes.rows[0]?.db_size ?? "N/A",
@@ -129,10 +139,17 @@ export async function GET() {
             agencyStats: agencyStatsRes.rows,
             hospitalStats: hospitalStatsRes.rows,
             topAgents: topAgentsRes.rows,
+            cacheStats,
+            logSummary,
+            criticalAlerts,
+            recentErrors,
             timestamp: new Date().toISOString(),
         });
     } catch (error) {
-        console.error("System health error:", error);
+        logError("api.developer.system-health", error, {
+            requestPath: "/api/developer/system-health",
+            requestMethod: "GET",
+        });
         return NextResponse.json({ error: "Failed to fetch system health" }, { status: 500 });
     } finally {
         client.release();

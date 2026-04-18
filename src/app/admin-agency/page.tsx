@@ -3,68 +3,105 @@ import { ClaimsList } from "@/components/dashboard/claims-list"
 import { getAgencyClaims } from "@/services/admin-agency"
 import Link from "next/link"
 import { dbPool } from "@/lib/db";
+import { cached, CacheKeys, TTL } from "@/lib/cache";
 import { Users, Building2, ShieldCheck, ArrowRightLeft, FileText, ArrowRight } from "lucide-react";
-import { cookies } from "next/headers";
 import { Claim } from "@/lib/claims-data";
 
-export default async function AdminAgencyDashboardPage() {
-  const cookieStore = await cookies();
-  const userId = await getAdminAgencyUserIdFromCookies();
-  let claims: Claim[] = [];
+interface AgencyDashboardData {
+  agencyName: string;
+  agentsCount: number;
+  hospitalsCount: number;
+  policiesCount: number;
+  pendingTransfersCount: number;
+  pendingClaimsCount: number;
+  claims: Claim[];
+}
+
+async function fetchAgencyDashboardData(userId: string): Promise<AgencyDashboardData> {
+  const empty: AgencyDashboardData = {
+    agencyName: "Dashboard Agency",
+    agentsCount: 0,
+    hospitalsCount: 0,
+    policiesCount: 0,
+    pendingTransfersCount: 0,
+    pendingClaimsCount: 0,
+    claims: [],
+  };
 
   const client = await dbPool.connect();
-  let agentsCount = 0;
-  let hospitalsCount = 0;
-  let policiesCount = 0;
-  let pendingTransfersCount = 0;
-  let pendingClaimsCount = 0;
-  let agencyName = "Dashboard Agency";
-
   try {
-    if (userId) {
-      // Fetch Agency Details First
-      const userRes = await client.query(`
-        SELECT a.name, a.agency_id 
-        FROM public.app_user au
-        JOIN public.agency a ON au.agency_id = a.agency_id
-        WHERE au.user_id = $1
-      `, [userId]);
+    const userRes = await client.query(`
+      SELECT a.name, a.agency_id
+      FROM public.app_user au
+      JOIN public.agency a ON au.agency_id = a.agency_id
+      WHERE au.user_id = $1
+    `, [userId]);
 
-      if (userRes.rows.length > 0) {
-        agencyName = userRes.rows[0].name;
-        const agencyId = userRes.rows[0].agency_id;
+    if (userRes.rows.length === 0) return empty;
 
-        claims = await getAgencyClaims(agencyId);
+    const agencyName = userRes.rows[0].name as string;
+    const agencyId = userRes.rows[0].agency_id as string;
 
-        const agentsRes = await client.query("SELECT COUNT(*) FROM public.app_user WHERE role = 'agent' AND agency_id = $1", [agencyId]);
-        agentsCount = parseInt(agentsRes.rows[0].count);
+    // All counts + claims in parallel (was sequential before).
+    const [claims, agentsRes, policiesRes, transfersRes, pendingClaimsRes] = await Promise.all([
+      getAgencyClaims(agencyId),
+      client.query(
+        "SELECT COUNT(*)::int AS count FROM public.app_user WHERE role = 'agent' AND agency_id = $1",
+        [agencyId]
+      ),
+      client.query(`
+        SELECT COUNT(*)::int AS count FROM public.client c
+        JOIN public.app_user au ON c.agent_id = au.user_id
+        WHERE au.agency_id = $1
+      `, [agencyId]),
+      client.query(
+        "SELECT COUNT(*)::int AS count FROM public.agency_transfer_request WHERE status = 'PENDING' AND (to_agency_id = $1 OR from_agency_id = $1)",
+        [agencyId]
+      ),
+      client.query(`
+        SELECT COUNT(*)::int AS count FROM public.claim c
+        JOIN public.app_user au ON c.created_by_user_id = au.user_id
+        WHERE au.agency_id = $1 AND c.stage = 'SUBMITTED_TO_AGENCY'
+      `, [agencyId]),
+    ]);
 
-        // Hospitals might be general, or we keep them globally if agency doesn't own hospitals, 
-        // but let's assume they don't own hospitals so we just leave it 0 or count global. 
-        // The objective says "Agency Admins only see data for their specific agency".
-        hospitalsCount = 0; // Not applicable for strict agency view, or keep as is if needed
-
-        const policiesRes = await client.query(`
-          SELECT COUNT(*) FROM public.client c
-          JOIN public.app_user au ON c.agent_id = au.user_id
-          WHERE au.agency_id = $1
-        `, [agencyId]);
-        policiesCount = parseInt(policiesRes.rows[0].count);
-
-        const transfersRes = await client.query("SELECT COUNT(*) FROM public.agency_transfer_request WHERE status = 'PENDING' AND (to_agency_id = $1 OR from_agency_id = $1)", [agencyId]);
-        pendingTransfersCount = parseInt(transfersRes.rows[0].count);
-
-        const pendingClaimsRes = await client.query(`
-          SELECT COUNT(*) FROM public.claim c
-          JOIN public.app_user au ON c.created_by_user_id = au.user_id
-          WHERE au.agency_id = $1 AND c.stage = 'SUBMITTED_TO_AGENCY'
-        `, [agencyId]);
-        pendingClaimsCount = parseInt(pendingClaimsRes.rows[0].count);
-      }
-    }
+    return {
+      agencyName,
+      agentsCount: agentsRes.rows[0].count ?? 0,
+      hospitalsCount: 0,
+      policiesCount: policiesRes.rows[0].count ?? 0,
+      pendingTransfersCount: transfersRes.rows[0].count ?? 0,
+      pendingClaimsCount: pendingClaimsRes.rows[0].count ?? 0,
+      claims,
+    };
   } finally {
     client.release();
   }
+}
+
+export default async function AdminAgencyDashboardPage() {
+  const userId = await getAdminAgencyUserIdFromCookies();
+
+  const data: AgencyDashboardData = userId
+    ? await cached(
+        CacheKeys.agencyDashboard(userId),
+        TTL.MEDIUM,
+        () => fetchAgencyDashboardData(userId),
+        { fallback: {
+            agencyName: "Dashboard Agency",
+            agentsCount: 0, hospitalsCount: 0, policiesCount: 0,
+            pendingTransfersCount: 0, pendingClaimsCount: 0, claims: [],
+          } as AgencyDashboardData
+        }
+      )
+    : {
+        agencyName: "Dashboard Agency",
+        agentsCount: 0, hospitalsCount: 0, policiesCount: 0,
+        pendingTransfersCount: 0, pendingClaimsCount: 0, claims: [],
+      };
+
+  const { agencyName, agentsCount, hospitalsCount, policiesCount,
+          pendingTransfersCount, pendingClaimsCount, claims } = data;
 
   const stats = [
     { label: "Total Agen", value: agentsCount, icon: Users, href: "/admin-agency/agents" },

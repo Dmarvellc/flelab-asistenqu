@@ -26,7 +26,7 @@
     "heic2any": "^0.0.4",
     "idn-area-data": "^3.1.2",
     "lucide-react": "^0.563.0",
-    "motion": "^12.34.0",
+    "motion": "^12.38.0",
     "next": "16.1.6",
     "pg": "^8.18.0",
     "radix-ui": "^1.4.3",

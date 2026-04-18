@@ -1,28 +1,37 @@
 import { NextResponse } from "next/server";
 import { dbPool } from "@/lib/db";
 import { composeClaimNotes } from "@/lib/claim-form-meta";
-import { deleteCacheByPattern, deleteCacheKeys, getJsonCache, setJsonCache } from "@/lib/redis";
+import { deleteCacheByPattern, deleteCacheKeys } from "@/lib/redis";
+import { cached, CacheKeys, TTL, invalidate } from "@/lib/cache";
+import { logError } from "@/lib/logger";
 import { getSession } from "@/lib/auth";
 
 export async function GET(req: Request) {
-  const client = await dbPool.connect();
+  const session = await getSession();
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const userId = session.userId;
 
   try {
-    const session = await getSession();
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-    const userId = session.userId;
+    const claims = await cached(CacheKeys.agentClaims(userId), TTL.SHORT, () => fetchAgentClaimRows(userId));
+    return NextResponse.json({ claims });
+  } catch (error) {
+    logError("api.agent.claims.list", error, {
+      userId,
+      requestPath: "/api/agent/claims",
+      requestMethod: "GET",
+      isPublicFacing: true,
+    });
+    return NextResponse.json({ error: "Failed to fetch claims" }, { status: 500 });
+  }
+}
 
-    const cacheKey = `claims:agent:list:${userId}`;
-    const cached = await getJsonCache<{ claims: unknown[] }>(cacheKey);
-    if (cached) {
-      return NextResponse.json(cached);
-    }
-
-    // Fetch claims for this agent
+async function fetchAgentClaimRows(userId: string) {
+  const client = await dbPool.connect();
+  try {
     const result = await client.query(`
-      SELECT 
+      SELECT
         c.claim_id,
         c.claim_number,
         c.claim_date,
@@ -43,14 +52,7 @@ export async function GET(req: Request) {
       WHERE c.created_by_user_id = $1
       ORDER BY c.created_at DESC
     `, [userId]);
-
-    const response = { claims: result.rows };
-    await setJsonCache(cacheKey, response, 30);
-    return NextResponse.json(response);
-
-  } catch (error) {
-    console.error("Fetch claims failed", error);
-    return NextResponse.json({ error: "Failed to fetch claims" }, { status: 500 });
+    return result.rows;
   } finally {
     client.release();
   }
@@ -110,6 +112,7 @@ export async function POST(req: Request) {
     ]);
 
     const claimId = result.rows[0].claim_id as string;
+    await invalidate([CacheKeys.agentClaims(userId)]);
     await deleteCacheKeys([`claims:agent:list:${userId}`]);
     await deleteCacheByPattern("claims:hospital:list:*");
     await deleteCacheByPattern(`claims:hospital:detail:${claimId}`);
@@ -117,7 +120,13 @@ export async function POST(req: Request) {
     return NextResponse.json({ claim_id: claimId }, { status: 201 });
 
   } catch (error) {
-    console.error("Create claim failed", error);
+    const session = await getSession().catch(() => null);
+    logError("api.agent.claims.create", error, {
+      userId: session?.userId,
+      requestPath: "/api/agent/claims",
+      requestMethod: "POST",
+      isPublicFacing: true,
+    });
     return NextResponse.json({ error: "Failed to create claim" }, { status: 500 });
   } finally {
     client.release();

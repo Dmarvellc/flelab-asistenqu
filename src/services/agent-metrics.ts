@@ -1,4 +1,5 @@
 import { dbPool } from "@/lib/db";
+import { cached, CacheKeys, TTL } from "@/lib/cache";
 
 export interface AgentChartData {
   name: string;
@@ -18,8 +19,13 @@ export interface AgentMetrics {
  * Fetch agent dashboard metrics.
  * All queries use user_id == agent_id (same UUID in this schema).
  * Each query is isolated so one failure doesn't kill the entire dashboard.
+ * Cached for 2 minutes per user.
  */
 export async function getAgentMetrics(userId: string): Promise<AgentMetrics> {
+  return cached(CacheKeys.agentMetrics(userId), TTL.MEDIUM, () => fetchAgentMetrics(userId));
+}
+
+async function fetchAgentMetrics(userId: string): Promise<AgentMetrics> {
   const client = await dbPool.connect();
   try {
     const [clientsRes, pendingRes, agentRes, claimsRes, chartRes] = await Promise.all([

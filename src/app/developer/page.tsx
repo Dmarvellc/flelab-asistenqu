@@ -1,22 +1,13 @@
 import { DeveloperClientView } from "./client-view"
-import { headers } from "next/headers"
 
 export const dynamic = "force-dynamic"
 
-export default async function DeveloperDashboardPage() {
-  const headersList = await headers()
-  const host = headersList.get("host") || "localhost:3000"
-  const protocol = process.env.NODE_ENV === "development" ? "http" : "https"
-  const cookieHeader = headersList.get("cookie") || ""
-  
-  let initialData = null
-  try {
-    const res = await fetch(`${protocol}://${host}/api/developer/analytics`, { 
-      cache: "no-store", 
-      headers: { cookie: cookieHeader } 
-    })
-    if (res.ok) initialData = await res.json()
-  } catch(e) {}
-
-  return <DeveloperClientView initialData={initialData} />
+// IMPORTANT: do NOT fetch analytics on the server here.
+// Previously this page made an SSR HTTP loopback fetch to /api/developer/analytics
+// (12 SQL queries) before flushing any HTML, which blocked First Contentful Paint
+// (Lighthouse reported NO_FCP) and left the page blank for several seconds.
+// The client view already fetches its own data via /api/developer/analytics
+// after mount, so we render the shell immediately with `initialData = null`.
+export default function DeveloperDashboardPage() {
+  return <DeveloperClientView initialData={null} />
 }

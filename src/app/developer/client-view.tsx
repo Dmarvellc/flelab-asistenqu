@@ -12,6 +12,7 @@ import {
   CheckCircle2, XCircle, AlertTriangle, ChevronRight, BarChart2,
   Sparkles, Zap, Command,
 } from "lucide-react";
+import { CriticalAlertsBanner } from "@/components/developer/critical-alerts-banner";
 
 /* ─── Types ─────────────────────────────────────────────────────── */
 interface DailyPoint  { date: string; count: number }
@@ -302,6 +303,9 @@ export function DeveloperClientView({ initialData }: { initialData?: Analytics |
           </button>
         </div>
       </div>
+
+      {/* ── Critical Alerts Banner ──────────────────────────────── */}
+      <CriticalAlertsBanner />
 
       {/* ── Velocity Hero Strip (Clean Minimal) ─────────────────── */}
       <div className="bg-white rounded-2xl px-6 py-6 border border-gray-100 shadow-sm flex items-center justify-between flex-wrap gap-4">

@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server"
 import { dbPool } from "@/lib/db"
 import { getRoleFromCookies } from "@/lib/auth-cookies"
+import { cached, CacheKeys, TTL } from "@/lib/cache"
+import { logError } from "@/lib/logger"
 
 export const dynamic = "force-dynamic"
 
@@ -12,6 +14,19 @@ export async function GET() {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 })
   }
 
+  try {
+    const data = await cached(CacheKeys.devAnalytics(), TTL.MEDIUM, computeDevAnalytics)
+    return NextResponse.json(data)
+  } catch (err) {
+    logError("api.developer.analytics", err, {
+      requestPath: "/api/developer/analytics",
+      requestMethod: "GET",
+    })
+    return NextResponse.json({ error: "Failed to fetch analytics" }, { status: 500 })
+  }
+}
+
+async function computeDevAnalytics() {
   const client = await dbPool.connect()
   try {
     // 1. Daily registrations — last 30 days
@@ -176,7 +191,7 @@ export async function GET() {
       hospitals: sparkRows.map(r => r.hospitals),
     }
 
-    return NextResponse.json({
+    return {
       dailyRegistrations: dailyRes.rows,
       monthlyRegistrations: monthlyRes.rows,
       claimsByStage: claimsStageRes.rows,
@@ -209,7 +224,7 @@ export async function GET() {
         previous: wow.prev ?? 0,
       },
       peakHour,
-    })
+    }
   } finally {
     client.release()
   }
