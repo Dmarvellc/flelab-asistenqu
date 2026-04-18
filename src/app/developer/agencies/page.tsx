@@ -4,9 +4,8 @@ import { useEffect, useState, useCallback } from "react";
 import {
     Briefcase, Search, RefreshCw, ChevronLeft, ChevronRight,
     Users, FileText, CheckCircle2, Building2, ArrowUpDown, ExternalLink,
-    TrendingUp, Plus,
+    TrendingUp,
 } from "lucide-react";
-import Link from "next/link";
 
 /* ─── Types ──────────────────────────────────────────────────────── */
 interface Agency {
@@ -104,14 +103,6 @@ export default function AgenciesPage() {
                         <p className="text-xs sm:text-sm text-gray-400 truncate">{total} agencies registered on platform</p>
                     </div>
                 </div>
-                <Link
-                    href="/developer/add-agency"
-                    className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-gray-900 text-white rounded-xl text-sm font-semibold hover:bg-gray-800 transition-all shadow-sm shrink-0"
-                >
-                    <Plus className="h-4 w-4" />
-                    <span className="hidden sm:inline">Add Agency</span>
-                    <span className="sm:hidden">Add</span>
-                </Link>
             </div>
 
             {/* ── Summary Cards ────────────────────────────────────── */}

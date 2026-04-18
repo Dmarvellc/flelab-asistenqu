@@ -3,9 +3,8 @@
 import { useEffect, useState, useCallback } from "react";
 import {
     Building2, Search, RefreshCw, ChevronLeft, ChevronRight,
-    Users, FileText, ArrowUpDown, Plus, Activity,
+    Users, FileText, ArrowUpDown, Activity,
 } from "lucide-react";
-import Link from "next/link";
 
 /* ─── Types ──────────────────────────────────────────────────────── */
 interface Hospital {
@@ -93,14 +92,6 @@ export default function HospitalsPage() {
                         <p className="text-xs sm:text-sm text-gray-400 truncate">{total} hospitals registered on platform</p>
                     </div>
                 </div>
-                <Link
-                    href="/developer/add-hospital"
-                    className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-gray-900 text-white rounded-xl text-sm font-semibold hover:bg-gray-800 transition-all shadow-sm shrink-0"
-                >
-                    <Plus className="h-4 w-4" />
-                    <span className="hidden sm:inline">Add Hospital</span>
-                    <span className="sm:hidden">Add</span>
-                </Link>
             </div>
 
             {/* ── Summary Cards ────────────────────────────────────── */}

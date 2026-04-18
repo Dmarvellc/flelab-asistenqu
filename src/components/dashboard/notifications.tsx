@@ -63,8 +63,6 @@ export function Notifications({ role = 'agent' }: { role?: 'agent' | 'hospital' 
     };
 
     fetchNotifications();
-    const interval = setInterval(fetchNotifications, 30000);
-    return () => clearInterval(interval);
   }, [role]);
 
   const viewAllHref = role === 'agent' ? "/agent/requests" : "/hospital/patients";

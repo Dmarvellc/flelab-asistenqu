@@ -103,7 +103,6 @@ export default function SystemHealthPage() {
     const [data, setData] = useState<HealthData | null>(null);
     const [loading, setLoading] = useState(true);
     const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
-    const [autoRefresh, setAutoRefresh] = useState(false);
 
     const fetchHealth = useCallback(async () => {
         setLoading(true);
@@ -119,12 +118,6 @@ export default function SystemHealthPage() {
     }, []);
 
     useEffect(() => { fetchHealth(); }, [fetchHealth]);
-
-    useEffect(() => {
-        if (!autoRefresh) return;
-        const interval = setInterval(fetchHealth, 15000);
-        return () => clearInterval(interval);
-    }, [autoRefresh, fetchHealth]);
 
     /* Normalize growth data to fill missing days */
     const normalizeGrowth = (data: GrowthPoint[]) =>
@@ -150,16 +143,6 @@ export default function SystemHealthPage() {
                     </div>
                 </div>
                 <div className="flex items-center gap-3">
-                    <button
-                        onClick={() => setAutoRefresh(v => !v)}
-                        className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold border transition-all ${autoRefresh
-                            ? "bg-emerald-50 border-emerald-200 text-emerald-700"
-                            : "bg-gray-50 border-gray-200 text-gray-500 hover:text-gray-900"
-                            }`}
-                    >
-                        <span className={`w-1.5 h-1.5 rounded-full ${autoRefresh ? "bg-emerald-500 animate-pulse" : "bg-gray-300"}`} />
-                        {autoRefresh ? "Live" : "Auto-refresh"}
-                    </button>
                     <button
                         onClick={() => { setLoading(true); fetchHealth(); }}
                         className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-all"

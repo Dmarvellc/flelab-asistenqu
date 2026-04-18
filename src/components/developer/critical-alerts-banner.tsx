@@ -47,8 +47,6 @@ export function CriticalAlertsBanner() {
 
   useEffect(() => {
     fetchAlerts();
-    const id = setInterval(fetchAlerts, 30_000);
-    return () => clearInterval(id);
   }, [fetchAlerts]);
 
   const ackOne = async (logId: string) => {

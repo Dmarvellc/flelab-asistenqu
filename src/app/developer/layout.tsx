@@ -16,9 +16,7 @@ import {
   LogOut,
   Users,
   UserCheck,
-  Hospital,
   Briefcase,
-  Terminal,
   BarChart2,
   Server,
   Building2,
@@ -135,25 +133,6 @@ export default function DeveloperLayout({
           active={pathname === "/developer/hospitals"}
         >
           Hospitals
-        </NavItem>
-
-        {/* ── Setup ── */}
-        <div className="px-2 pb-1 pt-4">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 px-2">Setup</p>
-        </div>
-        <NavItem
-          href="/developer/add-hospital"
-          icon={Hospital}
-          active={pathname === "/developer/add-hospital"}
-        >
-          Add Hospital
-        </NavItem>
-        <NavItem
-          href="/developer/add-agency"
-          icon={Briefcase}
-          active={pathname === "/developer/add-agency"}
-        >
-          Add Agency
         </NavItem>
       </SidebarContent>
 

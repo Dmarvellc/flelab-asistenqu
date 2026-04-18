@@ -115,9 +115,10 @@ export default withSentryConfig(nextConfig, {
     deleteSourcemapsAfterUpload: true,
   },
 
-  // Tree-shake Sentry logger statements so they don't ship to clients.
-  disableLogger: true,
-
-  // Enable Vercel Cron Monitors automatically.
-  automaticVercelMonitors: true,
+  webpack: {
+    // Tree-shake Sentry logger statements so they don't ship to clients.
+    treeshake: { removeDebugLogging: true },
+    // Enable Vercel Cron Monitors automatically.
+    automaticVercelMonitors: true,
+  },
 });

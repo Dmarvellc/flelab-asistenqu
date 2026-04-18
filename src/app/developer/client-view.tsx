@@ -253,12 +253,6 @@ export function DeveloperClientView({ initialData }: { initialData?: Analytics |
 
   useEffect(() => { fetchAnalytics() }, [fetchAnalytics])
 
-  // Auto-refresh every 60s
-  useEffect(() => {
-    const id = setInterval(fetchAnalytics, 60000)
-    return () => clearInterval(id)
-  }, [fetchAnalytics])
-
   const pt = data?.platformTotals
   const wowDelta = data?.wow ? pctDelta(data.wow.current, data.wow.previous) : undefined
 
