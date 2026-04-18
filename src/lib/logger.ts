@@ -3,6 +3,33 @@ import crypto from "crypto";
 import { dbPool } from "@/lib/db";
 
 /**
+ * Sentry forwarder — only loaded if @sentry/nextjs is installed AND a DSN
+ * is configured. The dynamic require keeps it tree-shakable and avoids
+ * pulling Sentry into Edge bundles where it isn't needed.
+ */
+type SentryLike = {
+  captureException: (e: unknown, ctx?: unknown) => void;
+  captureMessage: (m: string, ctx?: unknown) => void;
+};
+let sentryRef: SentryLike | null | undefined;
+function getSentry(): SentryLike | null {
+  if (sentryRef !== undefined) return sentryRef;
+  const dsn = process.env.SENTRY_DSN || process.env.NEXT_PUBLIC_SENTRY_DSN;
+  if (!dsn) {
+    sentryRef = null;
+    return null;
+  }
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    sentryRef = require("@sentry/nextjs") as SentryLike;
+    return sentryRef;
+  } catch {
+    sentryRef = null;
+    return null;
+  }
+}
+
+/**
  * ──────────────────────────────────────────────────────────────
  *  STRUCTURED LOGGER
  *  Persists errors/events to `public.system_log` and streams to
@@ -191,6 +218,32 @@ export function logError(scope: string, error: unknown, opts: LogOptions = {}): 
   });
 
   void persist(level, scope, extracted.message, extracted, opts);
+
+  // Forward to Sentry only for error/critical levels. info/warn stay in
+  // system_log to avoid burning Sentry quota on noise.
+  if (level === "error" || level === "critical") {
+    const sentry = getSentry();
+    if (sentry) {
+      try {
+        sentry.captureException(error, {
+          level: level === "critical" ? "fatal" : "error",
+          tags: {
+            scope,
+            isPublicFacing: opts.isPublicFacing ? "true" : "false",
+            requestMethod: opts.requestMethod || undefined,
+          },
+          user: opts.userId ? { id: opts.userId } : undefined,
+          extra: {
+            requestPath: opts.requestPath,
+            ...opts.meta,
+          },
+          fingerprint: [scope, extracted.name, extracted.message.slice(0, 100)],
+        });
+      } catch {
+        /* never let Sentry breakage break the app */
+      }
+    }
+  }
 }
 
 /** Log a non-error event (audit trail, deploy markers, etc). */

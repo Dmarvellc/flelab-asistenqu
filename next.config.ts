@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { withSentryConfig } from "@sentry/nextjs";
 
 const isProd = process.env.NODE_ENV === "production";
 
@@ -87,4 +88,36 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+// ── Sentry wrapper ─────────────────────────────────────────────
+// Wraps the Next.js config with Sentry's webpack plugin: uploads source maps
+// at build time (when SENTRY_AUTH_TOKEN is set), tunnels client requests to
+// avoid ad-blockers, and silences build warnings in CI.
+//
+// All Sentry options are no-ops if SENTRY_DSN / NEXT_PUBLIC_SENTRY_DSN are not
+// set, so this is safe to keep enabled in dev / preview.
+export default withSentryConfig(nextConfig, {
+  org: "flelab-j4",
+  project: "javascript-nextjs",
+
+  // Suppress source-map upload logs in CI builds.
+  silent: !process.env.CI,
+
+  // Upload a larger set of source maps for better stack traces.
+  widenClientFileUpload: true,
+
+  // Routes browser requests to Sentry through a Next.js rewrite to avoid
+  // being blocked by ad-blockers. Adds latency to client requests but
+  // dramatically improves error capture rate.
+  tunnelRoute: "/monitoring",
+
+  // Hide source maps from generated client bundles (Sentry v10 API).
+  sourcemaps: {
+    deleteSourcemapsAfterUpload: true,
+  },
+
+  // Tree-shake Sentry logger statements so they don't ship to clients.
+  disableLogger: true,
+
+  // Enable Vercel Cron Monitors automatically.
+  automaticVercelMonitors: true,
+});
