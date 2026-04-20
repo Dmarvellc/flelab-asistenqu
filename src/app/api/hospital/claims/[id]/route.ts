@@ -33,6 +33,8 @@ type AuthorizedClaimSummary = {
 
 type ClaimDetailRow = {
   claim_id: string;
+  client_id: string;
+  hospital_id: string | null;
   claim_date: string | null;
   status: string;
   stage: string | null;
@@ -156,6 +158,8 @@ async function getAuthorizedClaimDetail(
     `
       SELECT
         c.claim_id,
+        c.client_id,
+        c.hospital_id,
         c.claim_date,
         c.status,
         c.stage,

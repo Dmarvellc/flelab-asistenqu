@@ -52,9 +52,20 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
       ORDER BY con.created_at DESC
     `, [id]);
 
+    // Latest claim — used to determine which hospital the client is currently
+    // admitted to, so the client-request feature can pre-fill hospital_id.
+    const latestClaimRes = await client.query(`
+      SELECT claim_id, hospital_id, status
+      FROM public.claim
+      WHERE client_id = $1
+      ORDER BY created_at DESC
+      LIMIT 1
+    `, [id]);
+
     return NextResponse.json({
       client: clientRes.rows[0],
-      contracts: contractsRes.rows
+      contracts: contractsRes.rows,
+      latestClaim: latestClaimRes.rows[0] ?? null,
     });
 
   } catch (error) {

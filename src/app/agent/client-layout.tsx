@@ -13,6 +13,7 @@ import {
 } from "@/components/dashboard/dashboard-layout"
 
 import { LayoutDashboard, Users, FileText, LogOut, Settings, ClipboardList, Stethoscope, CalendarCheck, Gift, Globe, Search } from "lucide-react"
+import { Notifications } from "@/components/dashboard/notifications";
 import Link from "next/link"
 import Image from "next/image"
 import { I18nProvider, useTranslation } from "@/components/providers/i18n-provider"
@@ -194,7 +195,7 @@ export function AgentLayoutClient({ children, initialBadges, serverUserName }: {
     return (
         <>
             <DashboardLayout sidebar={sidebar} isCollapsed={false} header={
-                <DashboardHeader mobileSidebar={sidebar}>
+                <DashboardHeader mobileSidebar={sidebar} actions={<Notifications />}>
                     <Link href={basePath}>
                         <Image
                             src={logoUrl}

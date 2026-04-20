@@ -1,74 +1,106 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Bell, Circle } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { Bell, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 
-const statusConfig: Record<string, { label: string; dot: string }> = {
-  PENDING: { label: "Menunggu", dot: "bg-gray-400" },
-  APPROVED: { label: "Disetujui", dot: "bg-gray-700" },
-  REJECTED: { label: "Ditolak", dot: "bg-black" },
-  COMPLETED: { label: "Selesai", dot: "bg-gray-300" },
+/**
+ * Generic notification bell — portal-agnostic.
+ * Reads from /api/notifications which returns the current user's rows
+ * from the `notification` table (no role parameter needed).
+ */
+
+interface NotifItem {
+  id: string;
+  event_type: string;
+  title: string;
+  body: string | null;
+  link: string | null;
+  read_at: string | null;
+  created_at: string;
+}
+
+const EVENT_DOT: Record<string, string> = {
+  "client_request.created": "bg-amber-500",
+  "client_request.approved": "bg-emerald-500",
+  "client_request.rejected": "bg-rose-500",
+  "client_request.message": "bg-blue-500",
+  "claim.submitted": "bg-amber-500",
+  "claim.info_requested": "bg-amber-500",
+  "claim.approved": "bg-emerald-500",
+  "claim.rejected": "bg-rose-500",
+  "system.alert": "bg-gray-900",
 };
 
-export function Notifications({ role = 'agent' }: { role?: 'agent' | 'hospital' }) {
-  const [count, setCount] = useState(0);
-  const [requests, setRequests] = useState<any[]>([]);
+function timeAgo(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime();
+  const s = Math.floor(diff / 1000);
+  if (s < 60) return `${s}d`;
+  const m = Math.floor(s / 60);
+  if (m < 60) return `${m}m`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}j`;
+  const d = Math.floor(h / 24);
+  return `${d}h`;
+}
+
+// Backwards-compat: old layouts pass `role="hospital"|"agent"` — we accept
+// and ignore it so we don't have to touch every layout at once.
+export function Notifications(_props?: { role?: string }) {
+  const [items, setItems] = useState<NotifItem[]>([]);
+  const [unread, setUnread] = useState(0);
   const [open, setOpen] = useState(false);
 
+  const fetchFeed = useCallback(async () => {
+    try {
+      const res = await fetch("/api/notifications?limit=20", { cache: "no-store" });
+      if (!res.ok) return;
+      const j = (await res.json()) as { notifications: NotifItem[]; unread: number };
+      setItems(j.notifications ?? []);
+      setUnread(j.unread ?? 0);
+    } catch {
+      /* silent */
+    }
+  }, []);
+
   useEffect(() => {
-    const fetchNotifications = async () => {
-      try {
-        const endpoint = role === 'agent'
-          ? "/api/agent/requests"
-          : "/api/hospital/patients/request";
+    fetchFeed();
+  }, [fetchFeed]);
 
-        const res = await fetch(endpoint);
+  const markAllRead = async () => {
+    await fetch("/api/notifications", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ids: "all" }),
+    }).catch(() => {});
+    await fetchFeed();
+  };
 
-        let data;
-        try {
-          const text = await res.text();
-          data = text ? JSON.parse(text) : {};
-        } catch (e) {
-          console.error("JSON Parse error:", e);
-          return;
-        }
-
-        if (res.ok) {
-          let relevantRequests = [];
-
-          if (role === 'agent') {
-            relevantRequests = data.requests.filter((r: any) => r.status === 'PENDING');
-          } else {
-            relevantRequests = data.requests.filter((r: any) =>
-              r.status === 'APPROVED' || r.status === 'REJECTED' || r.status === 'COMPLETED'
-            );
-          }
-
-          setRequests(relevantRequests.slice(0, 5));
-          setCount(relevantRequests.length);
-        }
-      } catch (error) {
-        console.error("Failed to fetch notifications", error);
-      }
-    };
-
-    fetchNotifications();
-  }, [role]);
-
-  const viewAllHref = role === 'agent' ? "/agent/requests" : "/hospital/patients";
+  const markOne = async (id: string) => {
+    await fetch("/api/notifications", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ids: [id] }),
+    }).catch(() => {});
+    await fetchFeed();
+  };
 
   return (
-    <DropdownMenu open={open} onOpenChange={setOpen}>
+    <DropdownMenu
+      open={open}
+      onOpenChange={(v) => {
+        setOpen(v);
+        if (v) fetchFeed();
+      }}
+    >
       <DropdownMenuTrigger asChild>
         <Button
           variant="ghost"
@@ -77,100 +109,97 @@ export function Notifications({ role = 'agent' }: { role?: 'agent' | 'hospital' 
             "relative h-9 w-9 rounded-xl border transition-all duration-200",
             open
               ? "bg-black text-white border-black"
-              : "bg-white border-gray-200 text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-black"
+              : "bg-white border-gray-200 text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-black",
           )}
+          aria-label="Notifikasi"
         >
           <Bell className="h-4 w-4" />
-          {count > 0 && (
-            <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-black text-[9px] font-bold text-white border-2 border-white">
-              {count > 9 ? '9+' : count}
+          {unread > 0 && (
+            <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[9px] font-bold text-white border-2 border-white">
+              {unread > 9 ? "9+" : unread}
             </span>
           )}
-          <span className="sr-only">Notifikasi</span>
         </Button>
       </DropdownMenuTrigger>
 
       <DropdownMenuContent
         align="end"
-        className="w-[340px] p-0 rounded-2xl border border-gray-100 shadow-xl bg-white overflow-hidden"
+        className="w-[360px] p-0 rounded-2xl border border-gray-100 shadow-xl bg-white overflow-hidden"
         sideOffset={8}
       >
-        {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-gray-50">
           <div>
             <p className="text-sm font-semibold text-gray-900">Notifikasi</p>
             <p className="text-xs text-gray-400 mt-0.5">
-              {role === 'agent' ? 'Permintaan baru dari RS' : 'Update status permintaan'}
+              {unread > 0 ? `${unread} belum dibaca` : "Semua sudah dibaca"}
             </p>
           </div>
-          {count > 0 && (
-            <span className="flex h-6 min-w-[24px] items-center justify-center rounded-full bg-black text-white text-xs font-semibold px-2">
-              {count}
-            </span>
+          {unread > 0 && (
+            <button
+              type="button"
+              onClick={markAllRead}
+              className="text-xs font-medium text-gray-500 hover:text-black flex items-center gap-1"
+            >
+              <Check className="h-3 w-3" /> Tandai semua
+            </button>
           )}
         </div>
 
-        {/* List */}
-        <div className="max-h-[320px] overflow-y-auto">
-          {requests.length === 0 ? (
+        <div className="max-h-[380px] overflow-y-auto">
+          {items.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-10 text-center px-4">
               <div className="h-10 w-10 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center mb-3">
                 <Bell className="h-5 w-5 text-gray-300" />
               </div>
-              <p className="text-sm font-medium text-gray-500">Tidak ada notifikasi</p>
-              <p className="text-xs text-gray-400 mt-0.5">
-                {role === 'agent' ? 'Tidak ada permintaan baru.' : 'Tidak ada update terbaru.'}
-              </p>
+              <p className="text-sm font-medium text-gray-500">Belum ada notifikasi</p>
             </div>
           ) : (
             <div className="py-1">
-              {requests.map((req, idx) => {
-                const cfg = statusConfig[req.status] || { label: req.status, dot: "bg-gray-300" };
+              {items.map((n) => {
+                const dot = EVENT_DOT[n.event_type] ?? "bg-gray-400";
+                const isUnread = !n.read_at;
+                const content = (
+                  <div
+                    className={cn(
+                      "flex items-start gap-3 px-4 py-3 transition-colors duration-150 w-full",
+                      isUnread ? "bg-blue-50/40 hover:bg-blue-50/80" : "hover:bg-gray-50",
+                    )}
+                  >
+                    <div className="mt-1.5 shrink-0">
+                      <div className={cn("h-2 w-2 rounded-full", dot)} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-gray-900 truncate">{n.title}</p>
+                      {n.body && (
+                        <p className="text-xs text-gray-500 line-clamp-2 mt-0.5">{n.body}</p>
+                      )}
+                      <p className="text-[10px] text-gray-400 mt-1 uppercase tracking-wide">
+                        {timeAgo(n.created_at)} lalu
+                      </p>
+                    </div>
+                  </div>
+                );
                 return (
-                  <DropdownMenuItem key={req.request_id} asChild className="px-0 py-0 focus:bg-transparent">
-                    <Link
-                      href={viewAllHref}
-                      className="flex items-start gap-3 px-4 py-3 hover:bg-gray-50 transition-colors duration-150 cursor-pointer w-full"
-                    >
-                      <div className="mt-1 shrink-0">
-                        <div className={cn("h-2 w-2 rounded-full", cfg.dot)} />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900 truncate">
-                          {req.person_name}
-                        </p>
-                        <p className="text-xs text-gray-400 line-clamp-2 mt-0.5">
-                          {req.additional_data_request}
-                        </p>
-                        <div className="flex items-center gap-2 mt-1.5">
-                          <span className={cn(
-                            "inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full",
-                            req.status === 'PENDING' ? 'bg-gray-100 text-gray-600' :
-                              req.status === 'APPROVED' ? 'bg-gray-800 text-white' :
-                                req.status === 'REJECTED' ? 'bg-black text-white' :
-                                  'bg-gray-100 text-gray-600'
-                          )}>
-                            {cfg.label}
-                          </span>
-                        </div>
-                      </div>
-                    </Link>
+                  <DropdownMenuItem
+                    key={n.id}
+                    asChild
+                    className="px-0 py-0 focus:bg-transparent cursor-pointer"
+                    onSelect={() => {
+                      void markOne(n.id);
+                    }}
+                  >
+                    {n.link ? (
+                      <Link href={n.link}>{content}</Link>
+                    ) : (
+                      <button type="button" className="w-full text-left">
+                        {content}
+                      </button>
+                    )}
                   </DropdownMenuItem>
                 );
               })}
             </div>
           )}
-        </div>
-
-        {/* Footer */}
-        <div className="border-t border-gray-50 p-2">
-          <Link
-            href={viewAllHref}
-            className="flex items-center justify-center w-full py-2 text-xs font-medium text-gray-500 hover:text-black hover:bg-gray-50 rounded-xl transition-all duration-150"
-            onClick={() => setOpen(false)}
-          >
-            Lihat Semua Notifikasi →
-          </Link>
         </div>
       </DropdownMenuContent>
     </DropdownMenu>

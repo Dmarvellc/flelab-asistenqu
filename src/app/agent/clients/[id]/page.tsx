@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Loader2, ArrowLeft, User, FileText, Phone, MapPin, Calendar, CreditCard, ShieldCheck } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
+import { ClientRequestsPanel } from "@/components/client-requests/requests-panel";
 
 type ClientDetail = {
     client_id: string;
@@ -38,6 +39,11 @@ export default function ClientDetailPage() {
     const router = useRouter();
     const [client, setClient] = useState<ClientDetail | null>(null);
     const [contracts, setContracts] = useState<Contract[]>([]);
+    const [latestClaim, setLatestClaim] = useState<{
+        claim_id: string;
+        hospital_id: string;
+        status: string;
+    } | null>(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -49,6 +55,7 @@ export default function ClientDetailPage() {
                 if (res.ok) {
                     setClient(data.client);
                     setContracts(data.contracts || []);
+                    setLatestClaim(data.latestClaim ?? null);
                 } else {
                     // Handle error (e.g., client not found)
                     console.error(data.error);
@@ -231,6 +238,27 @@ export default function ClientDetailPage() {
                         </div>
                     )}
                 </div>
+            </div>
+
+            {/* Permintaan ke rumah sakit — jejak digital */}
+            <div className="bg-white rounded-3xl border border-gray-100 overflow-hidden shadow-sm p-6">
+                {latestClaim?.hospital_id ? (
+                    <ClientRequestsPanel
+                        mode="agent"
+                        clientId={client.client_id}
+                        hospitalId={latestClaim.hospital_id}
+                        claimId={latestClaim.claim_id}
+                    />
+                ) : (
+                    <div className="text-sm text-gray-500">
+                        <p className="font-semibold text-gray-900 mb-1">Permintaan ke Rumah Sakit</p>
+                        <p>
+                            Klien ini belum punya klaim aktif — buat klaim dulu supaya bisa
+                            mengajukan permintaan (naik kelas kamar, perpanjang rawat, dll.)
+                            ke rumah sakit tempat klien dirawat.
+                        </p>
+                    </div>
+                )}
             </div>
         </div>
     );

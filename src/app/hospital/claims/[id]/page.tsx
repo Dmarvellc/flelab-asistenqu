@@ -27,10 +27,13 @@ import {
 import Link from "next/link";
 import { extractClaimNotes } from "@/lib/claim-form-meta";
 import { ActionModal } from "@/components/ui/action-modal";
+import { ClientRequestsPanel } from "@/components/client-requests/requests-panel";
 
 
 type ClaimDetail = {
     claim_id: string;
+    client_id: string;
+    hospital_id: string | null;
     claim_date: string;
     status: string;
     total_amount: number;
@@ -679,6 +682,18 @@ export default function HospitalClaimDetailPage() {
                     )}
                 </div>
             </div>
+
+            {/* Permintaan klien — jejak digital (naik kelas, perpanjang rawat, dll.) */}
+            {claim.client_id && claim.hospital_id && (
+                <div className="bg-white rounded-3xl border border-gray-100 overflow-hidden shadow-sm p-6">
+                    <ClientRequestsPanel
+                        mode="hospital"
+                        clientId={claim.client_id}
+                        hospitalId={claim.hospital_id}
+                        claimId={claim.claim_id}
+                    />
+                </div>
+            )}
 
             <ActionModal
                 open={pendingStatus !== null}

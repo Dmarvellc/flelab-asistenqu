@@ -9,6 +9,7 @@ import Image from "next/image"
 import { CommandPalette } from "@/components/admin-agency/command-palette"
 import { I18nProvider, useTranslation } from "@/components/providers/i18n-provider";
 import { AIAgencyAssistantWidget } from "@/components/admin-agency/ai-assistant-widget";
+import { Notifications } from "@/components/dashboard/notifications";
 
 export default function AdminAgencyLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -129,7 +130,7 @@ function AdminAgencyLayoutContent({ children }: { children: React.ReactNode }) {
   return (
     <>
       <DashboardLayout sidebar={sidebar} isCollapsed={false} header={
-        <DashboardHeader mobileSidebar={sidebar}>
+        <DashboardHeader mobileSidebar={sidebar} actions={<Notifications />}>
           <Link href="/admin-agency">
             <Image
               src="https://jzupwygwzatugbrmqjau.supabase.co/storage/v1/object/sign/image/m_tagadmin.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV82NWE4NDk3Zi1iNTdiLTQ1ZDMtOWI3ZC0yNDAxNzU4Njg1NTAiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJpbWFnZS9tX3RhZ2FkbWluLnBuZyIsImlhdCI6MTc3MTg5NzQwMSwiZXhwIjozMzI3NjM2MTQwMX0.O2gM-49fTWQWkUKRyDs_5tsEUF-l_RKJb3xft9UWg64"
