@@ -225,7 +225,7 @@ export default function PendingApprovalsPage() {
                     <div className="flex-1 overflow-y-auto p-6 pt-2">
                         {selectedUser && (
                             <div className="grid gap-6">
-                                <div className="grid grid-cols-2 gap-4 border-b pb-4">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-b pb-4">
                                     <div className="space-y-1">
                                         <span className="text-sm font-medium text-muted-foreground">Email</span>
                                         <p className="text-sm font-semibold">{selectedUser.email}</p>
@@ -254,7 +254,7 @@ export default function PendingApprovalsPage() {
                                         <span className="text-sm font-medium text-muted-foreground">Birth Date</span>
                                         <p className="text-sm font-semibold">{selectedUser.birth_date || "-"}</p>
                                     </div>
-                                    <div className="col-span-2 space-y-1">
+                                    <div className="sm:col-span-2 space-y-1">
                                         <span className="text-sm font-medium text-muted-foreground">Address</span>
                                         <p className="text-sm font-semibold">{selectedUser.address || "-"}</p>
                                     </div>
@@ -264,7 +264,7 @@ export default function PendingApprovalsPage() {
                                 {(selectedUser.ktp_image_path || selectedUser.selfie_image_path) && (
                                     <div className="space-y-4">
                                         <h4 className="font-medium">Verification Documents</h4>
-                                        <div className="grid grid-cols-2 gap-4">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                             {selectedUser.ktp_image_path && (
                                                 <div className="space-y-2">
                                                     <span className="text-xs font-medium text-muted-foreground uppercase">KTP Photo</span>

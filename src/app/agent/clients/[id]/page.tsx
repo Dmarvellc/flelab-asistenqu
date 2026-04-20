@@ -87,7 +87,7 @@ export default function ClientDetailPage() {
     }
 
     return (
-        <div className="flex flex-col gap-10 animate-in fade-in duration-500 max-w-6xl mx-auto pb-12">
+        <div className="flex flex-col gap-6 sm:gap-10 animate-in fade-in duration-500 max-w-6xl mx-auto pb-12">
             {/* Header */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 pb-6 border-b border-gray-100">
                 <div className="flex items-center gap-4">
@@ -103,14 +103,14 @@ export default function ClientDetailPage() {
                                 Bergabung {new Date(client.created_at).toLocaleDateString("id-ID", { month: 'long', year: 'numeric' })}
                             </span>
                         </div>
-                        <h2 className="text-2xl sm:text-xl sm:text-3xl font-bold tracking-tight text-gray-900 mt-1">
+                        <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight text-gray-900 mt-1">
                             {client.full_name}
                         </h2>
                     </div>
                 </div>
             </div>
 
-            <div className="grid gap-8 lg:grid-cols-3">
+            <div className="grid gap-6 lg:gap-8 lg:grid-cols-3">
                 {/* Client Profile */}
                 <div className="lg:col-span-1 h-fit bg-white rounded-3xl border border-gray-100 overflow-hidden shadow-sm">
                     <div className="px-6 py-5 border-b border-gray-50 flex items-center justify-between bg-gray-50/30">

@@ -26,7 +26,7 @@ export default async function HospitalDashboardPage() {
   return (
     <div className="flex flex-col gap-4 sm:gap-6">
       <div>
-        <h2 className="text-2xl sm:text-xl sm:text-3xl font-bold tracking-tight">Hospital Dashboard</h2>
+        <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight">Hospital Dashboard</h2>
         <p className="text-muted-foreground">
           Manage patient admissions and insurance claims.
         </p>

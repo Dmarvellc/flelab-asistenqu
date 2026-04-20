@@ -333,7 +333,7 @@ export default function HospitalClaimDetailPage() {
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
                                     <p className="text-sm font-medium text-muted-foreground">Nama Lengkap</p>
                                     <p className="text-base font-semibold">{claim.client_name}</p>
@@ -362,7 +362,7 @@ export default function HospitalClaimDetailPage() {
                                     <p className="text-sm font-medium text-muted-foreground">No. Telepon</p>
                                     <p className="text-base">{claim.phone_number || "-"}</p>
                                 </div>
-                                <div className="col-span-2">
+                                <div className="sm:col-span-2">
                                     <p className="text-sm font-medium text-muted-foreground">Alamat</p>
                                     <p className="text-base">{claim.address || "-"}</p>
                                 </div>
@@ -379,7 +379,7 @@ export default function HospitalClaimDetailPage() {
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
                                     <p className="text-sm font-medium text-muted-foreground">Tanggal Kejadian</p>
                                     <p>{new Date(claim.claim_date).toLocaleDateString("id-ID", { day: 'numeric', month: 'long', year: 'numeric' })}</p>
@@ -483,7 +483,7 @@ export default function HospitalClaimDetailPage() {
                                     <p className="text-sm text-muted-foreground">
                                         Periksa ringkasan, lalu pilih Setujui atau Tolak.
                                     </p>
-                                    <div className="flex gap-4">
+                                    <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                                         <Button
                                             onClick={() => {
                                                 if (!canApprove) {

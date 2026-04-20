@@ -173,7 +173,7 @@ export default function HospitalPatientsPage() {
         <div className="space-y-4 sm:space-y-6">
             <div className="flex items-center justify-between">
                 <div>
-                    <h2 className="text-2xl sm:text-xl sm:text-3xl font-bold tracking-tight">Data Pasien</h2>
+                    <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight">Data Pasien</h2>
                     <p className="text-muted-foreground">
                         Kelola permintaan data pasien ke agen asuransi.
                     </p>

@@ -74,7 +74,7 @@ export default function HospitalClaimsPage() {
         <div className="space-y-4 sm:space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div>
-                    <h2 className="text-2xl sm:text-xl sm:text-3xl font-bold tracking-tight">Daftar Klaim Masuk</h2>
+                    <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight">Daftar Klaim Masuk</h2>
                     <p className="text-muted-foreground">
                         Kelola klaim asuransi yang masuk dari agen.
                     </p>

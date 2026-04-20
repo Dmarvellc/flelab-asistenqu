@@ -483,9 +483,11 @@ function RequestDetailSheet({
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-start gap-2">
-      <span className="text-xs text-gray-500 w-32 shrink-0">{label}</span>
-      <span className="text-sm text-gray-900 flex-1 break-words">{value}</span>
+    <div className="flex flex-col sm:flex-row sm:items-start sm:gap-2">
+      <span className="text-[11px] uppercase tracking-wide text-gray-500 sm:text-xs sm:normal-case sm:tracking-normal sm:w-32 sm:shrink-0">
+        {label}
+      </span>
+      <span className="text-sm text-gray-900 sm:flex-1 break-words">{value}</span>
     </div>
   );
 }
