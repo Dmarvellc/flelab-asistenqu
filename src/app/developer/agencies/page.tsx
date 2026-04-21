@@ -3,8 +3,8 @@
 import { useEffect, useState, useCallback } from "react";
 import {
     Briefcase, Search, RefreshCw, ChevronLeft, ChevronRight,
-    Users, FileText, CheckCircle2, Building2, ArrowUpDown, ExternalLink,
-    TrendingUp,
+    Users, FileText, ArrowUpDown,
+    Plus, X, Loader2, Copy, Check, Building2, UserPlus, Send,
 } from "lucide-react";
 
 /* ─── Types ──────────────────────────────────────────────────────── */
@@ -40,6 +40,96 @@ export default function AgenciesPage() {
     const [total, setTotal] = useState(0);
     const [sortBy, setSortBy] = useState<"name" | "active_agents" | "total_claims" | "created_at">("created_at");
     const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+
+    /* ── Create-agency modal state ─────────────────────────────── */
+    const [createOpen, setCreateOpen] = useState(false);
+    const [createStep, setCreateStep] = useState<1 | 2>(1);
+    const [createBusy, setCreateBusy] = useState(false);
+    const [createError, setCreateError] = useState<string | null>(null);
+    const [agencyForm, setAgencyForm] = useState({ name: "", address: "" });
+    const [createdAgency, setCreatedAgency] = useState<{
+        agency_id: string;
+        name: string;
+        slug: string | null;
+    } | null>(null);
+    const [inviteForm, setInviteForm] = useState({ email: "", fullName: "" });
+    const [inviteResult, setInviteResult] = useState<{
+        inviteUrl: string;
+        email: string;
+        expiresAt: string;
+    } | null>(null);
+    const [copied, setCopied] = useState(false);
+
+    function resetCreateModal() {
+        setCreateOpen(false);
+        setCreateStep(1);
+        setCreateBusy(false);
+        setCreateError(null);
+        setAgencyForm({ name: "", address: "" });
+        setCreatedAgency(null);
+        setInviteForm({ email: "", fullName: "" });
+        setInviteResult(null);
+        setCopied(false);
+    }
+
+    async function submitCreateAgency() {
+        if (!agencyForm.name.trim()) return;
+        setCreateBusy(true);
+        setCreateError(null);
+        try {
+            const res = await fetch("/api/developer/agencies", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(agencyForm),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || "Gagal membuat agency");
+            setCreatedAgency(data.agency);
+            setCreateStep(2);
+            fetchAgencies();
+        } catch (err) {
+            setCreateError(err instanceof Error ? err.message : "Gagal membuat agency");
+        } finally {
+            setCreateBusy(false);
+        }
+    }
+
+    async function submitInviteMaster() {
+        if (!createdAgency || !inviteForm.email.trim()) return;
+        setCreateBusy(true);
+        setCreateError(null);
+        try {
+            const res = await fetch(`/api/developer/agencies/${createdAgency.agency_id}/invitations`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    email: inviteForm.email,
+                    fullName: inviteForm.fullName || undefined,
+                    agencyRole: "master_admin",
+                }),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || "Gagal membuat undangan");
+            setInviteResult({
+                inviteUrl: data.inviteUrl,
+                email: data.email,
+                expiresAt: data.expiresAt,
+            });
+        } catch (err) {
+            setCreateError(err instanceof Error ? err.message : "Gagal membuat undangan");
+        } finally {
+            setCreateBusy(false);
+        }
+    }
+
+    async function copyInviteUrl() {
+        if (!inviteResult) return;
+        try {
+            await navigator.clipboard.writeText(inviteResult.inviteUrl);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+        } catch { /* ignore */ }
+    }
 
     const fetchAgencies = useCallback(async () => {
         setLoading(true);
@@ -103,7 +193,165 @@ export default function AgenciesPage() {
                         <p className="text-xs sm:text-sm text-gray-400 truncate">{total} agencies registered on platform</p>
                     </div>
                 </div>
+                <button
+                    onClick={() => { resetCreateModal(); setCreateOpen(true); }}
+                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold bg-gray-900 text-white hover:bg-gray-800 shadow-md transition-all"
+                >
+                    <Plus className="h-4 w-4" />
+                    Buat Agency
+                </button>
             </div>
+
+            {/* ── Create-agency 2-step modal ─────────────────────── */}
+            {createOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 animate-in fade-in duration-200">
+                    <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg p-6 sm:p-7 animate-in zoom-in-95 duration-200">
+                        <div className="flex items-center justify-between mb-1">
+                            <p className="text-[11px] uppercase tracking-widest text-gray-400 font-bold">
+                                Langkah {createStep} / 2
+                            </p>
+                            <button
+                                onClick={resetCreateModal}
+                                className="text-gray-400 hover:text-gray-600 p-1 -m-1"
+                            >
+                                <X className="h-5 w-5" />
+                            </button>
+                        </div>
+                        <h3 className="text-xl font-bold text-gray-900 mb-1">
+                            {createStep === 1 ? "Buat Organisasi Agency" : "Undang Master Admin"}
+                        </h3>
+                        <p className="text-sm text-gray-500 mb-5">
+                            {createStep === 1
+                                ? "Buat dulu entitas organisasinya. Belum ada user di sini — admin pertama dibuat di langkah berikutnya."
+                                : `Agency "${createdAgency?.name}" sudah dibuat. Sekarang undang user yang akan jadi master admin organisasi ini.`}
+                        </p>
+
+                        {createStep === 1 && (
+                            <div className="space-y-4">
+                                <div className="space-y-1.5">
+                                    <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">Nama Agency *</label>
+                                    <input
+                                        value={agencyForm.name}
+                                        onChange={e => setAgencyForm(f => ({ ...f, name: e.target.value }))}
+                                        placeholder="PT Asuransi Sehat Sejahtera"
+                                        className="w-full h-11 px-4 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900/10 focus:border-gray-400"
+                                    />
+                                </div>
+                                <div className="space-y-1.5">
+                                    <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">Alamat (opsional)</label>
+                                    <input
+                                        value={agencyForm.address}
+                                        onChange={e => setAgencyForm(f => ({ ...f, address: e.target.value }))}
+                                        placeholder="Jl. Sudirman No. 1, Jakarta"
+                                        className="w-full h-11 px-4 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900/10 focus:border-gray-400"
+                                    />
+                                </div>
+                                {createError && (
+                                    <p className="text-xs text-rose-700 bg-rose-50 border border-rose-100 rounded-lg px-3 py-2">{createError}</p>
+                                )}
+                                <div className="flex justify-end gap-2 pt-2">
+                                    <button
+                                        onClick={resetCreateModal}
+                                        className="px-4 py-2 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-100"
+                                    >
+                                        Batal
+                                    </button>
+                                    <button
+                                        onClick={submitCreateAgency}
+                                        disabled={createBusy || !agencyForm.name.trim()}
+                                        className="flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-semibold bg-gray-900 text-white hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed"
+                                    >
+                                        {createBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Building2 className="h-4 w-4" />}
+                                        Buat Agency & Lanjut
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
+                        {createStep === 2 && !inviteResult && (
+                            <div className="space-y-4">
+                                <div className="space-y-1.5">
+                                    <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">Email Master Admin *</label>
+                                    <input
+                                        type="email"
+                                        value={inviteForm.email}
+                                        onChange={e => setInviteForm(f => ({ ...f, email: e.target.value }))}
+                                        placeholder="admin@agency.com"
+                                        className="w-full h-11 px-4 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900/10 focus:border-gray-400"
+                                    />
+                                </div>
+                                <div className="space-y-1.5">
+                                    <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">Nama Lengkap (opsional)</label>
+                                    <input
+                                        value={inviteForm.fullName}
+                                        onChange={e => setInviteForm(f => ({ ...f, fullName: e.target.value }))}
+                                        placeholder="Nama lengkap"
+                                        className="w-full h-11 px-4 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900/10 focus:border-gray-400"
+                                    />
+                                </div>
+                                <p className="text-[11px] text-gray-500 flex items-start gap-1.5">
+                                    <UserPlus className="h-3 w-3 mt-0.5 shrink-0" />
+                                    Kami akan generate link undangan. Penerima klik link untuk set password sendiri dan otomatis jadi master admin agency ini.
+                                </p>
+                                {createError && (
+                                    <p className="text-xs text-rose-700 bg-rose-50 border border-rose-100 rounded-lg px-3 py-2">{createError}</p>
+                                )}
+                                <div className="flex justify-end gap-2 pt-2">
+                                    <button
+                                        onClick={resetCreateModal}
+                                        className="px-4 py-2 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-100"
+                                    >
+                                        Lewati
+                                    </button>
+                                    <button
+                                        onClick={submitInviteMaster}
+                                        disabled={createBusy || !inviteForm.email.trim()}
+                                        className="flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-semibold bg-gray-900 text-white hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed"
+                                    >
+                                        {createBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                                        Buat Undangan
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
+                        {createStep === 2 && inviteResult && (
+                            <div className="space-y-4">
+                                <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-4">
+                                    <p className="text-sm font-semibold text-emerald-900 mb-1">Undangan dibuat</p>
+                                    <p className="text-xs text-emerald-700">
+                                        Kirim link berikut ke <span className="font-semibold">{inviteResult.email}</span>.
+                                        Berlaku sampai {new Date(inviteResult.expiresAt).toLocaleString("id-ID", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}.
+                                    </p>
+                                </div>
+                                <div className="flex items-stretch gap-2">
+                                    <div className="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-xs text-gray-700 font-mono break-all">
+                                        {inviteResult.inviteUrl}
+                                    </div>
+                                    <button
+                                        onClick={copyInviteUrl}
+                                        className="flex items-center gap-1.5 px-4 rounded-xl text-sm font-semibold bg-gray-900 text-white hover:bg-gray-800 shrink-0"
+                                    >
+                                        {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                                        {copied ? "Tersalin" : "Salin"}
+                                    </button>
+                                </div>
+                                <p className="text-[11px] text-amber-700 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2">
+                                    Link ini hanya muncul sekali. Pastikan disalin sebelum menutup panel.
+                                </p>
+                                <div className="flex justify-end pt-2">
+                                    <button
+                                        onClick={resetCreateModal}
+                                        className="px-5 py-2 rounded-xl text-sm font-semibold bg-gray-900 text-white hover:bg-gray-800"
+                                    >
+                                        Selesai
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
 
             {/* ── Summary Cards ────────────────────────────────────── */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">

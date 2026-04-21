@@ -1,6 +1,7 @@
 import "server-only";
 import bcrypt from "bcryptjs";
 import { dbPool } from "@/lib/db";
+import { syncAgencyMembership } from "@/lib/agency-rbac";
 
 const E164_PHONE_REGEX = /^\+?[1-9]\d{6,14}$/;
 
@@ -84,22 +85,19 @@ export async function registerUser(params: {
   try {
     await client.query("BEGIN");
 
-    // 1. Create User in auth.users FIRST (to satisfy FK constraints)
-    // We generate a UUID for the user ID so we can use it in both tables
+    // 1. Generate user_id. We no longer write to auth.users (Supabase
+    // Auth schema) — login uses bcrypt against app_user.password_hash,
+    // so the auth.users row was dead weight.
     const idRes = await client.query("SELECT gen_random_uuid() as id");
     const userId = idRes.rows[0].id;
 
-    await client.query(`
-        INSERT INTO auth.users (id, email, encrypted_password, aud, role, created_at, updated_at)
-        VALUES ($1, $2, $3, 'authenticated', 'authenticated', NOW(), NOW())
-    `, [userId, params.email.toLowerCase(), passwordHash]);
-
-    // 2. Create User in public.app_user
+    // 2. Create User in public.app_user. Role lowercased so
+    // normalizeRole() in src/lib/rbac.ts will accept it at login time.
     const userRes = await client.query(
       `insert into public.app_user (user_id, email, password_hash, role, status, agency_id)
        values ($1, $2, $3, $4, 'PENDING', $5)
        returning user_id, email, role, status, agency_id`,
-      [userId, params.email.toLowerCase(), passwordHash, params.role, params.agencyId || null]
+      [userId, params.email.toLowerCase(), passwordHash, params.role.toLowerCase(), params.agencyId || null]
     );
     const user = userRes.rows[0];
 
@@ -236,13 +234,15 @@ export async function createActiveUser(params: {
     const idRes = await client.query("SELECT gen_random_uuid() as id");
     const userId = idRes.rows[0].id;
 
-    // Insert into auth.users
-    await client.query(`
-        INSERT INTO auth.users (id, email, encrypted_password, aud, role, created_at, updated_at)
-        VALUES ($1, $2, $3, 'authenticated', 'authenticated', NOW(), NOW())
-    `, [userId, params.email.toLowerCase(), passwordHash]);
+    // NOTE: We intentionally no longer write to auth.users (Supabase
+    // Auth schema). Login authenticates against app_user.password_hash
+    // via bcrypt, so the auth.users row was dead weight and a fragile
+    // FK. Existing rows are left in place for backward compat.
 
-    // Insert into app_user (agency_id set later if admin_agency)
+    // Insert into app_user. Role is stored lowercase to match the
+    // canonical values in src/lib/rbac.ts:roles. Earlier code uppercased
+    // it, which caused normalizeRole to reject the value at login time.
+    const normalizedRole = params.role.toLowerCase();
     const result = await client.query(
       `insert into public.app_user (user_id, email, password_hash, role, status, approved_at, approved_by)
          values ($1, $2, $3, $4, 'ACTIVE', now(), $5)
@@ -251,7 +251,7 @@ export async function createActiveUser(params: {
         userId,
         params.email.toLowerCase(),
         passwordHash,
-        params.role.toUpperCase(),
+        normalizedRole,
         params.approvedBy ?? null,
       ]
     );
@@ -282,8 +282,8 @@ export async function createActiveUser(params: {
       );
     }
 
-    // Create entity record and role mapping based on role
-    if (params.role === 'hospital_admin') {
+    // Create the organization record + appropriate scope mapping.
+    if (normalizedRole === 'hospital_admin') {
       const hospitalRes = await client.query(
         `INSERT INTO public.hospital (name, address, is_partner, status) VALUES ($1, $2, true, 'ACTIVE') RETURNING hospital_id`,
         [params.organizationName || params.profile?.fullName || 'Hospital', params.profile?.address || null]
@@ -291,20 +291,27 @@ export async function createActiveUser(params: {
       const hospitalId = hospitalRes.rows[0].hospital_id;
 
       await client.query(
-        `INSERT INTO public.user_role (user_id, role, scope_type, scope_id) VALUES ($1, $2, 'HOSPITAL', $3)`,
-        [userId, params.role.toUpperCase(), hospitalId]
+        `INSERT INTO public.user_role (user_id, role, scope_type, scope_id) VALUES ($1, 'HOSPITAL_ADMIN', 'HOSPITAL', $2)`,
+        [userId, hospitalId]
       );
-    } else if (params.role === 'admin_agency') {
+    } else if (normalizedRole === 'admin_agency') {
       const agencyRes = await client.query(
         `INSERT INTO public.agency (name, address) VALUES ($1, $2) RETURNING agency_id`,
         [params.organizationName || params.profile?.fullName || 'Agency', params.profile?.address || null]
       );
       const agencyId = agencyRes.rows[0].agency_id;
 
-      await client.query(
-        `UPDATE public.app_user SET agency_id = $1 WHERE user_id = $2`,
-        [agencyId, userId]
-      );
+      // Make the user the master_admin of the new organization. This
+      // creates the agency_member row, syncs app_user.agency_id, and
+      // writes an audit entry — all in the same transaction so the
+      // organization is never left without an owner.
+      await syncAgencyMembership(client, {
+        userId,
+        agencyId,
+        agencyRole: 'master_admin',
+        byUserId: params.approvedBy ?? null,
+        auditEvent: 'added_directly',
+      });
     }
 
     await client.query("COMMIT");
