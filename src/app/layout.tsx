@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Poppins } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
+import { BusyOverlayProvider } from "@/components/ui/busy-overlay-provider";
 
 const poppins = Poppins({
   variable: "--font-poppins",
@@ -25,7 +26,9 @@ export default function RootLayout({
         className={`${poppins.variable} antialiased bg-background text-foreground`}
         style={{ fontFamily: 'var(--font-poppins), sans-serif' }}
       >
-        {children}
+        <BusyOverlayProvider>
+          {children}
+        </BusyOverlayProvider>
         <Toaster />
       </body>
     </html>

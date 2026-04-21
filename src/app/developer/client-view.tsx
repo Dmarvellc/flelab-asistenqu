@@ -637,10 +637,10 @@ export function DeveloperClientView({ initialData }: { initialData?: Analytics |
       {/* ── Quick Actions ────────────────────────────────────────── */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {[
-          { href: "/developer/users",    label: "Kelola Users",    icon: Users,      color: "bg-blue-50   border-blue-200   text-blue-800   hover:bg-blue-100" },
-          { href: "/developer/agencies", label: "Kelola Agency",   icon: Briefcase,  color: "bg-fuchsia-50 border-fuchsia-200 text-fuchsia-800 hover:bg-fuchsia-100" },
-          { href: "/developer/analytics",label: "Analytics",       icon: BarChart2,  color: "bg-violet-50 border-violet-200 text-violet-800 hover:bg-violet-100" },
-          { href: "/developer/terminal", label: "Quick Create",    icon: TrendingUp, color: "bg-gray-50   border-gray-200   text-gray-800   hover:bg-gray-100" },
+          { href: "/developer/users",     label: "Kelola Users",    icon: Users,      color: "bg-blue-50    border-blue-200    text-blue-800    hover:bg-blue-100"    },
+          { href: "/developer/agencies",  label: "Kelola Agency",   icon: Briefcase,  color: "bg-fuchsia-50 border-fuchsia-200 text-fuchsia-800 hover:bg-fuchsia-100" },
+          { href: "/developer/hospitals", label: "Kelola Hospital",  icon: Building2,  color: "bg-teal-50    border-teal-200    text-teal-800    hover:bg-teal-100"    },
+          { href: "/developer/analytics", label: "Analytics",       icon: BarChart2,  color: "bg-violet-50  border-violet-200  text-violet-800  hover:bg-violet-100"  },
         ].map(({ href, label, icon: Icon, color }) => (
           <Link key={href} href={href}
             className={`flex items-center gap-3 rounded-2xl border px-5 py-4 transition-all ${color}`}>

@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { useBusy } from "@/components/ui/busy-overlay-provider";
 import {
     Briefcase, Search, RefreshCw, ChevronLeft, ChevronRight,
     Users, FileText, ArrowUpDown,
-    Plus, X, Loader2, Copy, Check, Building2, UserPlus, Send,
+    Plus, X, Loader2, Copy, Check, Building2, UserPlus, Send, Trash2, Mail,
 } from "lucide-react";
 
 /* ─── Types ──────────────────────────────────────────────────────── */
@@ -59,6 +60,19 @@ export default function AgenciesPage() {
         expiresAt: string;
     } | null>(null);
     const [copied, setCopied] = useState(false);
+    const { run } = useBusy();
+
+    /* ── Per-row invite modal ─────────────────────────────────── */
+    const [rowInviteAgency, setRowInviteAgency] = useState<Agency | null>(null);
+    const [rowInviteForm, setRowInviteForm] = useState({ email: "", fullName: "" });
+    const [rowInviteBusy, setRowInviteBusy] = useState(false);
+    const [rowInviteError, setRowInviteError] = useState<string | null>(null);
+    const [rowInviteResult, setRowInviteResult] = useState<{ inviteUrl: string; email: string; expiresAt: string } | null>(null);
+    const [rowInviteCopied, setRowInviteCopied] = useState(false);
+
+    /* ── Delete confirm ───────────────────────────────────────── */
+    const [deleteTarget, setDeleteTarget] = useState<Agency | null>(null);
+    const [deleteBusy, setDeleteBusy] = useState(false);
 
     function resetCreateModal() {
         setCreateOpen(false);
@@ -76,50 +90,56 @@ export default function AgenciesPage() {
         if (!agencyForm.name.trim()) return;
         setCreateBusy(true);
         setCreateError(null);
-        try {
-            const res = await fetch("/api/developer/agencies", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(agencyForm),
-            });
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.error || "Gagal membuat agency");
-            setCreatedAgency(data.agency);
-            setCreateStep(2);
-            fetchAgencies();
-        } catch (err) {
-            setCreateError(err instanceof Error ? err.message : "Gagal membuat agency");
-        } finally {
-            setCreateBusy(false);
-        }
+        let success = false;
+        await run(async () => {
+            try {
+                const res = await fetch("/api/developer/agencies", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ ...agencyForm, name: agencyForm.name.trim().toUpperCase() }),
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || "Gagal membuat agency");
+                setCreatedAgency(data.agency);
+                setCreateStep(2);
+                success = true;
+            } catch (err) {
+                setCreateError(err instanceof Error ? err.message : "Gagal membuat agency");
+            } finally {
+                setCreateBusy(false);
+            }
+        }, "Membuat agency…");
+        if (success) fetchAgencies();
     }
 
     async function submitInviteMaster() {
         if (!createdAgency || !inviteForm.email.trim()) return;
         setCreateBusy(true);
         setCreateError(null);
-        try {
-            const res = await fetch(`/api/developer/agencies/${createdAgency.agency_id}/invitations`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    email: inviteForm.email,
-                    fullName: inviteForm.fullName || undefined,
-                    agencyRole: "master_admin",
-                }),
-            });
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.error || "Gagal membuat undangan");
-            setInviteResult({
-                inviteUrl: data.inviteUrl,
-                email: data.email,
-                expiresAt: data.expiresAt,
-            });
-        } catch (err) {
-            setCreateError(err instanceof Error ? err.message : "Gagal membuat undangan");
-        } finally {
-            setCreateBusy(false);
-        }
+        await run(async () => {
+            try {
+                const res = await fetch(`/api/developer/agencies/${createdAgency.agency_id}/invitations`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        email: inviteForm.email,
+                        fullName: inviteForm.fullName || undefined,
+                        agencyRole: "master_admin",
+                    }),
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || "Gagal membuat undangan");
+                setInviteResult({
+                    inviteUrl: data.inviteUrl,
+                    email: data.email,
+                    expiresAt: data.expiresAt,
+                });
+            } catch (err) {
+                setCreateError(err instanceof Error ? err.message : "Gagal membuat undangan");
+            } finally {
+                setCreateBusy(false);
+            }
+        }, "Mengirim undangan…");
     }
 
     async function copyInviteUrl() {
@@ -175,11 +195,52 @@ export default function AgenciesPage() {
         <ArrowUpDown className={`h-3 w-3 inline ml-1 transition-opacity ${sortBy === col ? "opacity-100 text-gray-900" : "opacity-30"}`} />
     );
 
+    async function submitRowInvite() {
+        if (!rowInviteAgency || !rowInviteForm.email.trim()) return;
+        setRowInviteBusy(true);
+        setRowInviteError(null);
+        try {
+            const res = await fetch(`/api/developer/agencies/${rowInviteAgency.agency_id}/invitations`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    email: rowInviteForm.email,
+                    fullName: rowInviteForm.fullName || undefined,
+                    agencyRole: "master_admin",
+                }),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || "Gagal membuat undangan");
+            setRowInviteResult({ inviteUrl: data.inviteUrl, email: data.email, expiresAt: data.expiresAt });
+        } catch (err) {
+            setRowInviteError(err instanceof Error ? err.message : "Gagal membuat undangan");
+        } finally {
+            setRowInviteBusy(false);
+        }
+    }
+
+    async function handleDeleteAgency() {
+        if (!deleteTarget) return;
+        setDeleteBusy(true);
+        try {
+            const res = await fetch(`/api/developer/agencies/${deleteTarget.agency_id}`, { method: "DELETE" });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || "Gagal menghapus agency");
+            setDeleteTarget(null);
+            fetchAgencies();
+        } catch (err) {
+            alert(err instanceof Error ? err.message : "Gagal menghapus agency");
+        } finally {
+            setDeleteBusy(false);
+        }
+    }
+
     /* Summary stats */
     const totalAgents = agencies.reduce((s, a) => s + Number(a.active_agents), 0);
     const totalClaims = agencies.reduce((s, a) => s + Number(a.total_claims), 0);
 
     return (
+        <>
         <div className="space-y-6">
 
             {/* ── Header ──────────────────────────────────────────── */}
@@ -232,9 +293,9 @@ export default function AgenciesPage() {
                                     <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">Nama Agency *</label>
                                     <input
                                         value={agencyForm.name}
-                                        onChange={e => setAgencyForm(f => ({ ...f, name: e.target.value }))}
-                                        placeholder="PT Asuransi Sehat Sejahtera"
-                                        className="w-full h-11 px-4 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900/10 focus:border-gray-400"
+                                        onChange={e => setAgencyForm(f => ({ ...f, name: e.target.value.toUpperCase() }))}
+                                        placeholder="PT ASURANSI SEHAT SEJAHTERA"
+                                        className="w-full h-11 px-4 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900/10 focus:border-gray-400 uppercase tracking-wide"
                                     />
                                 </div>
                                 <div className="space-y-1.5">
@@ -428,6 +489,9 @@ export default function AgenciesPage() {
                                 >
                                     Joined <SortIcon col="created_at" />
                                 </th>
+                                <th className="text-right px-6 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                    Actions
+                                </th>
                             </tr>
                         </thead>
                         <tbody>
@@ -492,6 +556,30 @@ export default function AgenciesPage() {
                                             <td className="px-6 py-4 text-right">
                                                 <span className="text-xs text-gray-500">{fmtDate(agency.created_at)}</span>
                                             </td>
+                                            <td className="px-6 py-4 text-right">
+                                                <div className="relative inline-flex items-center gap-1 justify-end">
+                                                    <button
+                                                        onClick={() => {
+                                                            setRowInviteAgency(agency);
+                                                            setRowInviteForm({ email: "", fullName: "" });
+                                                            setRowInviteResult(null);
+                                                            setRowInviteError(null);
+                                                            setRowInviteCopied(false);
+                                                        }}
+                                                        title="Invite Master Admin"
+                                                        className="p-1.5 rounded-lg text-violet-500 hover:bg-violet-50 transition-colors"
+                                                    >
+                                                        <Mail className="h-4 w-4" />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => setDeleteTarget(agency)}
+                                                        title="Hapus Agency"
+                                                        className="p-1.5 rounded-lg text-red-400 hover:bg-red-50 transition-colors"
+                                                    >
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </button>
+                                                </div>
+                                            </td>
                                         </tr>
                                     );
                                 })
@@ -524,8 +612,136 @@ export default function AgenciesPage() {
                         </div>
                     </div>
                 )}
-            </div>
+        </div>
 
         </div>
+
+        {/* ── Per-row Invite Master Admin Modal ─────────────────── */}
+        {rowInviteAgency && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 animate-in fade-in duration-200">
+                <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg p-6 sm:p-7 animate-in zoom-in-95 duration-200">
+                    <div className="flex items-center justify-between mb-1">
+                        <p className="text-[11px] uppercase tracking-widest text-gray-400 font-bold">Undang Master Admin</p>
+                        <button onClick={() => setRowInviteAgency(null)} className="text-gray-400 hover:text-gray-600 p-1 -m-1">
+                            <X className="h-5 w-5" />
+                        </button>
+                    </div>
+                    <h3 className="text-xl font-bold text-gray-900 mb-1">{rowInviteAgency.name}</h3>
+                    <p className="text-sm text-gray-500 mb-5">
+                        Undang user yang akan jadi master admin organisasi ini.
+                    </p>
+
+                    {!rowInviteResult ? (
+                        <div className="space-y-4">
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">Email Master Admin *</label>
+                                <input
+                                    type="email"
+                                    value={rowInviteForm.email}
+                                    onChange={e => setRowInviteForm(f => ({ ...f, email: e.target.value }))}
+                                    placeholder="admin@agency.com"
+                                    className="w-full h-11 px-4 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900/10 focus:border-gray-400"
+                                />
+                            </div>
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">Nama Lengkap (opsional)</label>
+                                <input
+                                    value={rowInviteForm.fullName}
+                                    onChange={e => setRowInviteForm(f => ({ ...f, fullName: e.target.value }))}
+                                    placeholder="Nama lengkap"
+                                    className="w-full h-11 px-4 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900/10 focus:border-gray-400"
+                                />
+                            </div>
+                            {rowInviteError && (
+                                <p className="text-xs text-rose-700 bg-rose-50 border border-rose-100 rounded-lg px-3 py-2">{rowInviteError}</p>
+                            )}
+                            <div className="flex justify-end gap-2 pt-2">
+                                <button onClick={() => setRowInviteAgency(null)} className="px-4 py-2 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-100">Batal</button>
+                                <button
+                                    onClick={submitRowInvite}
+                                    disabled={rowInviteBusy || !rowInviteForm.email.trim()}
+                                    className="flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-semibold bg-gray-900 text-white hover:bg-gray-800 disabled:opacity-40"
+                                >
+                                    {rowInviteBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                                    Buat Undangan
+                                </button>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="space-y-4">
+                            <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-4">
+                                <p className="text-sm font-semibold text-emerald-900 mb-1">Undangan dibuat ✓</p>
+                                <p className="text-xs text-emerald-700">
+                                    Kirim link ke <span className="font-semibold">{rowInviteResult.email}</span>.
+                                    Berlaku sampai {new Date(rowInviteResult.expiresAt).toLocaleString("id-ID", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}.
+                                </p>
+                            </div>
+                            <div className="flex items-stretch gap-2">
+                                <div className="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-xs text-gray-700 font-mono break-all">
+                                    {rowInviteResult.inviteUrl}
+                                </div>
+                                <button
+                                    onClick={async () => {
+                                        await navigator.clipboard.writeText(rowInviteResult!.inviteUrl);
+                                        setRowInviteCopied(true);
+                                        setTimeout(() => setRowInviteCopied(false), 2000);
+                                    }}
+                                    className="flex items-center gap-1.5 px-4 rounded-xl text-sm font-semibold bg-gray-900 text-white hover:bg-gray-800 shrink-0"
+                                >
+                                    {rowInviteCopied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                                    {rowInviteCopied ? "Tersalin" : "Salin"}
+                                </button>
+                            </div>
+                            <p className="text-[11px] text-amber-700 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2">
+                                Link ini hanya muncul sekali. Pastikan disalin sebelum menutup panel.
+                            </p>
+                            <div className="flex justify-end pt-2">
+                                <button onClick={() => setRowInviteAgency(null)} className="px-5 py-2 rounded-xl text-sm font-semibold bg-gray-900 text-white hover:bg-gray-800">Selesai</button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </div>
+        )}
+
+        {/* ── Delete Confirmation ────────────────────────────────── */}
+        {deleteTarget && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 animate-in fade-in duration-200">
+                <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md p-6 animate-in zoom-in-95 duration-200">
+                    <div className="flex items-center gap-3 mb-4">
+                        <div className="w-10 h-10 bg-red-50 rounded-2xl flex items-center justify-center shrink-0">
+                            <Trash2 className="h-5 w-5 text-red-500" />
+                        </div>
+                        <div>
+                            <h3 className="text-base font-bold text-gray-900">Hapus Agency</h3>
+                            <p className="text-sm text-gray-500">{deleteTarget.name}</p>
+                        </div>
+                    </div>
+                    <p className="text-sm text-gray-600 mb-1">Apakah kamu yakin ingin menghapus agency ini?</p>
+                    <p className="text-xs text-amber-700 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2 mb-5">
+                        Users yang terhubung <strong>tidak</strong> akan dihapus, tapi akan di-detach dari agency ini.
+                    </p>
+                    <div className="flex justify-end gap-2">
+                        <button
+                            onClick={() => setDeleteTarget(null)}
+                            disabled={deleteBusy}
+                            className="px-4 py-2 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-100"
+                        >
+                            Batal
+                        </button>
+                        <button
+                            onClick={handleDeleteAgency}
+                            disabled={deleteBusy}
+                            className="flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-semibold bg-red-600 text-white hover:bg-red-700 disabled:opacity-40"
+                        >
+                            {deleteBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                            Ya, Hapus
+                        </button>
+                    </div>
+                </div>
+            </div>
+        )}
+
+        </>
     );
 }

@@ -2,12 +2,14 @@
 
 import { useEffect, useState } from "react";
 import {
-  Users, UserPlus, Shield, Star, Crown, Loader2, Mail, ChevronDown, X, Check,
-  Trash2, Link2, Copy, Clock, Send, UserCheck, Phone, MessageSquare,
+  Users, UserPlus, UserCog, Shield, Star, Crown, Loader2, Mail, X, Check,
+  Trash2, Link2, Copy, Clock, Send, UserCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import Link from "next/link";
 import { toast } from "@/hooks/use-toast";
+import { useBusy } from "@/components/ui/busy-overlay-provider";
 
 interface TeamMember {
   member_id: string;
@@ -74,14 +76,14 @@ export default function TeamManagementPage() {
   const [members, setMembers] = useState<TeamMember[]>([]);
   const [pending, setPending] = useState<PendingInvitation[]>([]);
   const [joinRequests, setJoinRequests] = useState<JoinRequest[]>([]);
-  const [reqProcessing, setReqProcessing] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [showInvite, setShowInvite] = useState(false);
-  const [inviteForm, setInviteForm] = useState({ email: "", fullName: "", phone: "", role: "agent" });
+  const [inviteForm, setInviteForm] = useState({ email: "", fullName: "", phone: "", role: "manager" });
   const [inviting, setInviting] = useState(false);
   const [inviteResult, setInviteResult] = useState<InviteResult | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editRole, setEditRole] = useState("");
+  const { run } = useBusy();
 
   const fetchAll = async () => {
     try {
@@ -114,6 +116,7 @@ export default function TeamManagementPage() {
   const handleInvite = async () => {
     if (!inviteForm.email) return;
     setInviting(true);
+    await run(async () => {
     try {
       const res = await fetch("/api/admin-agency/team", {
         method: "POST",
@@ -136,7 +139,7 @@ export default function TeamManagementPage() {
         toast({ title: "Berhasil", description: `${inviteForm.email} berhasil ditambahkan.` });
         setShowInvite(false);
       }
-      setInviteForm({ email: "", fullName: "", phone: "", role: "agent" });
+      setInviteForm({ email: "", fullName: "", phone: "", role: "manager" });
       fetchAll();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Gagal menambahkan anggota.";
@@ -144,6 +147,7 @@ export default function TeamManagementPage() {
     } finally {
       setInviting(false);
     }
+    }, "Mengirim undangan…");
   };
 
   const copyInviteUrl = async (url: string) => {
@@ -155,109 +159,87 @@ export default function TeamManagementPage() {
     }
   };
 
-  const handleJoinRequest = async (
-    requestId: string,
-    action: "accept" | "reject",
-    label: string,
-  ) => {
-    if (action === "reject" && !confirm(`Tolak permintaan dari ${label}?`)) return;
-    setReqProcessing(requestId);
-    try {
-      const res = await fetch("/api/admin-agency/join-requests", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ requestId, action }),
-      });
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error);
-      }
-      toast({
-        title: action === "accept" ? "Diterima" : "Ditolak",
-        description:
-          action === "accept"
-            ? `${label} bergabung sebagai agent.`
-            : `Permintaan dari ${label} ditolak.`,
-      });
-      fetchAll();
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Gagal memproses permintaan.";
-      toast({ title: "Gagal", description: msg, variant: "destructive" });
-    } finally {
-      setReqProcessing(null);
-    }
-  };
+  // Join-request handling lives on /admin-agency/agents now — join
+  // requests are always agent-scoped.
 
   const handleRevoke = async (invitationId: string, email: string) => {
     if (!confirm(`Cabut undangan untuk ${email}?`)) return;
-    try {
-      const res = await fetch(`/api/admin-agency/invitations?id=${invitationId}`, { method: "DELETE" });
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error);
+    await run(async () => {
+      try {
+        const res = await fetch(`/api/admin-agency/invitations?id=${invitationId}`, { method: "DELETE" });
+        if (!res.ok) {
+          const data = await res.json();
+          throw new Error(data.error);
+        }
+        toast({ title: "Berhasil", description: "Undangan dicabut." });
+        fetchAll();
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : "Gagal mencabut undangan.";
+        toast({ title: "Gagal", description: msg, variant: "destructive" });
       }
-      toast({ title: "Berhasil", description: "Undangan dicabut." });
-      fetchAll();
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Gagal mencabut undangan.";
-      toast({ title: "Gagal", description: msg, variant: "destructive" });
-    }
+    }, "Mencabut undangan…");
   };
 
   const handleUpdateRole = async (memberId: string) => {
-    try {
-      const res = await fetch("/api/admin-agency/team", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ memberId, role: editRole }),
-      });
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error);
+    await run(async () => {
+      try {
+        const res = await fetch("/api/admin-agency/team", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ memberId, role: editRole }),
+        });
+        if (!res.ok) {
+          const data = await res.json();
+          throw new Error(data.error);
+        }
+        toast({ title: "Berhasil", description: "Role berhasil diperbarui." });
+        setEditingId(null);
+        fetchAll();
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : "Gagal memperbarui role.";
+        toast({ title: "Gagal", description: msg, variant: "destructive" });
       }
-      toast({ title: "Berhasil", description: "Role berhasil diperbarui." });
-      setEditingId(null);
-      fetchAll();
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Gagal memperbarui role.";
-      toast({ title: "Gagal", description: msg, variant: "destructive" });
-    }
+    }, "Memperbarui role…");
   };
 
   const handleRemove = async (memberId: string, name: string) => {
     if (!confirm(`Hapus ${name} dari tim?`)) return;
-    try {
-      const res = await fetch(`/api/admin-agency/team?memberId=${memberId}`, { method: "DELETE" });
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error);
+    await run(async () => {
+      try {
+        const res = await fetch(`/api/admin-agency/team?memberId=${memberId}`, { method: "DELETE" });
+        if (!res.ok) {
+          const data = await res.json();
+          throw new Error(data.error);
+        }
+        toast({ title: "Berhasil", description: "Anggota berhasil dihapus." });
+        fetchAll();
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : "Gagal menghapus anggota.";
+        toast({ title: "Gagal", description: msg, variant: "destructive" });
       }
-      toast({ title: "Berhasil", description: "Anggota berhasil dihapus." });
-      fetchAll();
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Gagal menghapus anggota.";
-      toast({ title: "Gagal", description: msg, variant: "destructive" });
-    }
+    }, "Menghapus anggota…");
   };
 
   const handleToggleStatus = async (memberId: string, currentStatus: string) => {
     const newStatus = currentStatus === "ACTIVE" ? "SUSPENDED" : "ACTIVE";
-    try {
-      const res = await fetch("/api/admin-agency/team", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ memberId, status: newStatus }),
-      });
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error);
+    await run(async () => {
+      try {
+        const res = await fetch("/api/admin-agency/team", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ memberId, status: newStatus }),
+        });
+        if (!res.ok) {
+          const data = await res.json();
+          throw new Error(data.error);
+        }
+        toast({ title: "Berhasil", description: `Status berhasil diubah ke ${newStatus}.` });
+        fetchAll();
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : "Gagal mengubah status.";
+        toast({ title: "Gagal", description: msg, variant: "destructive" });
       }
-      toast({ title: "Berhasil", description: `Status berhasil diubah ke ${newStatus}.` });
-      fetchAll();
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Gagal mengubah status.";
-      toast({ title: "Gagal", description: msg, variant: "destructive" });
-    }
+    }, "Mengubah status…");
   };
 
   if (loading) {
@@ -268,24 +250,41 @@ export default function TeamManagementPage() {
     );
   }
 
+  // This page is scoped to internal staff only. Agent-facing rows
+  // (members with role=agent, pending agent invites, agent join requests)
+  // live on /admin-agency/agents.
+  const staffMembers = members.filter((m) => m.member_role !== "agent");
+  const staffPending = pending.filter((i) => i.agency_role !== "agent");
+
   return (
     <div className="flex flex-col gap-6 sm:gap-8 animate-in fade-in duration-500 max-w-5xl">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-gray-100">
-        <div>
-          <div className="flex items-center gap-2 text-gray-500 text-sm font-medium mb-2">
-            <Users className="h-4 w-4" />
-            Manajemen Tim
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 pb-6 border-b border-gray-100">
+        <div className="min-w-0">
+          <div className="inline-flex items-center gap-1.5 bg-gray-900 text-white text-[11px] font-semibold px-2.5 py-1 rounded-full mb-3">
+            <UserCheck className="h-3 w-3" />
+            Staff Internal
           </div>
-          <h1 className="text-2xl sm:text-4xl font-bold tracking-tight text-gray-900">Tim Agensi</h1>
-          <p className="text-sm sm:text-base text-gray-500 mt-1">Undang anggota, kelola role, dan pantau akses.</p>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900">
+            Master Admin, Admin &amp; Manager
+          </h1>
+          <p className="text-sm text-gray-500 mt-1.5 max-w-xl">
+            Kelola operator internal agensi Anda. Untuk mengundang <span className="font-semibold text-gray-700">agen baru</span>,
+            buka halaman{" "}
+            <Link
+              href="/admin-agency/agents"
+              className="text-gray-900 underline decoration-dotted underline-offset-2 font-semibold hover:text-violet-700"
+            >
+              Agen
+            </Link>.
+          </p>
         </div>
         <Button
           onClick={() => { setShowInvite(true); setInviteResult(null); }}
-          className="bg-gray-900 hover:bg-gray-800 text-white gap-2 h-12 px-6 rounded-2xl text-sm font-semibold shadow-md"
+          className="bg-gray-900 hover:bg-gray-800 text-white gap-2 h-11 px-5 rounded-xl text-sm font-semibold shadow-sm shrink-0"
         >
           <UserPlus className="h-4 w-4" />
-          Undang Anggota
+          Undang Staff
         </Button>
       </div>
 
@@ -380,7 +379,6 @@ export default function TeamManagementPage() {
                     onChange={e => setInviteForm({ ...inviteForm, role: e.target.value })}
                     className="w-full h-10 px-3 rounded-xl border border-gray-200 text-sm bg-white"
                   >
-                    <option value="agent">Agent</option>
                     <option value="manager">Manager</option>
                     <option value="admin">Admin</option>
                     <option value="master_admin">Master Admin</option>
@@ -407,10 +405,11 @@ export default function TeamManagementPage() {
         </div>
       )}
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        {Object.entries(ROLE_CONFIG).map(([key, cfg]) => {
-          const count = members.filter(m => m.member_role === key).length;
+      {/* Stats — only staff roles */}
+      <div className="grid grid-cols-3 gap-3">
+        {(["master_admin", "admin", "manager"] as const).map((key) => {
+          const cfg = ROLE_CONFIG[key];
+          const count = staffMembers.filter(m => m.member_role === key).length;
           const Icon = cfg.icon;
           return (
             <div key={key} className="flex items-center gap-3 bg-white border border-gray-100 rounded-xl p-4">
@@ -426,93 +425,34 @@ export default function TeamManagementPage() {
         })}
       </div>
 
-      {/* Join Requests (self-register) */}
+      {/* Link to agent self-registrations (lives on /agents) */}
       {joinRequests.length > 0 && (
-        <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm">
-          <div className="px-5 sm:px-6 py-4 border-b border-gray-50 bg-blue-50/40 flex items-center gap-2">
+        <Link
+          href="/admin-agency/agents"
+          className="flex items-center gap-3 px-5 py-4 bg-blue-50/60 border border-blue-100 rounded-2xl hover:bg-blue-50 transition-colors"
+        >
+          <div className="h-10 w-10 rounded-xl bg-white border border-blue-200 flex items-center justify-center shrink-0">
             <UserCheck className="h-4 w-4 text-blue-600" />
-            <h3 className="text-sm font-bold text-gray-900">
-              Permintaan Bergabung ({joinRequests.length})
-            </h3>
-            <span className="ml-auto text-[11px] text-gray-500">
-              Calon agen yang mendaftar mandiri & memilih agency Anda
-            </span>
           </div>
-          <div className="divide-y divide-gray-50">
-            {joinRequests.map(req => {
-              const label = req.full_name || req.email;
-              const isProcessing = reqProcessing === req.request_id;
-              return (
-                <div
-                  key={req.request_id}
-                  className="flex flex-col sm:flex-row sm:items-center gap-3 px-5 sm:px-6 py-4 hover:bg-gray-50/50 transition-colors"
-                >
-                  <div className="flex items-start gap-3 flex-1 min-w-0">
-                    <div className="h-10 w-10 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center shrink-0 text-sm font-bold text-blue-700">
-                      {label.charAt(0).toUpperCase()}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-semibold text-gray-900 truncate">{label}</p>
-                      <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 mt-0.5">
-                        <span className="text-[11px] text-gray-400 flex items-center gap-1 truncate">
-                          <Mail className="h-3 w-3 shrink-0" /> {req.email}
-                        </span>
-                        {req.phone_number && (
-                          <span className="text-[11px] text-gray-400 flex items-center gap-1 truncate">
-                            <Phone className="h-3 w-3 shrink-0" /> {req.phone_number}
-                          </span>
-                        )}
-                      </div>
-                      {req.message && (
-                        <p className="text-[11px] text-gray-600 bg-gray-50 border border-gray-100 rounded-lg px-2 py-1.5 mt-1.5 flex items-start gap-1.5">
-                          <MessageSquare className="h-3 w-3 mt-0.5 shrink-0 text-gray-400" />
-                          {req.message}
-                        </p>
-                      )}
-                      <p className="text-[10px] text-gray-400 mt-1">
-                        Dikirim {formatDate(req.created_at)}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 sm:shrink-0">
-                    <Button
-                      onClick={() => handleJoinRequest(req.request_id, "reject", label)}
-                      variant="outline"
-                      size="sm"
-                      disabled={isProcessing}
-                      className="rounded-xl gap-1.5 text-xs"
-                    >
-                      <X className="h-3.5 w-3.5" />
-                      Tolak
-                    </Button>
-                    <Button
-                      onClick={() => handleJoinRequest(req.request_id, "accept", label)}
-                      size="sm"
-                      disabled={isProcessing}
-                      className="bg-gray-900 hover:bg-gray-800 rounded-xl gap-1.5 text-xs"
-                    >
-                      {isProcessing
-                        ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                        : <Check className="h-3.5 w-3.5" />}
-                      Terima
-                    </Button>
-                  </div>
-                </div>
-              );
-            })}
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-gray-900">
+              {joinRequests.length} calon agen menunggu persetujuan
+            </p>
+            <p className="text-[11px] text-gray-500 mt-0.5">
+              Permintaan bergabung agen ditangani di halaman Agen →
+            </p>
           </div>
-        </div>
+        </Link>
       )}
-
-      {/* Pending Invitations */}
-      {pending.length > 0 && (
+      {/* Pending staff invitations */}
+      {staffPending.length > 0 && (
         <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm">
           <div className="px-5 sm:px-6 py-4 border-b border-gray-50 bg-amber-50/30 flex items-center gap-2">
             <Clock className="h-4 w-4 text-amber-600" />
-            <h3 className="text-sm font-bold text-gray-900">Undangan Pending ({pending.length})</h3>
+            <h3 className="text-sm font-bold text-gray-900">Undangan Pending ({staffPending.length})</h3>
           </div>
           <div className="divide-y divide-gray-50">
-            {pending.map(inv => {
+            {staffPending.map(inv => {
               const roleCfg = ROLE_CONFIG[inv.agency_role] || ROLE_CONFIG.agent;
               return (
                 <div
@@ -552,20 +492,20 @@ export default function TeamManagementPage() {
         </div>
       )}
 
-      {/* Team List */}
+      {/* Staff List */}
       <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm">
         <div className="px-5 sm:px-6 py-4 border-b border-gray-50 bg-gray-50/30">
-          <h3 className="text-sm font-bold text-gray-900">Anggota Tim ({members.length})</h3>
+          <h3 className="text-sm font-bold text-gray-900">Daftar Staff ({staffMembers.length})</h3>
         </div>
         <div className="divide-y divide-gray-50">
-          {members.length === 0 ? (
+          {staffMembers.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center">
-              <Users className="h-10 w-10 text-gray-300 mb-3" />
-              <p className="font-semibold text-gray-700">Belum ada anggota</p>
-              <p className="text-sm text-gray-500 mt-1">Tambahkan anggota tim pertama Anda.</p>
+              <UserCog className="h-10 w-10 text-gray-300 mb-3" />
+              <p className="font-semibold text-gray-700">Belum ada staff internal</p>
+              <p className="text-sm text-gray-500 mt-1">Undang Admin atau Manager pertama Anda.</p>
             </div>
           ) : (
-            members.map(m => {
+            staffMembers.map(m => {
               const roleConfig = ROLE_CONFIG[m.member_role] || ROLE_CONFIG.agent;
               const statusConfig = STATUS_CONFIG[m.member_status] || STATUS_CONFIG.ACTIVE;
               const RoleIcon = roleConfig.icon;
@@ -605,7 +545,6 @@ export default function TeamManagementPage() {
                           onChange={e => setEditRole(e.target.value)}
                           className="text-xs border border-gray-200 rounded-lg px-2 py-1 bg-white"
                         >
-                          <option value="agent">Agent</option>
                           <option value="manager">Manager</option>
                           <option value="admin">Admin</option>
                           <option value="master_admin">Master Admin</option>

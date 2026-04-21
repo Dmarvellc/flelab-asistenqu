@@ -60,8 +60,25 @@ function generateToken(): string {
   return crypto.randomBytes(TOKEN_BYTES).toString("base64url");
 }
 
+/**
+ * Build a public invite URL.
+ *
+ * Priority for the base origin:
+ *   1. NEXT_PUBLIC_APP_URL env var  (e.g. https://asistenqu.com)
+ *   2. APP_URL env var              (same idea, server-side only)
+ *   3. The `origin` arg passed by the caller (from request headers) — used
+ *      as a last-resort fallback for local dev when no env is set.
+ *
+ * This makes sure invitation links we email/WhatsApp out always point at
+ * the real production domain, never `localhost` or a Vercel preview URL.
+ */
 export function buildInviteUrl(origin: string, rawToken: string): string {
-  return `${origin.replace(/\/$/, "")}/invitations/${rawToken}`;
+  const envBase =
+    process.env.NEXT_PUBLIC_APP_URL?.trim() ||
+    process.env.APP_URL?.trim() ||
+    "";
+  const base = envBase || origin;
+  return `${base.replace(/\/$/, "")}/invitations/${rawToken}`;
 }
 
 /**

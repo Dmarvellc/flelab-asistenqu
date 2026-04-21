@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
     slug?: string;
   } | null;
 
-  const name = body?.name?.trim();
+  const name = body?.name?.trim()?.toUpperCase();
   if (!name) {
     return NextResponse.json({ error: "Nama agency wajib diisi" }, { status: 400 });
   }

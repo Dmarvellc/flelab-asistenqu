@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { ActionModal } from "@/components/ui/action-modal";
+import { useBusy } from "@/components/ui/busy-overlay-provider";
 
 /* ─── Types ──────────────────────────────────────────────────────── */
 type User = {
@@ -339,6 +340,7 @@ export default function UsersPage() {
     const [openMenuId, setOpenMenuId] = useState<string | null>(null);
 
     const { toast } = useToast();
+    const { run } = useBusy();
 
     const fetchUsers = useCallback(async () => {
         setLoading(true);
@@ -373,17 +375,33 @@ export default function UsersPage() {
     }, [fetchUsers]);
 
     const handleDelete = async (userId: string) => {
-        try {
-            const res = await fetch(`/api/users/${userId}`, { method: "DELETE" });
-            if (res.ok) {
-                toast({ title: "Deleted", description: "User deleted successfully" });
-                fetchUsers();
-            } else {
-                toast({ title: "Error", description: "Failed to delete user", variant: "destructive" });
+        await run(async () => {
+            try {
+                const res = await fetch(`/api/users/${userId}`, { method: "DELETE" });
+                const body = await res.json().catch(() => ({} as Record<string, unknown>));
+                if (res.ok) {
+                    const msg =
+                        (body as { message?: string }).message ?? "User berhasil dihapus";
+                    toast({
+                        title: (body as { softDeleted?: boolean }).softDeleted
+                            ? "User di-suspend"
+                            : "Deleted",
+                        description: msg,
+                    });
+                    fetchUsers();
+                } else {
+                    const msg =
+                        (body as { error?: string }).error ?? "Gagal menghapus user";
+                    toast({ title: "Error", description: msg, variant: "destructive" });
+                }
+            } catch (e) {
+                toast({
+                    title: "Error",
+                    description: e instanceof Error ? e.message : "Gagal menghapus user",
+                    variant: "destructive",
+                });
             }
-        } catch {
-            toast({ title: "Error", description: "Failed to delete user", variant: "destructive" });
-        }
+        }, "Menghapus user…");
     };
 
     const toggleSort = (col: string) => {

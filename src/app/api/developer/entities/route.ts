@@ -50,7 +50,28 @@ export async function GET(request: Request) {
         ORDER BY a.created_at DESC
         LIMIT $${params.length + 1} OFFSET $${params.length + 2}`,
                 [...params, limit, offset]
-            );
+            ).catch(async () => {
+                // Fallback: public.claim table may not exist yet — return 0 for claim columns
+                return client.query(
+                    `SELECT
+              a.agency_id,
+              a.name,
+              a.address,
+              a.created_at,
+              COUNT(DISTINCT u.user_id) FILTER (WHERE u.role = 'agent' AND u.status = 'ACTIVE') AS active_agents,
+              COUNT(DISTINCT u.user_id) FILTER (WHERE u.role = 'agent') AS total_agents,
+              COUNT(DISTINCT u.user_id) FILTER (WHERE u.role = 'admin_agency') AS admins,
+              0 AS total_claims,
+              0 AS approved_claims
+            FROM public.agency a
+            LEFT JOIN public.app_user u ON u.agency_id = a.agency_id
+            ${whereClause}
+            GROUP BY a.agency_id, a.name, a.address, a.created_at
+            ORDER BY a.created_at DESC
+            LIMIT $${params.length + 1} OFFSET $${params.length + 2}`,
+                    [...params, limit, offset]
+                );
+            });
 
             return NextResponse.json({
                 data: dataRes.rows,

@@ -5,6 +5,8 @@ import { getAgencyAgents, AgencyAgent } from "@/services/admin-agency";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { User, Mail, Phone, CalendarCheck, FileText, Shield } from "lucide-react";
 import { ApproveAgentButton } from "@/components/admin/approve-agent-button";
+import { AgentInvitePanel } from "@/components/admin-agency/agent-invite-panel";
+import Link from "next/link";
 
 async function getAgencyId(): Promise<string | null> {
     const cookieStore = await cookies();
@@ -36,18 +38,29 @@ export default async function AgencyAgentsPage() {
     const agents: AgencyAgent[] = await getAgencyAgents(agencyId);
 
     return (
-        <div className="flex flex-col gap-8 animate-in fade-in duration-500 max-w-7xl">
+        <div className="flex flex-col gap-6 animate-in fade-in duration-500 max-w-7xl">
             {/* Header */}
-            <div>
-                <div className="inline-flex items-center gap-2 bg-black text-white text-xs font-medium px-3 py-1 rounded-full mb-3 shadow-sm">
-                    <User className="h-3 w-3" />
-                    <span>Daftar Agen Aktif</span>
+            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 pb-6 border-b border-gray-100">
+                <div className="min-w-0">
+                    <div className="inline-flex items-center gap-1.5 bg-gray-900 text-white text-[11px] font-semibold px-2.5 py-1 rounded-full mb-3">
+                        <User className="h-3 w-3" />
+                        Agen
+                    </div>
+                    <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900">
+                        Manajemen Agen
+                    </h1>
+                    <p className="mt-1.5 text-sm text-gray-500 max-w-xl">
+                        Undang, setujui, dan pantau agen yang mewakili agensi Anda. Untuk operator internal
+                        (Admin/Manager), buka{" "}
+                        <Link href="/admin-agency/team" className="text-gray-900 underline decoration-dotted underline-offset-2 font-semibold hover:text-violet-700">
+                            Staff Internal
+                        </Link>.
+                    </p>
                 </div>
-                <h1 className="text-xl sm:text-3xl font-bold tracking-tight text-gray-900">Manajemen Agen</h1>
-                <p className="mt-1 text-sm text-gray-500">
-                    Pantau informasi kontak, histori, dan status agen yang terdaftar di perusahaan Anda.
-                </p>
             </div>
+
+            {/* Invite + Join Requests + Pending Invitations (client) */}
+            <AgentInvitePanel />
 
             {/* Table Card */}
             <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">

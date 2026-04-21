@@ -1,1 +1,5 @@
-export default function TerminalPage() { return null }
+import { redirect } from "next/navigation"
+
+export default function TerminalPage() {
+  redirect("/developer")
+}

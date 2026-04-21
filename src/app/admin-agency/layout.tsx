@@ -3,7 +3,7 @@
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useCallback, useEffect } from "react";
 import { DashboardLayout, DashboardSidebar, DashboardHeader, SidebarHeader, SidebarContent, SidebarFooter, NavItem } from "@/components/dashboard/dashboard-layout"
-import { LayoutDashboard, Shield, Settings, LogOut, Users, FileText, GitPullRequest, Trophy, Search, Globe2, Stethoscope } from "lucide-react"
+import { LayoutDashboard, Settings, LogOut, Users, UserCog, FileText, GitPullRequest, Trophy, Search, Stethoscope } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 import { CommandPalette } from "@/components/admin-agency/command-palette"
@@ -88,12 +88,20 @@ function AdminAgencyLayoutContent({ children }: { children: React.ReactNode }) {
           <NavItem href="/admin-agency" icon={LayoutDashboard} active={pathname === '/admin-agency'} isCollapsed={false}>
             {t.dashboard}
           </NavItem>
+          {/* ── People ────────────────────────────────────────── */}
+          <p className="text-[10px] font-semibold tracking-widest text-gray-400 uppercase px-4 mt-4 mb-1">Orang</p>
           <NavItem href="/admin-agency/agents" icon={Users} active={pathname.startsWith('/admin-agency/agents')} isCollapsed={false}>
-            {t.agents}
+            Agen
+          </NavItem>
+          <NavItem href="/admin-agency/team" icon={UserCog} active={pathname.startsWith('/admin-agency/team')} isCollapsed={false}>
+            Staff Internal
           </NavItem>
           <NavItem href="/admin-agency/clients" icon={Users} active={pathname.startsWith('/admin-agency/clients')} isCollapsed={false}>
             {t.clients}
           </NavItem>
+
+          {/* ── Operations ────────────────────────────────────── */}
+          <p className="text-[10px] font-semibold tracking-widest text-gray-400 uppercase px-4 mt-4 mb-1">Operasional</p>
           <NavItem href="/admin-agency/claims" icon={FileText} active={pathname.startsWith('/admin-agency/claims')} isCollapsed={false}>
             {t.claims}
           </NavItem>
@@ -106,9 +114,8 @@ function AdminAgencyLayoutContent({ children }: { children: React.ReactNode }) {
           <NavItem href="/admin-agency/network" icon={Stethoscope} active={pathname.startsWith('/admin-agency/network')} isCollapsed={false}>
             Marketplace
           </NavItem>
-          <NavItem href="/admin-agency/team" icon={Users} active={pathname.startsWith('/admin-agency/team')} isCollapsed={false}>
-            Tim
-          </NavItem>
+          {/* ── System ───────────────────────────────────────── */}
+          <p className="text-[10px] font-semibold tracking-widest text-gray-400 uppercase px-4 mt-4 mb-1">Sistem</p>
           <NavItem href="/admin-agency/settings" icon={Settings} active={pathname === '/admin-agency/settings'} isCollapsed={false}>
             {t.settings}
           </NavItem>

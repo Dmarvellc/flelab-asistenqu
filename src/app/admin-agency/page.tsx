@@ -4,7 +4,7 @@ import { getAgencyClaims } from "@/services/admin-agency"
 import Link from "next/link"
 import { dbPool } from "@/lib/db";
 import { cached, CacheKeys, TTL } from "@/lib/cache";
-import { Users, Building2, ShieldCheck, ArrowRightLeft, FileText, ArrowRight } from "lucide-react";
+import { Users, UserCog, Building2, ShieldCheck, ArrowRightLeft, FileText, ArrowRight } from "lucide-react";
 import { Claim } from "@/lib/claims-data";
 
 interface AgencyDashboardData {
@@ -119,10 +119,17 @@ export default async function AdminAgencyDashboardPage() {
           <p className="mt-1 text-base text-gray-500">Pantau performa agensi, perkembangan agen, dan klaim secara keseluruhan.</p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-4 mt-4 sm:mt-0">
-          <Link href="/agent/register" target="_blank">
-            <button className="bg-gray-900 hover:bg-black text-white text-[14px] font-semibold h-11 px-6 rounded-xl transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5">
-              Tambah Agen Baru
+        <div className="flex flex-wrap items-center gap-3 mt-4 sm:mt-0">
+          <Link href="/admin-agency/agents">
+            <button className="bg-gray-900 hover:bg-black text-white text-[14px] font-semibold h-11 px-5 rounded-xl transition-all shadow-sm hover:shadow-md inline-flex items-center gap-2">
+              <Users className="h-4 w-4" />
+              Undang Agen
+            </button>
+          </Link>
+          <Link href="/admin-agency/team">
+            <button className="bg-white hover:bg-gray-50 border border-gray-200 text-gray-900 text-[14px] font-semibold h-11 px-5 rounded-xl transition-all inline-flex items-center gap-2">
+              <UserCog className="h-4 w-4" />
+              Staff Internal
             </button>
           </Link>
         </div>

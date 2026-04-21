@@ -3,18 +3,17 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Loader2,
   CheckCircle2,
-  XCircle,
-  ShieldCheck,
-  Building2,
-  Mail,
-  Clock,
 } from "lucide-react";
+
+const LOGO_URL =
+  "https://jzupwygwzatugbrmqjau.supabase.co/storage/v1/object/sign/image/m_logotext.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV82NWE4NDk3Zi1iNTdiLTQ1ZDMtOWI3ZC0yNDAxNzU4Njg1NTAiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJpbWFnZS9tX2xvZ290ZXh0LnBuZyIsImlhdCI6MTc3MTkwMjgxNywiZXhwIjozMzI3NjM2NjgxN30.BDtpL6pQ6FhAGQF3V05PMC3gHkJ44R2O4vm3yfY2iyQ";
 
 /**
  * Public landing for /invitations/<token>.
@@ -98,8 +97,15 @@ export default function InvitationLandingPage() {
       const j = await res.json();
       if (!res.ok) throw new Error(j.error ?? "Gagal memproses undangan");
       setDone(true);
-      // Auto-redirect to the agency login after a short pause
+      // Auto-redirect after a short pause.
+      // master_admin / admin / manager → /admin-agency/login  (agency operators)
+      // agent                           → /{slug}/agent/login (or /agent/login)
       setTimeout(() => {
+        const role = preview?.agency_role;
+        if (role && role !== "agent") {
+          router.push("/admin-agency/login");
+          return;
+        }
         if (preview?.agency_slug) {
           router.push(`/${preview.agency_slug}/agent/login`);
         } else {
@@ -115,24 +121,23 @@ export default function InvitationLandingPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+      <div className="min-h-screen flex items-center justify-center bg-[#111111]">
+        <Loader2 className="h-6 w-6 animate-spin text-[#555555]" />
       </div>
     );
   }
 
   if (loadErr || !preview) {
     return (
-      <Wrap>
-        <div className="text-center space-y-3">
-          <XCircle className="h-10 w-10 text-rose-500 mx-auto" />
-          <h2 className="text-lg font-bold text-gray-900">Undangan tidak valid</h2>
-          <p className="text-sm text-gray-500">{loadErr ?? "Link tidak ditemukan."}</p>
-          <Link href="/" className="inline-block text-sm text-gray-900 underline">
-            Kembali ke beranda
+      <div className="min-h-screen bg-[#111111] flex flex-col items-center justify-center p-6 text-center font-serif">
+        <div className="space-y-4">
+          <h2 className="text-2xl text-white font-medium">Link tidak valid</h2>
+          <p className="text-[#888888]">{loadErr ?? "Undangan tidak ditemukan."}</p>
+          <Link href="/" className="inline-block pt-4 text-[#CCCCCC] hover:text-white underline transition-colors">
+            Kembali ke Beranda
           </Link>
         </div>
-      </Wrap>
+      </div>
     );
   }
 
@@ -143,133 +148,123 @@ export default function InvitationLandingPage() {
       expired: "Undangan ini sudah kedaluwarsa. Minta admin mengirim ulang.",
     };
     return (
-      <Wrap>
-        <div className="text-center space-y-3">
-          <Clock className="h-10 w-10 text-amber-500 mx-auto" />
-          <h2 className="text-lg font-bold text-gray-900">Tidak bisa diproses</h2>
-          <p className="text-sm text-gray-500">{msg[preview.status]}</p>
+      <div className="min-h-screen bg-[#111111] flex flex-col items-center justify-center p-6 text-center font-serif">
+        <div className="space-y-4">
+          <h2 className="text-2xl text-white font-medium">Tidak bisa diproses</h2>
+          <p className="text-[#888888]">{msg[preview.status]}</p>
         </div>
-      </Wrap>
+      </div>
     );
   }
 
   if (done) {
+    const isStaff = preview?.agency_role && preview.agency_role !== "agent";
     return (
-      <Wrap>
-        <div className="text-center space-y-3">
-          <CheckCircle2 className="h-10 w-10 text-emerald-500 mx-auto" />
-          <h2 className="text-lg font-bold text-gray-900">Akun siap</h2>
-          <p className="text-sm text-gray-500">
-            Mengarahkan ke halaman login...
+      <div className="min-h-screen bg-[#111111] flex flex-col items-center justify-center p-6 text-center font-serif">
+        <div className="space-y-4">
+          <CheckCircle2 className="h-8 w-8 text-white mx-auto mb-2" />
+          <h2 className="text-2xl text-white font-medium">Akun siap</h2>
+          <p className="text-[#888888]">
+            {isStaff
+              ? "Mengarahkan ke dashboard Admin Agency…"
+              : "Mengarahkan ke halaman login agen…"}
           </p>
         </div>
-      </Wrap>
+      </div>
     );
   }
 
   return (
-    <Wrap>
-      {/* Agency context */}
-      <div className="flex items-start gap-3 pb-5 border-b border-gray-100">
-        <div className="h-11 w-11 rounded-xl bg-gray-900 text-white flex items-center justify-center shrink-0">
-          <Building2 className="h-5 w-5" />
-        </div>
-        <div className="min-w-0">
-          <p className="text-[11px] uppercase tracking-wider text-gray-400 font-bold">
-            Undangan bergabung
+    <div className="min-h-screen bg-[#FAFAFA] flex flex-col items-center p-6 sm:p-12 font-serif text-[#1C1C1C]">
+      {/* Top Center Logo */}
+      <div className="w-full max-w-lg flex justify-center mb-16">
+        <Image
+          src={LOGO_URL}
+          alt="AsistenQu"
+          width={180}
+          height={36}
+          className="h-7 w-auto object-contain"
+          priority
+        />
+      </div>
+
+      <div className="w-full max-w-lg space-y-12">
+        {/* Header / Context */}
+        <div className="space-y-4">
+          <p className="text-sm tracking-widest text-[#666666] uppercase mb-4">
+            Undangan Bergabung
           </p>
-          <h1 className="text-xl font-bold text-gray-900 truncate">
+          <h1 className="text-4xl leading-tight font-medium text-black">
             {preview.agency_name}
           </h1>
-          <div className="flex flex-wrap items-center gap-2 mt-1.5">
-            <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-gray-900 text-white">
-              <ShieldCheck className="h-3 w-3" />
-              {ROLE_LABEL[preview.agency_role]}
-            </span>
-            <span className="text-xs text-gray-500 truncate flex items-center gap-1">
-              <Mail className="h-3 w-3" />
-              {preview.email}
-            </span>
+          <p className="text-base text-[#444444] leading-relaxed">
+            Anda diundang untuk bergabung menjadi <span className="text-black font-medium">{ROLE_LABEL[preview.agency_role]}</span>.
+            <br />Undangan berlaku hingga {new Date(preview.expires_at).toLocaleDateString("id-ID", {
+              day: "numeric",
+              month: "long",
+              year: "numeric"
+            })}.
+          </p>
+        </div>
+
+        {/* Form */}
+        <div className="space-y-8">
+          <div className="space-y-3">
+            <Label className="text-sm font-medium text-[#666666]">Nama lengkap</Label>
+            <Input
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              placeholder="Sesuai KTP"
+              className="h-12 bg-transparent border-0 border-b border-[#CCCCCC] rounded-none px-0 focus-visible:ring-0 focus-visible:border-black text-base text-black placeholder:text-[#999999]"
+            />
+          </div>
+          <div className="space-y-3">
+            <Label className="text-sm font-medium text-[#666666]">No. HP / WhatsApp (opsional)</Label>
+            <Input
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="+62812..."
+              className="h-12 bg-transparent border-0 border-b border-[#CCCCCC] rounded-none px-0 focus-visible:ring-0 focus-visible:border-black text-base text-black placeholder:text-[#999999]"
+            />
+          </div>
+          <div className="space-y-3">
+            <Label className="text-sm font-medium text-[#666666]">Password</Label>
+            <Input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Minimum 8 karakter"
+              className="h-12 bg-transparent border-0 border-b border-[#CCCCCC] rounded-none px-0 focus-visible:ring-0 focus-visible:border-black text-base text-black placeholder:text-[#999999]"
+            />
+          </div>
+          <div className="space-y-3">
+            <Label className="text-sm font-medium text-[#666666]">Konfirmasi password</Label>
+            <Input
+              type="password"
+              value={confirm}
+              onChange={(e) => setConfirm(e.target.value)}
+              placeholder="Ulangi password"
+              className="h-12 bg-transparent border-0 border-b border-[#CCCCCC] rounded-none px-0 focus-visible:ring-0 focus-visible:border-black text-base text-black placeholder:text-[#999999]"
+            />
+          </div>
+
+          {err && (
+            <p className="text-sm text-red-600 pt-2">
+              {err}
+            </p>
+          )}
+
+          <div className="pt-8">
+            <Button
+              className="w-full h-12 rounded-none bg-black hover:bg-[#333333] text-white text-base font-medium transition-colors"
+              onClick={submit}
+              disabled={submitting || !password || !confirm}
+            >
+              {submitting && <Loader2 className="h-4 w-4 mr-2 animate-spin text-white" />}
+              Aktifkan Akun
+            </Button>
           </div>
         </div>
-      </div>
-
-      {preview.invited_by_email && (
-        <p className="text-xs text-gray-500 mt-4">
-          Diundang oleh{" "}
-          <span className="font-medium text-gray-900">{preview.invited_by_email}</span>.
-          Link berlaku sampai{" "}
-          {new Date(preview.expires_at).toLocaleString("id-ID", {
-            day: "numeric",
-            month: "short",
-            year: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
-          })}
-          .
-        </p>
-      )}
-
-      <div className="mt-6 space-y-4">
-        <div className="space-y-1.5">
-          <Label>Nama lengkap</Label>
-          <Input
-            value={fullName}
-            onChange={(e) => setFullName(e.target.value)}
-            placeholder="Nama lengkap sesuai KTP"
-          />
-        </div>
-        <div className="space-y-1.5">
-          <Label>No. HP / WhatsApp (opsional)</Label>
-          <Input
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            placeholder="+62812..."
-          />
-        </div>
-        <div className="space-y-1.5">
-          <Label>Password</Label>
-          <Input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="Minimum 8 karakter"
-          />
-        </div>
-        <div className="space-y-1.5">
-          <Label>Konfirmasi password</Label>
-          <Input
-            type="password"
-            value={confirm}
-            onChange={(e) => setConfirm(e.target.value)}
-            placeholder="Ulangi password"
-          />
-        </div>
-
-        {err && (
-          <p className="text-xs text-rose-700 bg-rose-50 border border-rose-100 rounded-lg px-3 py-2">
-            {err}
-          </p>
-        )}
-
-        <Button
-          className="w-full"
-          onClick={submit}
-          disabled={submitting || !password || !confirm}
-        >
-          {submitting && <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />}
-          Aktifkan Akun
-        </Button>
-      </div>
-    </Wrap>
-  );
-}
-
-function Wrap({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-md bg-white rounded-3xl shadow-sm border border-gray-100 p-6 sm:p-8">
-        {children}
       </div>
     </div>
   );

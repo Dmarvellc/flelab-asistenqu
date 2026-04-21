@@ -144,6 +144,19 @@ export async function PATCH(request: Request, props: { params: Promise<{ id: str
   }
 }
 
+/**
+ * DELETE /api/users/[id]
+ *
+ * Strategy:
+ *   1. Try a hard DELETE (works after migration v9 — most FK columns are now
+ *      SET NULL or CASCADE).
+ *   2. If a RESTRICT-protected reference still blocks (PG 23503) — typically
+ *      because the user is the agent_id on existing client_request rows or
+ *      authored client_request_message / status_change rows — fall back to a
+ *      soft delete: set status='SUSPENDED', rotate the email so it can be
+ *      reused, revoke all sessions. This keeps business records intact.
+ *   3. Always return a meaningful error message instead of a generic 500.
+ */
 export async function DELETE(_request: Request, props: { params: Promise<{ id: string }> }) {
   try {
     const session = await requireRole([...ALLOWED_USER_MANAGEMENT_ROLES]);
@@ -157,50 +170,81 @@ export async function DELETE(_request: Request, props: { params: Promise<{ id: s
       );
     }
 
-    const client = await dbPool.connect();
-    let sessionIds: string[] = [];
+    const sessionIdsRes = await dbPool.query<{ session_id: string }>(
+      `SELECT session_id FROM public.auth_session WHERE user_id = $1`,
+      [userId]
+    );
+    const sessionIds = sessionIdsRes.rows.map((row) => row.session_id);
 
+    // Attempt 1: hard delete
     try {
-      await client.query("BEGIN");
-
-      const existingUserRes = await client.query<{ user_id: string }>(
-        `SELECT user_id
-         FROM public.app_user
-         WHERE user_id = $1
-         FOR UPDATE`,
+      const res = await dbPool.query(
+        `DELETE FROM public.app_user WHERE user_id = $1`,
         [userId]
       );
-
-      if (existingUserRes.rows.length === 0) {
-        await client.query("ROLLBACK");
+      if (res.rowCount === 0) {
         return NextResponse.json({ error: "User not found" }, { status: 404 });
       }
+      await Promise.all(sessionIds.map((sid) => revokeSession(sid)));
+      return NextResponse.json({ message: "User deleted successfully" });
+    } catch (hardErr: unknown) {
+      const pgCode =
+        typeof hardErr === "object" && hardErr !== null && "code" in hardErr
+          ? (hardErr as { code?: string }).code
+          : undefined;
+      if (pgCode !== "23503") throw hardErr;
 
-      const sessionIdsRes = await client.query<{ session_id: string }>(
-        `SELECT session_id
-         FROM public.auth_session
-         WHERE user_id = $1`,
-        [userId]
-      );
-      sessionIds = sessionIdsRes.rows.map((row) => row.session_id);
+      // Attempt 2: soft delete — preserves business audit trail
+      const detail =
+        typeof hardErr === "object" && hardErr !== null && "table" in hardErr
+          ? (hardErr as { table?: string }).table
+          : undefined;
 
-      await client.query(
-        `DELETE FROM public.app_user
-         WHERE user_id = $1`,
-        [userId]
-      );
+      const client = await dbPool.connect();
+      try {
+        await client.query("BEGIN");
+        const exists = await client.query<{ email: string }>(
+          `SELECT email FROM public.app_user WHERE user_id = $1 FOR UPDATE`,
+          [userId]
+        );
+        if (exists.rows.length === 0) {
+          await client.query("ROLLBACK");
+          return NextResponse.json({ error: "User not found" }, { status: 404 });
+        }
+        const rotatedEmail = `deleted-${userId}@deleted.local`;
+        await client.query(
+          `UPDATE public.app_user
+             SET status = 'SUSPENDED',
+                 email = $2
+           WHERE user_id = $1`,
+          [userId, rotatedEmail]
+        );
+        await client.query("COMMIT");
+      } catch (softErr) {
+        await client.query("ROLLBACK").catch(() => {});
+        throw softErr;
+      } finally {
+        client.release();
+      }
 
-      await client.query("COMMIT");
-    } catch (error) {
-      await client.query("ROLLBACK").catch(() => {});
-      throw error;
-    } finally {
-      client.release();
+      await Promise.all(sessionIds.map((sid) => revokeSession(sid)));
+      return NextResponse.json({
+        message:
+          "User memiliki riwayat bisnis (mis. permintaan/pesan klien) sehingga tidak bisa dihapus permanen. Akun di-suspend & semua sesi dicabut.",
+        softDeleted: true,
+        blockedBy: detail ?? null,
+      });
     }
-
-    await Promise.all(sessionIds.map((sessionId) => revokeSession(sessionId)));
-    return NextResponse.json({ message: "User deleted successfully" });
   } catch (error) {
-    return toErrorResponse(error);
+    if (error instanceof AuthError) {
+      return NextResponse.json({ error: error.message }, { status: error.status });
+    }
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({ error: "Invalid request payload" }, { status: 400 });
+    }
+    console.error("DELETE /api/users/[id] failed", error);
+    const msg =
+      error instanceof Error ? error.message : "Gagal menghapus user";
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
 }
