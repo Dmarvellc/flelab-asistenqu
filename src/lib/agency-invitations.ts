@@ -264,14 +264,30 @@ export async function acceptInvitation(input: {
          VALUES ($1, $2, $3, 'agent', 'ACTIVE')`,
         [userId, inv.email, passwordHash],
       );
+    }
 
-      // Create person row if we have name info
-      const fullName = input.fullName?.trim() || inv.full_name || null;
-      if (fullName) {
+    // Sync person row (works for both new and existing users)
+    const fullName = input.fullName?.trim() || inv.full_name || null;
+    const phoneNum = input.phoneNumber?.trim() || inv.phone_number || null;
+
+    if (fullName || phoneNum) {
+      const linkRes = await client.query<{ person_id: string }>(
+        `SELECT person_id FROM public.user_person_link WHERE user_id = $1 LIMIT 1`,
+        [userId],
+      );
+      if (linkRes.rows.length > 0) {
+        await client.query(
+          `UPDATE public.person
+             SET full_name = COALESCE($2, full_name),
+                 phone_number = COALESCE($3, phone_number)
+           WHERE person_id = $1`,
+          [linkRes.rows[0].person_id, fullName, phoneNum],
+        );
+      } else {
         const personRes = await client.query<{ person_id: string }>(
           `INSERT INTO public.person (full_name, phone_number)
            VALUES ($1, $2) RETURNING person_id`,
-          [fullName, input.phoneNumber?.trim() || inv.phone_number || null],
+          [fullName, phoneNum],
         );
         await client.query(
           `INSERT INTO public.user_person_link (user_id, person_id, relation_type)
