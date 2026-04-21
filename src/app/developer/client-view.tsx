@@ -8,7 +8,7 @@ import {
 } from "recharts";
 import {
   Users, Activity, Clock, Building2, Briefcase, FileText,
-  ArrowRight, RefreshCw, TrendingUp, TrendingDown, UserCheck,
+  ArrowRight, RefreshCw, TrendingUp, TrendingDown,
   CheckCircle2, XCircle, AlertTriangle, ChevronRight, BarChart2,
   Sparkles, Zap, Command,
 } from "lucide-react";
@@ -350,7 +350,7 @@ export function DeveloperClientView({ initialData }: { initialData?: Analytics |
         <StatCard label="Total Users"  value={pt?.totalUsers}   icon={Users}      loading={loading} bgClass="bg-blue-50/40"
           spark={data?.sparklines?.users} delta={wowDelta} accent="#1e3a8a" color="text-blue-900" />
         <StatCard label="Active"       value={pt?.activeUsers}  icon={Activity}   color="text-emerald-700" accent="#047857" loading={loading} bgClass="bg-emerald-50/40" />
-        <StatCard label="Pending"      value={pt?.pendingUsers} icon={Clock}      color="text-amber-700"   accent="#b45309" loading={loading} href="/developer/pending" bgClass="bg-amber-50/40" />
+        <StatCard label="Pending"      value={pt?.pendingUsers} icon={Clock}      color="text-amber-700"   accent="#b45309" loading={loading} bgClass="bg-amber-50/40" />
         <StatCard label="Agents"       value={pt?.activeAgents} icon={Users}      color="text-indigo-700"  accent="#4338ca" loading={loading} bgClass="bg-indigo-50/40"
           spark={data?.sparklines?.agents} />
         <StatCard label="Agencies"     value={pt?.agencies}     icon={Briefcase}  color="text-fuchsia-700" accent="#a21caf" loading={loading} href="/developer/agencies" bgClass="bg-fuchsia-50/40"
@@ -637,8 +637,8 @@ export function DeveloperClientView({ initialData }: { initialData?: Analytics |
       {/* ── Quick Actions ────────────────────────────────────────── */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {[
-          { href: "/developer/pending",  label: "Review Pending",  icon: UserCheck,  color: "bg-amber-50  border-amber-200  text-amber-800  hover:bg-amber-100" },
           { href: "/developer/users",    label: "Kelola Users",    icon: Users,      color: "bg-blue-50   border-blue-200   text-blue-800   hover:bg-blue-100" },
+          { href: "/developer/agencies", label: "Kelola Agency",   icon: Briefcase,  color: "bg-fuchsia-50 border-fuchsia-200 text-fuchsia-800 hover:bg-fuchsia-100" },
           { href: "/developer/analytics",label: "Analytics",       icon: BarChart2,  color: "bg-violet-50 border-violet-200 text-violet-800 hover:bg-violet-100" },
           { href: "/developer/terminal", label: "Quick Create",    icon: TrendingUp, color: "bg-gray-50   border-gray-200   text-gray-800   hover:bg-gray-100" },
         ].map(({ href, label, icon: Icon, color }) => (

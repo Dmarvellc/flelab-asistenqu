@@ -15,7 +15,6 @@ import {
   LayoutDashboard,
   LogOut,
   Users,
-  UserCheck,
   Briefcase,
   BarChart2,
   Server,
@@ -113,13 +112,6 @@ export default function DeveloperLayout({
           active={pathname === "/developer/users"}
         >
           Users
-        </NavItem>
-        <NavItem
-          href="/developer/pending"
-          icon={UserCheck}
-          active={pathname === "/developer/pending"}
-        >
-          Pending
         </NavItem>
         <NavItem
           href="/developer/agencies"

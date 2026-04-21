@@ -152,6 +152,19 @@ export default function PendingApprovalsPage() {
                 </p>
             </div>
 
+            {/* Deprecation banner — onboarding is now agency-driven */}
+            <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 flex gap-3 items-start">
+                <AlertCircle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+                <div className="text-sm">
+                    <p className="font-semibold text-amber-900">Halaman ini akan dipensiunkan.</p>
+                    <p className="text-amber-800 mt-0.5">
+                        Approval per-agen sekarang ditangani admin agency lewat invitation flow di
+                        {" "}<span className="font-mono text-xs bg-amber-100 px-1.5 py-0.5 rounded">/admin-agency/team</span>.
+                        Halaman ini hanya untuk membersihkan akun-akun lama yang masih berstatus PENDING.
+                    </p>
+                </div>
+            </div>
+
             <div className="rounded-md border">
                 <Table>
                     <TableHeader>
