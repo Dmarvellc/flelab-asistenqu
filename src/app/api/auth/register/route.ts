@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { registerUser } from "@/lib/auth-queries";
+import { dbPool } from "@/lib/db";
+import { createJoinRequest } from "@/lib/agency-join-requests";
 import {
   getSupabaseAdmin,
   getSupabaseAdminConfigError,
@@ -121,6 +123,11 @@ export async function POST(request: Request) {
       selfieImagePath = await saveBase64Image(body.selfie_image, "selfie") || undefined;
     }
 
+    // Self-registration NEVER attaches the user to an agency directly —
+    // even if they pick one, it goes through the join-request flow so an
+    // agency admin must approve. This prevents drift between
+    // app_user.agency_id and agency_member, and stops random sign-ups
+    // from auto-joining without consent.
     const user = await registerUser({
       email: body.email,
       password: body.password,
@@ -133,10 +140,27 @@ export async function POST(request: Request) {
       gender: body.gender,
       ktpImagePath,
       selfieImagePath,
-      agencyId: body.agencyId,
-      referralCode: body.referralCode
+      agencyId: undefined,
+      referralCode: body.referralCode,
     });
-    return NextResponse.json({ user });
+
+    // If the user picked an agency on the form, file a join-request for
+    // the chosen agency's admins to review.
+    let joinRequestId: string | null = null;
+    if (body.agencyId) {
+      const client = await dbPool.connect();
+      try {
+        const req = await createJoinRequest(client, {
+          agencyId: body.agencyId,
+          requesterUserId: user.user_id,
+        });
+        joinRequestId = req.request_id;
+      } finally {
+        client.release();
+      }
+    }
+
+    return NextResponse.json({ user, joinRequestId });
   } catch (error) {
     logError("api.auth.register", error, {
       requestPath: "/api/auth/register",

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import {
   Users, UserPlus, Shield, Star, Crown, Loader2, Mail, ChevronDown, X, Check,
-  Trash2, Link2, Copy, Clock, Send,
+  Trash2, Link2, Copy, Clock, Send, UserCheck, Phone, MessageSquare,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,6 +31,16 @@ interface PendingInvitation {
   expires_at: string;
   created_at: string;
   invited_by_email: string | null;
+}
+
+interface JoinRequest {
+  request_id: string;
+  requester_user_id: string;
+  email: string;
+  full_name: string | null;
+  phone_number: string | null;
+  message: string | null;
+  created_at: string;
 }
 
 interface InviteResult {
@@ -63,6 +73,8 @@ function formatDate(iso: string) {
 export default function TeamManagementPage() {
   const [members, setMembers] = useState<TeamMember[]>([]);
   const [pending, setPending] = useState<PendingInvitation[]>([]);
+  const [joinRequests, setJoinRequests] = useState<JoinRequest[]>([]);
+  const [reqProcessing, setReqProcessing] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [showInvite, setShowInvite] = useState(false);
   const [inviteForm, setInviteForm] = useState({ email: "", fullName: "", phone: "", role: "agent" });
@@ -74,9 +86,10 @@ export default function TeamManagementPage() {
   const fetchAll = async () => {
     try {
       setLoading(true);
-      const [tRes, iRes] = await Promise.all([
+      const [tRes, iRes, jRes] = await Promise.all([
         fetch("/api/admin-agency/team"),
         fetch("/api/admin-agency/invitations"),
+        fetch("/api/admin-agency/join-requests"),
       ]);
       if (!tRes.ok) throw new Error("Failed to fetch team");
       const tData = await tRes.json();
@@ -84,6 +97,10 @@ export default function TeamManagementPage() {
       if (iRes.ok) {
         const iData = await iRes.json();
         setPending(iData.invitations || []);
+      }
+      if (jRes.ok) {
+        const jData = await jRes.json();
+        setJoinRequests(jData.requests || []);
       }
     } catch {
       toast({ title: "Error", description: "Gagal memuat data tim.", variant: "destructive" });
@@ -135,6 +152,39 @@ export default function TeamManagementPage() {
       toast({ title: "Tersalin", description: "Link undangan tersalin ke clipboard." });
     } catch {
       toast({ title: "Gagal menyalin", description: "Salin manual dari kolom di atas.", variant: "destructive" });
+    }
+  };
+
+  const handleJoinRequest = async (
+    requestId: string,
+    action: "accept" | "reject",
+    label: string,
+  ) => {
+    if (action === "reject" && !confirm(`Tolak permintaan dari ${label}?`)) return;
+    setReqProcessing(requestId);
+    try {
+      const res = await fetch("/api/admin-agency/join-requests", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ requestId, action }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error);
+      }
+      toast({
+        title: action === "accept" ? "Diterima" : "Ditolak",
+        description:
+          action === "accept"
+            ? `${label} bergabung sebagai agent.`
+            : `Permintaan dari ${label} ditolak.`,
+      });
+      fetchAll();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Gagal memproses permintaan.";
+      toast({ title: "Gagal", description: msg, variant: "destructive" });
+    } finally {
+      setReqProcessing(null);
     }
   };
 
@@ -375,6 +425,84 @@ export default function TeamManagementPage() {
           );
         })}
       </div>
+
+      {/* Join Requests (self-register) */}
+      {joinRequests.length > 0 && (
+        <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm">
+          <div className="px-5 sm:px-6 py-4 border-b border-gray-50 bg-blue-50/40 flex items-center gap-2">
+            <UserCheck className="h-4 w-4 text-blue-600" />
+            <h3 className="text-sm font-bold text-gray-900">
+              Permintaan Bergabung ({joinRequests.length})
+            </h3>
+            <span className="ml-auto text-[11px] text-gray-500">
+              Calon agen yang mendaftar mandiri & memilih agency Anda
+            </span>
+          </div>
+          <div className="divide-y divide-gray-50">
+            {joinRequests.map(req => {
+              const label = req.full_name || req.email;
+              const isProcessing = reqProcessing === req.request_id;
+              return (
+                <div
+                  key={req.request_id}
+                  className="flex flex-col sm:flex-row sm:items-center gap-3 px-5 sm:px-6 py-4 hover:bg-gray-50/50 transition-colors"
+                >
+                  <div className="flex items-start gap-3 flex-1 min-w-0">
+                    <div className="h-10 w-10 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center shrink-0 text-sm font-bold text-blue-700">
+                      {label.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-semibold text-gray-900 truncate">{label}</p>
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 mt-0.5">
+                        <span className="text-[11px] text-gray-400 flex items-center gap-1 truncate">
+                          <Mail className="h-3 w-3 shrink-0" /> {req.email}
+                        </span>
+                        {req.phone_number && (
+                          <span className="text-[11px] text-gray-400 flex items-center gap-1 truncate">
+                            <Phone className="h-3 w-3 shrink-0" /> {req.phone_number}
+                          </span>
+                        )}
+                      </div>
+                      {req.message && (
+                        <p className="text-[11px] text-gray-600 bg-gray-50 border border-gray-100 rounded-lg px-2 py-1.5 mt-1.5 flex items-start gap-1.5">
+                          <MessageSquare className="h-3 w-3 mt-0.5 shrink-0 text-gray-400" />
+                          {req.message}
+                        </p>
+                      )}
+                      <p className="text-[10px] text-gray-400 mt-1">
+                        Dikirim {formatDate(req.created_at)}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 sm:shrink-0">
+                    <Button
+                      onClick={() => handleJoinRequest(req.request_id, "reject", label)}
+                      variant="outline"
+                      size="sm"
+                      disabled={isProcessing}
+                      className="rounded-xl gap-1.5 text-xs"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                      Tolak
+                    </Button>
+                    <Button
+                      onClick={() => handleJoinRequest(req.request_id, "accept", label)}
+                      size="sm"
+                      disabled={isProcessing}
+                      className="bg-gray-900 hover:bg-gray-800 rounded-xl gap-1.5 text-xs"
+                    >
+                      {isProcessing
+                        ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        : <Check className="h-3.5 w-3.5" />}
+                      Terima
+                    </Button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Pending Invitations */}
       {pending.length > 0 && (
