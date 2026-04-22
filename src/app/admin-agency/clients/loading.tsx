@@ -1,5 +1,5 @@
-import { ListSkeleton } from "@/components/ui/dashboard-skeleton";
+import { ClientsPageSkeleton } from "@/components/ui/dashboard-skeleton";
 
 export default function Loading() {
-  return <ListSkeleton title="Klien Agency" rows={8} />;
+  return <ClientsPageSkeleton />;
 }

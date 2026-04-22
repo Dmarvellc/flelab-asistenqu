@@ -5,8 +5,7 @@ import Link from "next/link"
 import {
   Search, Building2, MapPin, Star, Shield, Globe2, Stethoscope, ChevronRight,
   X, Heart, Brain, Bone, Microscope, Eye, Baby, Activity, Droplets, FlaskConical,
-  Wifi, Award, Users, Zap, Clock, Phone, ExternalLink, BadgeCheck, Sparkles,
-  ArrowRight, TrendingUp, Hospital, Filter, Video, Calendar, UserCheck, Briefcase
+  Award, Users, Zap, Clock, Hospital, Video
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
@@ -389,12 +388,6 @@ export default function NetworkMarketplacePage() {
       <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-5 sm:p-10">
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wMyI+PHBhdGggZD0iTTM2IDM0djItSDJ2LTJoMzR6bTAtMzBWMkgyVjRoMzR6TTIgMzBoMnYySDJ2LTJ6Ii8+PC9nPjwvZz48L3N2Zz4=')] opacity-50" />
         <div className="relative z-10">
-          <div className="flex items-center gap-2 mb-3">
-            <div className="h-8 w-8 rounded-lg bg-white/10 flex items-center justify-center">
-              <Sparkles className="h-4 w-4 text-white" />
-            </div>
-            <span className="text-[11px] font-bold tracking-widest uppercase text-white/60">Doctor Marketplace</span>
-          </div>
           <h1 className="text-xl sm:text-4xl font-bold text-white tracking-tight">
             Marketplace Dokter & Rumah Sakit
           </h1>

@@ -272,7 +272,7 @@ export default function SystemHealthPage() {
             </div>
 
             {/* ── Database Tables ───────────────────────────────────── */}
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
                 <div className="px-6 py-4 border-b border-gray-50 flex items-center justify-between">
                     <div>
                         <h2 className="text-sm font-bold text-gray-900">Database Tables</h2>
@@ -283,11 +283,11 @@ export default function SystemHealthPage() {
                 <div className="overflow-x-auto">
                     <table className="w-full text-sm min-w-[560px]">
                         <thead>
-                            <tr className="border-b border-gray-50">
-                                <th className="text-left px-6 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Table</th>
-                                <th className="text-right px-6 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Rows</th>
-                                <th className="text-right px-6 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Size</th>
-                                <th className="px-6 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Distribution</th>
+                            <tr className="border-b border-gray-50 bg-gray-50/40">
+                                <th className="text-left px-6 py-3.5 text-xs font-semibold text-gray-400 uppercase tracking-wider">Table</th>
+                                <th className="text-right px-6 py-3.5 text-xs font-semibold text-gray-400 uppercase tracking-wider">Rows</th>
+                                <th className="text-right px-6 py-3.5 text-xs font-semibold text-gray-400 uppercase tracking-wider">Size</th>
+                                <th className="px-6 py-3.5 text-xs font-semibold text-gray-400 uppercase tracking-wider">Distribution</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -343,7 +343,7 @@ export default function SystemHealthPage() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
                 {/* Top Agents */}
-                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
                     <div className="px-6 py-4 border-b border-gray-50">
                         <h2 className="text-sm font-bold text-gray-900">Top Agents by Claims</h2>
                         <p className="text-xs text-gray-400 mt-0.5">Most active agents on platform</p>
@@ -379,7 +379,7 @@ export default function SystemHealthPage() {
                 </div>
 
                 {/* Agency Overview */}
-                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
                     <div className="px-6 py-4 border-b border-gray-50">
                         <h2 className="text-sm font-bold text-gray-900">Agency Overview</h2>
                         <p className="text-xs text-gray-400 mt-0.5">Top agencies by agent count</p>

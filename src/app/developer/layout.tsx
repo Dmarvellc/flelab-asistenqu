@@ -22,7 +22,6 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
-import { DevTerminalDrawer } from "@/components/developer/terminal-drawer";
 import { Notifications } from "@/components/dashboard/notifications";
 
 const LOGO_URL =
@@ -142,26 +141,23 @@ export default function DeveloperLayout({
   );
 
   return (
-    <>
-      <DashboardLayout
-        sidebar={sidebar}
-        header={
-          <DashboardHeader mobileSidebar={sidebar} actions={<Notifications />}>
-            <Link href="/developer">
-              <Image
-                src={LOGO_URL}
-                alt="AsistenQu Developer"
-                width={120}
-                height={24}
-                className="h-5 w-auto object-contain"
-              />
-            </Link>
-          </DashboardHeader>
-        }
-      >
-        <div className="pb-10">{children}</div>
-      </DashboardLayout>
-      <DevTerminalDrawer />
-    </>
+    <DashboardLayout
+      sidebar={sidebar}
+      header={
+        <DashboardHeader mobileSidebar={sidebar} actions={<Notifications />}>
+          <Link href="/developer">
+            <Image
+              src={LOGO_URL}
+              alt="AsistenQu Developer"
+              width={120}
+              height={24}
+              className="h-5 w-auto object-contain"
+            />
+          </Link>
+        </DashboardHeader>
+      }
+    >
+      <div className="pb-10">{children}</div>
+    </DashboardLayout>
   );
 }

@@ -5,6 +5,7 @@ import {
   Users, UserPlus, UserCog, Shield, Star, Crown, Loader2, Mail, X, Check,
   Trash2, Link2, Copy, Clock, Send, UserCheck,
 } from "lucide-react";
+import { TeamPageSkeleton } from "@/components/ui/dashboard-skeleton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
@@ -243,11 +244,7 @@ export default function TeamManagementPage() {
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
-      </div>
-    );
+    return <TeamPageSkeleton />;
   }
 
   // This page is scoped to internal staff only. Agent-facing rows
@@ -257,14 +254,10 @@ export default function TeamManagementPage() {
   const staffPending = pending.filter((i) => i.agency_role !== "agent");
 
   return (
-    <div className="flex flex-col gap-6 sm:gap-8 animate-in fade-in duration-500 max-w-5xl">
+    <div className="flex flex-col gap-6 sm:gap-8 animate-in fade-in duration-500 w-full">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 pb-6 border-b border-gray-100">
         <div className="min-w-0">
-          <div className="inline-flex items-center gap-1.5 bg-gray-900 text-white text-[11px] font-semibold px-2.5 py-1 rounded-full mb-3">
-            <UserCheck className="h-3 w-3" />
-            Staff Internal
-          </div>
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900">
             Master Admin, Admin &amp; Manager
           </h1>

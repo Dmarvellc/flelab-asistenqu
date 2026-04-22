@@ -37,7 +37,7 @@ export function DashboardLayout({
         isCollapsed ? "sm:pl-[80px]" : "sm:pl-[260px]"
       )}>
         {header}
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 xl:p-10 2xl:max-w-[1600px] 2xl:mx-auto w-full">
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 xl:p-10 w-full">
           {children}
         </main>
       </div>

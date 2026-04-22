@@ -278,10 +278,6 @@ export default function AppointmentsPage() {
             {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 pb-6 border-b border-gray-100">
                 <div>
-                    <div className="inline-flex items-center gap-2 bg-black text-white text-xs font-medium px-3 py-1 rounded-full mb-3">
-                        <CalendarCheck className="h-3 w-3" />
-                        <span>Jadwal & Visit LOG</span>
-                    </div>
                     <h1 className="text-xl sm:text-3xl font-bold tracking-tight text-gray-900">Jadwal Dokter</h1>
                     <p className="mt-1 text-sm text-gray-500">
                         Booking jadwal dan kirim notifikasi kunjungan ke rumah sakit.

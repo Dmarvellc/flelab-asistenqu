@@ -1,5 +1,5 @@
-import { ListSkeleton } from "@/components/ui/dashboard-skeleton";
+import { ClaimsPageSkeleton } from "@/components/ui/dashboard-skeleton";
 
 export default function Loading() {
-  return <ListSkeleton title="Validasi Klaim" rows={8} />;
+  return <ClaimsPageSkeleton />;
 }

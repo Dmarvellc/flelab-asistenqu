@@ -1,5 +1,5 @@
 import { getAdminAgencyUserIdFromCookies } from "@/lib/auth-cookies";
-import { ClaimsList } from "@/components/dashboard/claims-list"
+import { ClaimsDataTable } from "@/components/admin-agency/claims-data-table"
 import { getAgencyClaims } from "@/services/admin-agency"
 import Link from "next/link"
 import { dbPool } from "@/lib/db";
@@ -201,23 +201,9 @@ export default async function AdminAgencyDashboardPage() {
         </div>
       </div>
 
-      {/* Claims list */}
-      <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden transform transition-all duration-500 hover:shadow-md">
-        <div className="px-8 py-8 border-b border-gray-50 flex flex-col sm:flex-row items-start sm:items-center justify-between bg-white gap-4">
-          <h2 className="text-xl font-bold text-gray-900 flex items-center gap-3">
-            <div className="w-2.5 h-2.5 rounded-full bg-gray-900 shadow-[0_0_12px_rgba(0,0,0,0.2)]"></div>
-            Daftar Antrean Klaim
-          </h2>
-          <Link href="/admin-agency/claims">
-            <button className="text-[15px] font-semibold text-gray-500 hover:text-gray-900 flex items-center gap-2 transition-colors group px-4 py-2 rounded-xl hover:bg-gray-50">
-              Lihat Semua
-              <ArrowRight className="h-4 w-4 transform group-hover:translate-x-1 transition-transform" />
-            </button>
-          </Link>
-        </div>
-        <div className="p-4 sm:p-6 lg:p-8">
-          <ClaimsList role="admin_agency" claims={claims} />
-        </div>
+      {/* Claims data table */}
+      <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
+        <ClaimsDataTable claims={claims} role="admin_agency" limit={10} showViewAll />
       </div>
 
     </div>

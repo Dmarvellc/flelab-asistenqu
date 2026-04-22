@@ -1,5 +1,5 @@
-import { DashboardSkeleton } from "@/components/ui/dashboard-skeleton";
+import { ClaimDetailSkeleton } from "@/components/ui/dashboard-skeleton";
 
 export default function Loading() {
-  return <DashboardSkeleton title="Detail Klaim" />;
+  return <ClaimDetailSkeleton />;
 }
