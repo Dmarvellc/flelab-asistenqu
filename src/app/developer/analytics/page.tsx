@@ -169,11 +169,11 @@ export default function AnalyticsPage() {
 
       {/* ── KPI Row ──────────────────────────────────────────────── */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
-        <KPI label="Total Users"   value={pt?.totalUsers}   icon={Users}     loading={loading} />
-        <KPI label="Active Users"  value={pt?.activeUsers}  icon={Users}     color="text-emerald-600" loading={loading} sub={`${pt?.totalUsers ? Math.round((pt.activeUsers / pt.totalUsers) * 100) : 0}% of total`} />
-        <KPI label="Agencies"      value={pt?.agencies}     icon={Briefcase} color="text-violet-600" loading={loading} />
-        <KPI label="Hospitals"     value={pt?.hospitals}    icon={Building2} color="text-teal-600" loading={loading} />
-        <KPI label="Total Claims"  value={pt?.totalClaims}  icon={FileText}  color="text-blue-600" loading={loading} />
+        <KPI label="Total Pengguna"   value={pt?.totalUsers}   icon={Users}     loading={loading} />
+        <KPI label="Pengguna Aktif"   value={pt?.activeUsers}  icon={Users}     color="text-emerald-600" loading={loading} sub={`${pt?.totalUsers ? Math.round((pt.activeUsers / pt.totalUsers) * 100) : 0}% dari total`} />
+        <KPI label="Agensi"           value={pt?.agencies}     icon={Briefcase} color="text-violet-600" loading={loading} />
+        <KPI label="Rumah Sakit"      value={pt?.hospitals}    icon={Building2} color="text-teal-600" loading={loading} />
+        <KPI label="Total Klaim"      value={pt?.totalClaims}  icon={FileText}  color="text-blue-600" loading={loading} />
       </div>
 
       {/* ── Monthly Growth Trend ─────────────────────────────────── */}

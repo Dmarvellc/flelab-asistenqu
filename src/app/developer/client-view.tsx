@@ -5,7 +5,7 @@ import {
   LineChart, Line, ResponsiveContainer
 } from "recharts";
 import {
-  Calendar, MoreHorizontal, Link2,
+  MoreHorizontal, Link2,
 } from "lucide-react";
 import { CriticalAlertsBanner } from "@/components/developer/critical-alerts-banner";
 
@@ -65,7 +65,7 @@ export function DeveloperClientView({ initialData }: { initialData?: Analytics |
 
   const totals = data?.platformTotals;
 
-  // Funnel steps — derived from live data
+  // Funnel: shows the 4 key platform metrics as a visual comparison
   const funnelSteps = totals ? [
     { label: "Total Pengguna", value: totals.totalUsers },
     { label: "Pengguna Aktif", value: totals.activeUsers },
@@ -85,15 +85,9 @@ export function DeveloperClientView({ initialData }: { initialData?: Analytics |
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8 mt-2">
         <div className="flex items-center gap-3">
-          <h1 className="text-4xl font-normal text-gray-900 tracking-tight">Overview</h1>
+          <h1 className="text-4xl font-normal text-gray-900 tracking-tight">Ringkasan</h1>
           <button className="w-8 h-8 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center text-gray-400 hover:text-gray-900 transition-colors">
             <Link2 className="w-4 h-4" />
-          </button>
-        </div>
-        <div className="flex items-center gap-3 flex-wrap">
-          <button className="flex items-center gap-2 bg-white border border-gray-200 shadow-sm rounded-xl px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
-            <Calendar className="w-4 h-4 text-gray-400" />
-            This Month
           </button>
         </div>
       </div>
@@ -103,7 +97,10 @@ export function DeveloperClientView({ initialData }: { initialData?: Analytics |
         {/* Funnel — spans 2 cols */}
         <div className="lg:col-span-2 bg-white rounded-3xl p-6 sm:p-8 shadow-sm flex flex-col relative overflow-hidden border border-gray-100">
           <div className="flex items-center justify-between mb-12 relative z-10">
-            <h2 className="text-xl font-medium text-gray-900">User Conversion</h2>
+            <div>
+              <h2 className="text-xl font-medium text-gray-900">Metrik Platform</h2>
+              <p className="text-xs text-gray-400 mt-0.5">Perbandingan visual 4 indikator utama</p>
+            </div>
             <button className="w-8 h-8 rounded-full border border-gray-100 flex items-center justify-center text-gray-400 hover:bg-gray-50 transition-colors">
               <MoreHorizontal className="w-5 h-5" />
             </button>
@@ -114,9 +111,10 @@ export function DeveloperClientView({ initialData }: { initialData?: Analytics |
               <div className="flex-1 flex items-center justify-center text-gray-300 text-sm">Memuat…</div>
             ) : (
               funnelSteps.map((step, idx) => {
-                const h = Math.max(10, Math.round((step.value / funnelMax) * 100));
+                // Use minimum 35% so all bars are visually substantial
+                const h = Math.max(35, Math.round((step.value / funnelMax) * 100));
                 const nextH = idx < funnelSteps.length - 1
-                  ? Math.max(10, Math.round((funnelSteps[idx + 1].value / funnelMax) * 100))
+                  ? Math.max(35, Math.round((funnelSteps[idx + 1].value / funnelMax) * 100))
                   : undefined;
                 const prev = idx === 0 ? step.value : funnelSteps[idx - 1].value;
                 return (
@@ -139,10 +137,10 @@ export function DeveloperClientView({ initialData }: { initialData?: Analytics |
           <div className="absolute bottom-0 left-0 right-0 h-64 bg-gradient-to-t from-blue-100/60 to-transparent z-0 pointer-events-none" />
         </div>
 
-        {/* Total Platform Users */}
+        {/* Total Pengguna Platform */}
         <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-sm flex flex-col justify-between border border-gray-100">
           <div>
-            <h2 className="text-xl font-medium text-gray-900">Total Platform Users</h2>
+            <h2 className="text-xl font-medium text-gray-900">Total Pengguna Platform</h2>
             <div className="mt-6 mb-10">
               <p className="text-[4rem] leading-none font-normal tracking-tighter text-gray-900">
                 {totals ? totals.totalUsers.toLocaleString("id-ID") : "—"}
@@ -166,7 +164,7 @@ export function DeveloperClientView({ initialData }: { initialData?: Analytics |
                       striped
                     />
                     <MiniBar
-                      label={`Hospital Admins (${totals ? totals.hospitals.toLocaleString("id-ID") : "—"})`}
+                      label={`Admin Rumah Sakit (${totals ? totals.hospitals.toLocaleString("id-ID") : "—"})`}
                       color="bg-blue-500"
                       pct={totals ? Math.min((totals.hospitals / total) * 100, 100) : 0}
                       striped
@@ -200,6 +198,13 @@ export function DeveloperClientView({ initialData }: { initialData?: Analytics |
               </LineChart>
             </ResponsiveContainer>
           </div>
+          {wowDiff !== null && (
+            <p className="text-xs text-gray-400 mt-3">
+              <span className={`font-bold ${wowDiff >= 0 ? "text-emerald-600" : "text-red-500"}`}>
+                {wowDiff >= 0 ? "+" : ""}{wowDiff}
+              </span>{" "}pengguna baru minggu ini
+            </p>
+          )}
         </div>
 
         {/* Total Klaim */}
@@ -211,41 +216,18 @@ export function DeveloperClientView({ initialData }: { initialData?: Analytics |
             </button>
           </div>
 
-          <div className="flex items-end justify-between mt-auto pt-8">
-            <div>
-              <p className="text-5xl font-normal tracking-tighter text-gray-900">
-                {totals ? fmt(totals.totalClaims) : "—"}
-              </p>
-            </div>
-
-            {/* Dot chart — user sparkline last 7 days */}
-            <div className="flex flex-col items-center gap-1.5 pb-1 relative">
-              <div className="flex items-end gap-1.5 h-12">
-                {(() => {
-                  const spark = data?.sparklines?.users?.slice(-7) ?? [];
-                  const max = Math.max(...spark, 1);
-                  return spark.map((val, i) => (
-                    <DotColumn key={i} count={Math.max(1, Math.ceil((val / max) * 5))} active={i === spark.length - 1} />
-                  ));
-                })()}
-              </div>
-            </div>
-
-            <div className="text-right pb-1">
-              <p className="text-xs text-gray-400 mb-1">pengguna baru 7 hari</p>
-              <p className="text-sm font-bold text-gray-900">
-                {wowDiff !== null
-                  ? `${wowDiff >= 0 ? "+" : ""}${wowDiff}`
-                  : "—"}
-              </p>
-            </div>
+          <div className="mt-auto pt-8">
+            <p className="text-5xl font-normal tracking-tighter text-gray-900">
+              {totals ? fmt(totals.totalClaims) : "—"}
+            </p>
+            <p className="text-xs text-gray-400 mt-3">Total klaim di seluruh platform</p>
           </div>
         </div>
 
-        {/* Recent Updates */}
+        {/* Pembaruan Terbaru */}
         <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-sm flex flex-col justify-between border border-gray-100 min-h-[240px]">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-medium text-gray-900">Recent Updates</h2>
+            <h2 className="text-xl font-medium text-gray-900">Pembaruan Terbaru</h2>
             <button className="w-8 h-8 rounded-full border border-gray-100 flex items-center justify-center text-gray-400 hover:bg-gray-50 transition-colors">
               <MoreHorizontal className="w-5 h-5" />
             </button>
@@ -256,7 +238,7 @@ export function DeveloperClientView({ initialData }: { initialData?: Analytics |
                 <div key={u.user_id} className="flex items-center gap-3">
                   <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${i === 0 ? "bg-blue-500" : i === 1 ? "bg-emerald-500" : "bg-pink-400"}`} />
                   <p className="text-sm text-gray-600 truncate">
-                    <strong>{u.full_name || u.email.split("@")[0]}</strong> bergabung sebagai {u.role}
+                    <strong>{u.full_name || u.email.split("@")[0]}</strong> bergabung sebagai {u.role.replace(/_/g, " ")}
                   </p>
                 </div>
               ))
@@ -283,7 +265,7 @@ function FunnelBar({ label, value, height, nextHeight, isLast, dataValue, prevVa
   const leftTop  = height  >= safeNext ? 0 : ((safeNext - height)  / safeNext)  * 100;
   const rightTop = safeNext >= height  ? 0 : ((height  - safeNext) / height)    * 100;
 
-  void maxVal; void prevValue; void dataValue; // available for tooltip use
+  void maxVal; void prevValue; void dataValue;
 
   return (
     <div
@@ -351,21 +333,6 @@ function MiniBar({ label, color, pct, striped }: { label: string; color: string;
           }}
         />
       </div>
-    </div>
-  );
-}
-
-function DotColumn({ count, active }: { count: number; active?: boolean }) {
-  return (
-    <div className="flex flex-col gap-[3px] justify-end h-full">
-      {Array.from({ length: 5 }).map((_, i) => (
-        <div
-          key={i}
-          className={`w-[10px] h-[10px] rounded-[3px] transition-colors ${
-            i >= 5 - count ? (active ? "bg-emerald-500" : "bg-emerald-300") : "bg-transparent"
-          }`}
-        />
-      ))}
     </div>
   );
 }

@@ -19,6 +19,7 @@ import {
   BarChart2,
   Server,
   Building2,
+  UserCheck,
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -125,6 +126,13 @@ export default function DeveloperLayout({
           active={pathname === "/developer/hospitals"}
         >
           Hospitals
+        </NavItem>
+        <NavItem
+          href="/developer/clients"
+          icon={UserCheck}
+          active={pathname === "/developer/clients"}
+        >
+          Klien
         </NavItem>
       </SidebarContent>
 
