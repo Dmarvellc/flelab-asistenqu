@@ -37,10 +37,14 @@ async function fetchClients(userId: string) {
         c.status,
         c.created_at,
         COUNT(con.contract_id) as contract_count,
-        MAX(con.contract_product) as latest_product
+        MAX(con.contract_product) as latest_product,
+        MIN(con.next_due_date) FILTER (WHERE con.next_due_date IS NOT NULL) as next_due_date,
+        MAX(con.policy_status) as latest_policy_status,
+        COALESCE(SUM(cd.premium_amount), 0) as total_premium
       FROM public.client c
       JOIN public.person p ON c.person_id = p.person_id
       LEFT JOIN public.contract con ON con.client_id = c.client_id
+      LEFT JOIN public.contract_detail cd ON cd.contract_id = con.contract_id
       WHERE c.agent_id = $1
       GROUP BY c.client_id, p.full_name, p.phone_number, p.address, c.status, c.created_at
       ORDER BY c.created_at DESC

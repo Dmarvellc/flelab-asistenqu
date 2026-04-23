@@ -11,7 +11,7 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
-import { Plus, Search, MoreHorizontal, Users, ArrowUpRight } from "lucide-react";
+import { Plus, Search, MoreHorizontal, Users, ArrowUpRight, AlertTriangle, Clock, CheckCircle2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
     DropdownMenu,
@@ -33,12 +33,37 @@ type Client = {
     created_at: string;
     contract_count: string;
     latest_product: string;
+    next_due_date?: string | null;
+    latest_policy_status?: string | null;
+    total_premium?: string | null;
 };
+
+type Filter = "ALL" | "DUE_SOON" | "LAPSE" | "ACTIVE";
+
+const daysUntil = (d?: string | null) => {
+    if (!d) return null;
+    return Math.ceil((new Date(d).getTime() - Date.now()) / 86400000);
+};
+
+function DueCell({ nextDue, lang }: { nextDue?: string | null; lang: string }) {
+    if (!nextDue) return <span className="text-xs text-gray-300 italic">—</span>;
+    const d = daysUntil(nextDue) ?? 0;
+    const base = "inline-flex items-center gap-1 text-[11px] font-bold px-2 py-1 rounded-md border";
+    let tone = "bg-emerald-50 text-emerald-700 border-emerald-200";
+    let label: string;
+    if (d < -30) { tone = "bg-red-50 text-red-700 border-red-200"; label = `Lapse ${Math.abs(d)}h`; }
+    else if (d < 0) { tone = "bg-amber-50 text-amber-700 border-amber-200"; label = `Lewat ${Math.abs(d)}h`; }
+    else if (d <= 7) { tone = "bg-amber-50 text-amber-700 border-amber-200"; label = `${d}h lagi`; }
+    else if (d <= 14) { tone = "bg-blue-50 text-blue-700 border-blue-200"; label = `${d}h lagi`; }
+    else label = new Date(nextDue).toLocaleDateString(lang === "en" ? "en-US" : "id-ID", { day: "numeric", month: "short" });
+    return <span className={cn(base, tone)}>{label}</span>;
+}
 
 export default function AgentClientsPage({ initialClients }: { initialClients: Client[] }) {
     const [clients, setClients] = useState<Client[]>(initialClients || []);
     const [loading, setLoading] = useState(!initialClients);
     const [search, setSearch] = useState("");
+    const [filter, setFilter] = useState<Filter>("ALL");
     const { t, lang } = useTranslation();
 
     useEffect(() => {
@@ -59,12 +84,31 @@ export default function AgentClientsPage({ initialClients }: { initialClients: C
         fetchClients();
     }, [initialClients]);
 
-    const filteredClients = clients.filter(client =>
-        client.full_name.toLowerCase().includes(search.toLowerCase()) ||
-        client.latest_product?.toLowerCase().includes(search.toLowerCase())
-    );
+    const filteredClients = clients.filter(client => {
+        const matchesSearch =
+            client.full_name.toLowerCase().includes(search.toLowerCase()) ||
+            client.latest_product?.toLowerCase().includes(search.toLowerCase());
+        if (!matchesSearch) return false;
+        if (filter === "ACTIVE") return client.status === "ACTIVE";
+        if (filter === "LAPSE") {
+            return client.latest_policy_status === "LAPSE" || (daysUntil(client.next_due_date) ?? 9999) < -30;
+        }
+        if (filter === "DUE_SOON") {
+            const d = daysUntil(client.next_due_date);
+            return d !== null && d >= 0 && d <= 14;
+        }
+        return true;
+    });
 
     const activeCount = clients.filter(c => c.status === 'ACTIVE').length;
+    const dueSoonCount = clients.filter(c => {
+        const d = daysUntil(c.next_due_date);
+        return d !== null && d >= 0 && d <= 14;
+    }).length;
+    const lapseCount = clients.filter(c =>
+        c.latest_policy_status === "LAPSE" || (daysUntil(c.next_due_date) ?? 9999) < -30
+    ).length;
+    const totalPremium = clients.reduce((s, c) => s + parseFloat(c.total_premium || "0"), 0);
 
     return (
         <div className="flex flex-col gap-10 animate-in fade-in duration-500">
@@ -89,16 +133,44 @@ export default function AgentClientsPage({ initialClients }: { initialClients: C
             </div>
 
             {/* Stats Row */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {[
-                    { label: lang === 'en' ? "Total Clients" : "Total Klien", value: clients.length },
-                    { label: t.activeClients, value: activeCount },
-                    { label: lang === 'en' ? "Managed Policies" : "Polis Terkelola", value: clients.reduce((s, c) => s + parseInt(c.contract_count || "0"), 0) },
+                    { label: lang === 'en' ? "Total Clients" : "Total Klien", value: clients.length, tone: "text-gray-900" },
+                    { label: t.activeClients, value: activeCount, tone: "text-emerald-600" },
+                    { label: lang === 'en' ? "Due Soon (14d)" : "Jatuh Tempo (14h)", value: dueSoonCount, tone: "text-amber-600" },
+                    { label: lang === 'en' ? "Total Premium" : "Total Premi", value: `Rp ${(totalPremium/1_000_000).toFixed(1)}Jt`, tone: "text-gray-900", small: true },
                 ].map((stat, i) => (
-                    <div key={stat.label} className={cn("bg-white rounded-3xl border border-gray-100 p-8 shadow-sm hover:shadow-lg transition-all duration-300 group", i === 2 && "col-span-2 md:col-span-1")} style={{ animationDelay: `${i * 100}ms` }}>
-                        <p className="text-4xl font-bold tabular-nums tracking-tight text-gray-900 mb-2">{stat.value}</p>
-                        <p className="text-[15px] font-medium text-gray-500">{stat.label}</p>
+                    <div key={stat.label} className="bg-white rounded-3xl border border-gray-100 p-6 shadow-sm hover:shadow-lg transition-all duration-300" style={{ animationDelay: `${i * 80}ms` }}>
+                        <p className={cn("font-bold tabular-nums tracking-tight mb-1", stat.small ? "text-2xl" : "text-3xl", stat.tone)}>{stat.value}</p>
+                        <p className="text-[13px] font-medium text-gray-500">{stat.label}</p>
                     </div>
+                ))}
+            </div>
+
+            {/* Quick Filters */}
+            <div className="flex flex-wrap gap-2">
+                {[
+                    { id: "ALL" as Filter,      label: lang === 'en' ? "All" : "Semua",           count: clients.length, icon: Users },
+                    { id: "ACTIVE" as Filter,   label: lang === 'en' ? "Active" : "Aktif",        count: activeCount,    icon: CheckCircle2 },
+                    { id: "DUE_SOON" as Filter, label: lang === 'en' ? "Due Soon" : "Jatuh Tempo", count: dueSoonCount,   icon: Clock },
+                    { id: "LAPSE" as Filter,    label: "Lapse",                                    count: lapseCount,     icon: AlertTriangle },
+                ].map(f => (
+                    <button
+                        key={f.id}
+                        onClick={() => setFilter(f.id)}
+                        className={cn(
+                            "inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold border transition-all",
+                            filter === f.id
+                                ? "bg-gray-900 text-white border-gray-900 shadow-sm"
+                                : "bg-white text-gray-600 border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                        )}
+                    >
+                        <f.icon className="w-3.5 h-3.5" />
+                        {f.label}
+                        <span className={cn("text-[10px] font-bold px-1.5 py-0.5 rounded-md", filter === f.id ? "bg-white/20" : "bg-gray-100")}>
+                            {f.count}
+                        </span>
+                    </button>
                 ))}
             </div>
 
@@ -129,9 +201,9 @@ export default function AgentClientsPage({ initialClients }: { initialClients: C
                             <TableRow className="border-gray-50 hover:bg-transparent bg-gray-50/50">
                                 <TableHead className="text-[11px] font-bold uppercase tracking-widest text-gray-500 px-6 h-12">{lang === 'en' ? 'Client' : 'Nasabah'}</TableHead>
                                 <TableHead className="text-[11px] font-bold uppercase tracking-widest text-gray-500 px-6 h-12">{lang === 'en' ? 'Latest Product' : 'Produk Terakhir'}</TableHead>
-                                <TableHead className="text-[11px] font-bold uppercase tracking-widest text-gray-500 px-6 h-12">{lang === 'en' ? 'Total Policies' : 'Total Polis'}</TableHead>
+                                <TableHead className="text-[11px] font-bold uppercase tracking-widest text-gray-500 px-6 h-12">{lang === 'en' ? 'Policies' : 'Polis'}</TableHead>
+                                <TableHead className="text-[11px] font-bold uppercase tracking-widest text-gray-500 px-6 h-12">{lang === 'en' ? 'Next Due' : 'Jatuh Tempo'}</TableHead>
                                 <TableHead className="text-[11px] font-bold uppercase tracking-widest text-gray-500 px-6 h-12">Status</TableHead>
-                                <TableHead className="text-[11px] font-bold uppercase tracking-widest text-gray-500 px-6 h-12">{lang === 'en' ? 'Joined' : 'Bergabung'}</TableHead>
                                 <TableHead className="text-[11px] font-bold uppercase tracking-widest text-gray-500 text-right px-6 h-12">{lang === 'en' ? 'Action' : 'Aksi'}</TableHead>
                             </TableRow>
                         </TableHeader>
@@ -182,22 +254,24 @@ export default function AgentClientsPage({ initialClients }: { initialClients: C
                                         </TableCell>
                                         <TableCell className="px-6 py-3">
                                             <span className="inline-flex items-center justify-center h-7 min-w-[56px] rounded-lg bg-gray-50 text-gray-700 border border-gray-100 text-[11px] font-bold px-3">
-                                                {client.contract_count} {lang === 'en' ? 'Policies' : 'Polis'}
+                                                {client.contract_count}
                                             </span>
+                                        </TableCell>
+                                        <TableCell className="px-6 py-3">
+                                            <DueCell nextDue={client.next_due_date} lang={lang} />
                                         </TableCell>
                                         <TableCell className="px-6 py-3">
                                             <span className={cn(
                                                 "inline-flex items-center gap-1.5 text-[10px] font-bold tracking-widest uppercase px-2 py-1 rounded border",
-                                                client.status === 'ACTIVE'
+                                                client.latest_policy_status === 'LAPSE'
+                                                    ? "bg-red-50 text-red-700 border-red-200"
+                                                    : client.status === 'ACTIVE'
                                                     ? "bg-gray-900 text-white border-gray-900"
                                                     : "bg-white text-gray-500 border-gray-200"
                                             )}>
-                                                {client.status === 'ACTIVE' ? (lang === 'en' ? 'Active' : 'Aktif') : client.status}
-                                            </span>
-                                        </TableCell>
-                                        <TableCell className="px-6 py-3">
-                                            <span className="text-[13px] font-medium text-gray-500 tracking-wide">
-                                                {new Date(client.created_at).toLocaleDateString(lang === 'en' ? "en-US" : "id-ID", { day: 'numeric', month: 'short', year: 'numeric' })}
+                                                {client.latest_policy_status === 'LAPSE'
+                                                    ? 'Lapse'
+                                                    : client.status === 'ACTIVE' ? (lang === 'en' ? 'Active' : 'Aktif') : client.status}
                                             </span>
                                         </TableCell>
                                         <TableCell className="text-right px-6 py-3">

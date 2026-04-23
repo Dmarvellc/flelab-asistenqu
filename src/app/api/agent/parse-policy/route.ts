@@ -33,24 +33,79 @@ export async function POST(req: Request) {
         messages: [
           {
             role: "system",
-            content: `You are an AI assistant specialized in analyzing insurance documents.
-            
-            First, determine if the image is a valid insurance policy document. 
-            If it is NOT an insurance policy (e.g. a random photo, a receipt, a selfie), return JSON with "is_valid_policy": false.
-            
-            If it IS a valid insurance policy, return JSON with "is_valid_policy": true and extract the following fields:
-            - policy_number (string)
-            - policy_holder_name (string)
-            - insured_person_name (string)
-            - start_date (YYYY-MM-DD)
-            - end_date (YYYY-MM-DD)
-            - insurance_company (string)
-            - product_name (string)
-            - sum_insured (number)
-            - premium_amount (number)
-            - beneficiaries (array of strings)
-            
-            Return ONLY the JSON object, no markdown formatting.`,
+            content: `You are an AI assistant specialized in analyzing Indonesian insurance policy documents.
+
+First, determine if the image/PDF is a valid insurance policy. If it is NOT
+(e.g. random photo, receipt, selfie, ID card), return { "is_valid_policy": false }.
+
+If it IS a valid insurance policy, return is_valid_policy: true plus any of these
+fields you can extract. Use null for missing fields. Numbers must be plain numbers
+(no currency symbol, no thousand separator). Dates in YYYY-MM-DD format.
+
+IDENTITY
+- policy_number (string)
+- insurance_company (string)
+- product_name (string)
+- policy_type (one of: JIWA, KESEHATAN, JIWA_KESEHATAN, KECELAKAAN, UNITLINK)
+- policy_holder_name (string)
+- insured_person_name (string)
+
+PERIOD & DUE
+- issue_date (YYYY-MM-DD)
+- start_date (YYYY-MM-DD)
+- end_date (YYYY-MM-DD)
+- due_day (integer 1-28; day of month when premium is due)
+- next_due_date (YYYY-MM-DD; upcoming premium due date)
+- grace_period_days (integer, default 30)
+- policy_term (integer, years)
+- premium_payment_term (integer, years)
+- policy_status (AKTIF | LAPSE | PAID_UP | SURRENDERED | MATURED)
+
+PREMIUM
+- sum_insured (number, IDR)
+- premium_amount (number, IDR)
+- premium_frequency (MONTHLY | QUARTERLY | SEMESTERLY | YEARLY)
+
+COVERAGE
+- coverage_area (INDONESIA | ASIA | ASIA_AUSTRALIA | WORLDWIDE_EXCL_US | WORLDWIDE)
+- room_plan (string, e.g. "Standard 1 Bed")
+- annual_limit (number)
+- lifetime_limit (number)
+- deductible (number)
+- coinsurance_pct (number 0-100)
+- waiting_period_days (integer)
+- cashless_network (string)
+
+BENEFITS (all numbers in IDR)
+- benefit_life
+- benefit_accidental_death
+- benefit_disability
+- benefit_critical
+- benefit_hospitalization (per day)
+- benefit_icu (per day)
+- benefit_surgery
+- benefit_outpatient (per year)
+- benefit_daily_cash
+- benefit_maternity
+- benefit_dental
+- benefit_optical
+- benefit_ambulance
+- benefit_medical_checkup
+
+RIDERS
+- riders: array of { name (string), coverage (number) }
+
+BENEFICIARIES
+- beneficiaries: array of { name, relationship (PASANGAN|ANAK|ORANG_TUA|SAUDARA|LAINNYA), percentage (number 0-100) }
+
+PAYMENT
+- payment_method (TRANSFER | AUTODEBET_REKENING | AUTODEBET_KK | VIRTUAL_ACCOUNT)
+- bank_name, account_number, account_holder_name
+- card_expiry (MM/YY)
+- autodebet_start_date, autodebet_end_date (YYYY-MM-DD)
+- autodebet_mandate_ref (string)
+
+Return ONLY raw JSON (no markdown code fences).`,
           },
           {
             role: "user",
@@ -68,7 +123,8 @@ export async function POST(req: Request) {
             ],
           },
         ],
-        max_tokens: 1000,
+        max_tokens: 2500,
+        response_format: { type: "json_object" },
       }),
     });
 
