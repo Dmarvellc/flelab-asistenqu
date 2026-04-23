@@ -12,6 +12,7 @@ import { useState } from "react";
 import { Loader2, CheckCircle2, XCircle } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
+import { ClaimTimeline } from "@/components/claims/claim-timeline";
 
 interface ClaimDetailViewProps {
     claim: Claim & { agent_notes?: string; hospital_notes?: string; admin_review_notes?: string };
@@ -175,6 +176,15 @@ export function ClaimDetailView({ claim }: ClaimDetailViewProps) {
                     )}
                 </div>
             </div>
+
+            <Card>
+                <CardHeader>
+                    <CardTitle>Audit Trail</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <ClaimTimeline claimId={claim.claim_id} showHeader={false} />
+                </CardContent>
+            </Card>
         </div>
     );
 }

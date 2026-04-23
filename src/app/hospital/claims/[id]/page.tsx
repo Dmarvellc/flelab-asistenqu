@@ -28,6 +28,7 @@ import Link from "next/link";
 import { extractClaimNotes } from "@/lib/claim-form-meta";
 import { ActionModal } from "@/components/ui/action-modal";
 import { ClientRequestsPanel } from "@/components/client-requests/requests-panel";
+import { ClaimTimeline } from "@/components/claims/claim-timeline";
 
 
 type ClaimDetail = {
@@ -681,6 +682,11 @@ export default function HospitalClaimDetailPage() {
                         </Card>
                     )}
                 </div>
+            </div>
+
+            {/* Audit Trail / Riwayat Klaim */}
+            <div className="bg-white rounded-3xl border border-gray-100 overflow-hidden shadow-sm p-6">
+                <ClaimTimeline claimId={claim.claim_id} />
             </div>
 
             {/* Permintaan klien — jejak digital (naik kelas, perpanjang rawat, dll.) */}

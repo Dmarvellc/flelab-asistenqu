@@ -32,6 +32,7 @@ import Link from "next/link";
 import { extractClaimNotes } from "@/lib/claim-form-meta";
 import { ActionModal } from "@/components/ui/action-modal";
 import { cn } from "@/lib/utils";
+import { ClaimTimeline } from "@/components/claims/claim-timeline";
 
 
 type ClaimDetail = {
@@ -625,6 +626,11 @@ export default function ClaimDetailPage() {
                         </div>
                     )}
                 </div>
+            </div>
+
+            {/* Audit Trail / Riwayat Klaim */}
+            <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6">
+                <ClaimTimeline claimId={claim.claim_id} />
             </div>
 
             {/* Dialog Edit */}
