@@ -13,6 +13,7 @@ const SESSION_CACHE_PREFIX = "auth:session";
 const DEFAULT_SESSION_TTL_SECONDS = 12 * 60 * 60;
 const REMEMBER_ME_TTL_SECONDS = 30 * 24 * 60 * 60;
 const SESSION_REVALIDATE_SECONDS = 60;
+const SESSION_MEMORY_CACHE_LIMIT = 2_000;
 
 const LEGACY_COOKIE_PREFIXES = [
   "session_agent",
@@ -46,6 +47,8 @@ export type AppSession = {
   expiresAt: string;
   validatedAt: number;
 };
+
+const inMemorySessions = new Map<string, AppSession>();
 
 export class AuthError extends Error {
   status: number;
@@ -108,6 +111,12 @@ function parseCachedSession(raw: string): AppSession | null {
 }
 
 async function cacheSession(session: AppSession) {
+  if (inMemorySessions.size >= SESSION_MEMORY_CACHE_LIMIT) {
+    const oldestKey = inMemorySessions.keys().next().value;
+    if (oldestKey) inMemorySessions.delete(oldestKey);
+  }
+  inMemorySessions.set(session.sessionId, session);
+
   if (!redisClient) return;
   const ttlSeconds = Math.max(
     Math.ceil((new Date(session.expiresAt).getTime() - Date.now()) / 1000),
@@ -126,6 +135,7 @@ async function cacheSession(session: AppSession) {
 }
 
 async function deleteSessionCache(sessionId: string) {
+  inMemorySessions.delete(sessionId);
   if (!redisClient) return;
   try {
     const ok = await ensureRedisConnection();
@@ -137,6 +147,15 @@ async function deleteSessionCache(sessionId: string) {
 }
 
 async function getCachedSession(sessionId: string) {
+  const memory = inMemorySessions.get(sessionId);
+  if (
+    memory &&
+    !isSessionExpired(memory.expiresAt) &&
+    Date.now() - memory.validatedAt < SESSION_REVALIDATE_SECONDS * 1000
+  ) {
+    return memory;
+  }
+
   if (!redisClient) return null;
   try {
     const ok = await ensureRedisConnection();
@@ -220,7 +239,8 @@ async function loadSessionFromDatabase(sessionId: string): Promise<AppSession | 
     validatedAt: Date.now(),
   };
 
-  await dbPool
+  // Non-blocking touch; never hold API response for this write.
+  void dbPool
     .query(
       `UPDATE public.auth_session
        SET last_seen_at = NOW(), updated_at = NOW()
@@ -229,6 +249,12 @@ async function loadSessionFromDatabase(sessionId: string): Promise<AppSession | 
     )
     .catch(() => {});
 
+  if (inMemorySessions.size >= SESSION_MEMORY_CACHE_LIMIT) {
+    // FIFO-ish cleanup to avoid unbounded growth in long-running processes.
+    const oldestKey = inMemorySessions.keys().next().value;
+    if (oldestKey) inMemorySessions.delete(oldestKey);
+  }
+  inMemorySessions.set(session.sessionId, session);
   await cacheSession(session);
   return session;
 }

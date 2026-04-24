@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { dbPool } from "@/lib/db";
+import { cached } from "@/lib/cache";
 
 export const dynamic = "force-dynamic";
 
@@ -30,6 +31,16 @@ export interface ReminderItem {
     meta?: Record<string, unknown>;
 }
 
+type ReminderPayload = {
+    items: ReminderItem[];
+    summary: {
+        total: number;
+        by_type: Record<string, number>;
+        by_severity: Record<string, number>;
+    };
+    horizon: number;
+};
+
 /* ─── Severity bucketing (centralized) ─────────────────── */
 function severityFor(daysUntil: number, overdueAllowed = false): ReminderSeverity {
     if (daysUntil < 0) return overdueAllowed ? "OVERDUE" : "TODAY";
@@ -48,14 +59,18 @@ export async function GET(req: Request) {
     const typeFilter = url.searchParams.get("type") as ReminderType | null;
 
     const agentId = session.userId;
-    const client = await dbPool.connect();
-
+    const cacheKey = `v1:agent:reminders:${agentId}:h${horizon}:l${limit}:t${typeFilter ?? "ALL"}`;
     try {
-        const items: ReminderItem[] = [];
-
+        const payload = await cached<ReminderPayload>(
+            cacheKey,
+            30,
+            async () => {
+                const client = await dbPool.connect();
+                try {
+                    const items: ReminderItem[] = [];
         /* ─── 1. BIRTHDAYS (year-agnostic month/day match) ──── */
-        if (!typeFilter || typeFilter === "BIRTHDAY") {
-            const res = await client.query(
+                    if (!typeFilter || typeFilter === "BIRTHDAY") {
+                        const res = await client.query(
                 `
                 WITH birthdays AS (
                     SELECT
@@ -93,29 +108,29 @@ export async function GET(req: Request) {
                 [agentId, horizon]
             );
 
-            for (const r of res.rows) {
-                const due = new Date(r.next_birthday);
-                const days = Math.floor((due.getTime() - Date.now()) / 86400000);
-                const bdate = new Date(r.birth_date);
-                const age = due.getFullYear() - bdate.getFullYear();
-                items.push({
-                    type: "BIRTHDAY",
-                    severity: severityFor(days),
-                    client_id: r.client_id,
-                    client_name: r.full_name,
-                    title: days === 0 ? `Ulang tahun hari ini ${age > 0 ? `(${age} th)` : ""}` : `Ulang tahun ke-${age}`,
-                    subtitle: `Kirim ucapan pribadi ke ${r.full_name}`,
-                    due_date: due.toISOString().slice(0, 10),
-                    days_until: days,
-                    phone: r.phone_number,
-                    href: `/agent/clients/${r.client_id}`,
-                });
-            }
-        }
+                        for (const r of res.rows) {
+                            const due = new Date(r.next_birthday);
+                            const days = Math.floor((due.getTime() - Date.now()) / 86400000);
+                            const bdate = new Date(r.birth_date);
+                            const age = due.getFullYear() - bdate.getFullYear();
+                            items.push({
+                                type: "BIRTHDAY",
+                                severity: severityFor(days),
+                                client_id: r.client_id,
+                                client_name: r.full_name,
+                                title: days === 0 ? `Ulang tahun hari ini ${age > 0 ? `(${age} th)` : ""}` : `Ulang tahun ke-${age}`,
+                                subtitle: `Kirim ucapan pribadi ke ${r.full_name}`,
+                                due_date: due.toISOString().slice(0, 10),
+                                days_until: days,
+                                phone: r.phone_number,
+                                href: `/agent/clients/${r.client_id}`,
+                            });
+                        }
+                    }
 
         /* ─── 2. PREMIUM DUE & LAPSE RISK (both from next_due_date) ───────── */
-        if (!typeFilter || typeFilter === "PREMIUM_DUE" || typeFilter === "LAPSE_RISK") {
-            const res = await client.query(
+                    if (!typeFilter || typeFilter === "PREMIUM_DUE" || typeFilter === "LAPSE_RISK") {
+                        const res = await client.query(
                 `
                 SELECT
                     c.client_id,
@@ -142,41 +157,41 @@ export async function GET(req: Request) {
                 [agentId, horizon]
             );
 
-            for (const r of res.rows) {
-                const days = Number(r.days_until);
-                const grace = Number(r.grace_period_days ?? 30);
-                const isLapse = days < -grace || r.policy_status === "LAPSE";
-                const type: ReminderType = days < 0 ? "LAPSE_RISK" : "PREMIUM_DUE";
-                if (typeFilter && typeFilter !== type) continue;
+                        for (const r of res.rows) {
+                            const days = Number(r.days_until);
+                            const grace = Number(r.grace_period_days ?? 30);
+                            const isLapse = days < -grace || r.policy_status === "LAPSE";
+                            const type: ReminderType = days < 0 ? "LAPSE_RISK" : "PREMIUM_DUE";
+                            if (typeFilter && typeFilter !== type) continue;
 
-                items.push({
-                    type,
-                    severity: isLapse ? "OVERDUE" : severityFor(days, true),
-                    client_id: r.client_id,
-                    client_name: r.full_name,
-                    contract_id: r.contract_id,
-                    title:
-                        days < 0
-                            ? isLapse
-                                ? `Polis LAPSE · lewat ${Math.abs(days)} hari`
-                                : `Jatuh tempo lewat ${Math.abs(days)} hari (grace ${grace}h)`
-                            : days === 0
-                                ? "Jatuh tempo hari ini"
-                                : `Jatuh tempo dalam ${days} hari`,
-                    subtitle: r.contract_product ? `${r.contract_product}` : null,
-                    due_date: new Date(r.next_due_date).toISOString().slice(0, 10),
-                    days_until: days,
-                    amount: r.premium_amount ? Number(r.premium_amount) : null,
-                    phone: r.phone_number,
-                    href: `/agent/clients/${r.client_id}`,
-                    meta: { grace_period_days: grace, policy_status: r.policy_status },
-                });
-            }
-        }
+                            items.push({
+                                type,
+                                severity: isLapse ? "OVERDUE" : severityFor(days, true),
+                                client_id: r.client_id,
+                                client_name: r.full_name,
+                                contract_id: r.contract_id,
+                                title:
+                                    days < 0
+                                        ? isLapse
+                                            ? `Polis LAPSE · lewat ${Math.abs(days)} hari`
+                                            : `Jatuh tempo lewat ${Math.abs(days)} hari (grace ${grace}h)`
+                                        : days === 0
+                                            ? "Jatuh tempo hari ini"
+                                            : `Jatuh tempo dalam ${days} hari`,
+                                subtitle: r.contract_product ? `${r.contract_product}` : null,
+                                due_date: new Date(r.next_due_date).toISOString().slice(0, 10),
+                                days_until: days,
+                                amount: r.premium_amount ? Number(r.premium_amount) : null,
+                                phone: r.phone_number,
+                                href: `/agent/clients/${r.client_id}`,
+                                meta: { grace_period_days: grace, policy_status: r.policy_status },
+                            });
+                        }
+                    }
 
         /* ─── 3. AUTODEBET EXPIRING ────────────────────────── */
-        if (!typeFilter || typeFilter === "AUTODEBET_EXPIRING") {
-            const res = await client.query(
+                    if (!typeFilter || typeFilter === "AUTODEBET_EXPIRING") {
+                        const res = await client.query(
                 `
                 SELECT
                     c.client_id,
@@ -202,36 +217,36 @@ export async function GET(req: Request) {
                 [agentId, horizon]
             );
 
-            for (const r of res.rows) {
-                const days = Number(r.days_until);
-                const method = String(r.payment_method ?? "");
-                const label = method.includes("KK") || method.includes("CARD")
-                    ? `Kartu ${r.card_network ?? ""}`.trim()
-                    : method.includes("REKENING")
-                        ? `Bank ${r.bank_name ?? ""}`.trim()
-                        : "Autodebet";
-                items.push({
-                    type: "AUTODEBET_EXPIRING",
-                    severity: severityFor(days, true),
-                    client_id: r.client_id,
-                    client_name: r.full_name,
-                    contract_id: r.contract_id,
-                    title: days < 0
-                        ? `${label} sudah expired ${Math.abs(days)} hari lalu`
-                        : days === 0 ? `${label} expired hari ini`
-                            : `${label} expired dalam ${days} hari`,
-                    subtitle: r.contract_product,
-                    due_date: new Date(r.autodebet_end_date).toISOString().slice(0, 10),
-                    days_until: days,
-                    phone: r.phone_number,
-                    href: `/agent/clients/${r.client_id}`,
-                });
-            }
-        }
+                        for (const r of res.rows) {
+                            const days = Number(r.days_until);
+                            const method = String(r.payment_method ?? "");
+                            const label = method.includes("KK") || method.includes("CARD")
+                                ? `Kartu ${r.card_network ?? ""}`.trim()
+                                : method.includes("REKENING")
+                                    ? `Bank ${r.bank_name ?? ""}`.trim()
+                                    : "Autodebet";
+                            items.push({
+                                type: "AUTODEBET_EXPIRING",
+                                severity: severityFor(days, true),
+                                client_id: r.client_id,
+                                client_name: r.full_name,
+                                contract_id: r.contract_id,
+                                title: days < 0
+                                    ? `${label} sudah expired ${Math.abs(days)} hari lalu`
+                                    : days === 0 ? `${label} expired hari ini`
+                                        : `${label} expired dalam ${days} hari`,
+                                subtitle: r.contract_product,
+                                due_date: new Date(r.autodebet_end_date).toISOString().slice(0, 10),
+                                days_until: days,
+                                phone: r.phone_number,
+                                href: `/agent/clients/${r.client_id}`,
+                            });
+                        }
+                    }
 
         /* ─── 4. POLICY EXPIRING (end_date) ────────────────── */
-        if (!typeFilter || typeFilter === "POLICY_EXPIRING") {
-            const res = await client.query(
+                    if (!typeFilter || typeFilter === "POLICY_EXPIRING") {
+                        const res = await client.query(
                 `
                 SELECT
                     c.client_id,
@@ -253,27 +268,27 @@ export async function GET(req: Request) {
                 [agentId, Math.max(horizon, 60)]
             );
 
-            for (const r of res.rows) {
-                const days = Number(r.days_until);
-                items.push({
-                    type: "POLICY_EXPIRING",
-                    severity: severityFor(days),
-                    client_id: r.client_id,
-                    client_name: r.full_name,
-                    contract_id: r.contract_id,
-                    title: `Polis berakhir dalam ${days} hari`,
-                    subtitle: r.contract_product ? `${r.contract_product} · peluang renewal` : "Peluang renewal",
-                    due_date: new Date(r.end_date).toISOString().slice(0, 10),
-                    days_until: days,
-                    phone: r.phone_number,
-                    href: `/agent/clients/${r.client_id}`,
-                });
-            }
-        }
+                        for (const r of res.rows) {
+                            const days = Number(r.days_until);
+                            items.push({
+                                type: "POLICY_EXPIRING",
+                                severity: severityFor(days),
+                                client_id: r.client_id,
+                                client_name: r.full_name,
+                                contract_id: r.contract_id,
+                                title: `Polis berakhir dalam ${days} hari`,
+                                subtitle: r.contract_product ? `${r.contract_product} · peluang renewal` : "Peluang renewal",
+                                due_date: new Date(r.end_date).toISOString().slice(0, 10),
+                                days_until: days,
+                                phone: r.phone_number,
+                                href: `/agent/clients/${r.client_id}`,
+                            });
+                        }
+                    }
 
         /* ─── 5. UPCOMING APPOINTMENTS ─────────────────────── */
-        if (!typeFilter || typeFilter === "APPOINTMENT") {
-            const res = await client.query(
+                    if (!typeFilter || typeFilter === "APPOINTMENT") {
+                        const res = await client.query(
                 `
                 SELECT
                     a.appointment_id,
@@ -298,56 +313,61 @@ export async function GET(req: Request) {
                 [agentId, horizon]
             ).catch(() => ({ rows: [] as Array<Record<string, unknown>> }));
 
-            for (const row of res.rows as Array<Record<string, unknown>>) {
-                const days = Number(row.days_until);
-                const date = new Date(row.appointment_date as string);
-                const time = row.appointment_time as string | null;
-                items.push({
-                    type: "APPOINTMENT",
-                    severity: severityFor(days),
-                    client_id: row.client_id as string,
-                    client_name: row.full_name as string,
-                    title: days === 0
-                        ? `Janji temu hari ini${time ? ` • ${String(time).slice(0, 5)}` : ""}`
-                        : `Janji temu dalam ${days} hari${time ? ` • ${String(time).slice(0, 5)}` : ""}`,
-                    subtitle: (row.appointment_type as string | null) ?? "Appointment",
-                    due_date: date.toISOString().slice(0, 10),
-                    days_until: days,
-                    phone: row.phone_number as string | null,
-                    href: `/agent/appointments`,
-                    meta: { appointment_time: time, notes: row.notes, status: row.status },
-                });
+                        for (const row of res.rows as Array<Record<string, unknown>>) {
+                            const days = Number(row.days_until);
+                            const date = new Date(row.appointment_date as string);
+                            const time = row.appointment_time as string | null;
+                            items.push({
+                                type: "APPOINTMENT",
+                                severity: severityFor(days),
+                                client_id: row.client_id as string,
+                                client_name: row.full_name as string,
+                                title: days === 0
+                                    ? `Janji temu hari ini${time ? ` • ${String(time).slice(0, 5)}` : ""}`
+                                    : `Janji temu dalam ${days} hari${time ? ` • ${String(time).slice(0, 5)}` : ""}`,
+                                subtitle: (row.appointment_type as string | null) ?? "Appointment",
+                                due_date: date.toISOString().slice(0, 10),
+                                days_until: days,
+                                phone: row.phone_number as string | null,
+                                href: `/agent/appointments`,
+                                meta: { appointment_time: time, notes: row.notes, status: row.status },
+                            });
+                        }
+                    }
+
+                    /* ─── Sort: severity first, then days_until ─────── */
+                    const sevWeight: Record<ReminderSeverity, number> = { OVERDUE: 0, TODAY: 1, SOON: 2, UPCOMING: 3 };
+                    items.sort((a, b) => {
+                        const s = sevWeight[a.severity] - sevWeight[b.severity];
+                        if (s !== 0) return s;
+                        return a.days_until - b.days_until;
+                    });
+
+                    const total = items.length;
+                    const sliced = items.slice(0, limit);
+
+                    const summary = {
+                        total,
+                        by_type: items.reduce<Record<string, number>>((acc, r) => {
+                            acc[r.type] = (acc[r.type] ?? 0) + 1;
+                            return acc;
+                        }, {}),
+                        by_severity: items.reduce<Record<string, number>>((acc, r) => {
+                            acc[r.severity] = (acc[r.severity] ?? 0) + 1;
+                            return acc;
+                        }, {}),
+                    };
+
+                    return { items: sliced, summary, horizon };
+                } finally {
+                    client.release();
+                }
             }
-        }
+        );
 
-        /* ─── Sort: severity first, then days_until ─────── */
-        const sevWeight: Record<ReminderSeverity, number> = { OVERDUE: 0, TODAY: 1, SOON: 2, UPCOMING: 3 };
-        items.sort((a, b) => {
-            const s = sevWeight[a.severity] - sevWeight[b.severity];
-            if (s !== 0) return s;
-            return a.days_until - b.days_until;
-        });
-
-        const total = items.length;
-        const sliced = items.slice(0, limit);
-
-        const summary = {
-            total,
-            by_type: items.reduce<Record<string, number>>((acc, r) => {
-                acc[r.type] = (acc[r.type] ?? 0) + 1;
-                return acc;
-            }, {}),
-            by_severity: items.reduce<Record<string, number>>((acc, r) => {
-                acc[r.severity] = (acc[r.severity] ?? 0) + 1;
-                return acc;
-            }, {}),
-        };
-
-        return NextResponse.json({ items: sliced, summary, horizon });
+        return NextResponse.json(payload);
     } catch (error) {
         console.error("Agent reminders fetch failed", error);
         return NextResponse.json({ error: "Failed to load reminders" }, { status: 500 });
-    } finally {
-        client.release();
     }
 }

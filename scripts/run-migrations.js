@@ -44,7 +44,10 @@ const pool = new Pool({
 });
 
 const DB_DIR = pathJoin("db");
-const NON_TRANSACTIONAL_FILES = new Set(["migration_v8_performance_indexes.sql"]);
+const NON_TRANSACTIONAL_FILES = new Set([
+  "migration_v8_performance_indexes.sql",
+  "migration_v12_dashboard_perf_indexes.sql",
+]);
 
 function readSql(file) {
   return fs.readFileSync(path.join(DB_DIR, file), "utf8");

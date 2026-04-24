@@ -5,10 +5,36 @@ const globalForRedis = globalThis as unknown as {
   redisClient?: ReturnType<typeof createClient> | null;
   redisConnecting?: boolean;
   redisLastError?: number;
+  redisFailureCount?: number;
+  redisRetryAfter?: number;
 };
 
+const REDIS_CONNECT_TIMEOUT_MS = 800;
+const REDIS_BASE_BACKOFF_MS = 30_000;
+const REDIS_MAX_BACKOFF_MS = 5 * 60 * 1000; // 5 minutes
+
+function normalizeRedisUrl(rawUrl: string): string {
+  try {
+    const parsed = new URL(rawUrl);
+    const host = parsed.hostname.toLowerCase();
+    const isUpstashHost = host.includes("upstash.io");
+
+    // Upstash Redis requires TLS; auto-upgrade misconfigured redis:// URLs.
+    if (isUpstashHost && parsed.protocol === "redis:") {
+      parsed.protocol = "rediss:";
+      console.warn("REDIS_URL uses redis:// for Upstash. Auto-upgraded to rediss:// (TLS).");
+      return parsed.toString();
+    }
+
+    return rawUrl;
+  } catch {
+    return rawUrl;
+  }
+}
+
 function createRedisClient() {
-  const url = process.env.REDIS_URL;
+  const rawUrl = process.env.REDIS_URL;
+  const url = rawUrl ? normalizeRedisUrl(rawUrl) : rawUrl;
   if (!url) {
     console.warn("REDIS_URL is not set — Redis caching disabled");
     return null;
@@ -17,7 +43,7 @@ function createRedisClient() {
   const client = createClient({
     url,
     socket: {
-      connectTimeout: 5_000,
+      connectTimeout: REDIS_CONNECT_TIMEOUT_MS,
       reconnectStrategy: (retries) => {
         // After 3 retries, back off exponentially up to 30s
         if (retries > 10) return new Error("Redis max retries reached");
@@ -45,24 +71,43 @@ if (process.env.NODE_ENV !== "production") {
 }
 
 /**
- * Connect to Redis with a timeout. Never blocks longer than 5s.
+ * Connect to Redis with a strict timeout.
  * Returns false if connection failed (callers should skip caching).
  */
 export async function ensureRedisConnection(): Promise<boolean> {
   if (!redisClient) return false;
   if (redisClient.isOpen) return true;
   if (globalForRedis.redisConnecting) return false;
+  if (
+    globalForRedis.redisRetryAfter &&
+    Date.now() < globalForRedis.redisRetryAfter
+  ) {
+    return false;
+  }
 
   globalForRedis.redisConnecting = true;
   try {
     await Promise.race([
       redisClient.connect(),
       new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error("Redis connect timeout")), 5_000)
+        setTimeout(
+          () => reject(new Error("Redis connect timeout")),
+          REDIS_CONNECT_TIMEOUT_MS
+        )
       ),
     ]);
+    globalForRedis.redisFailureCount = 0;
+    globalForRedis.redisRetryAfter = 0;
     return true;
   } catch {
+    const failures = (globalForRedis.redisFailureCount ?? 0) + 1;
+    globalForRedis.redisFailureCount = failures;
+    // Circuit breaker: skip reconnect attempts for an increasing window.
+    const backoffMs = Math.min(
+      REDIS_BASE_BACKOFF_MS * 2 ** (failures - 1),
+      REDIS_MAX_BACKOFF_MS
+    );
+    globalForRedis.redisRetryAfter = Date.now() + backoffMs;
     return false;
   } finally {
     globalForRedis.redisConnecting = false;

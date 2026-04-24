@@ -32,43 +32,75 @@ export async function GET(request: Request) {
             const total = parseInt(countRes.rows[0].count);
 
             const dataRes = await client.query(
-                `SELECT
-          a.agency_id,
-          a.name,
-          a.address,
-          a.created_at,
-          COUNT(DISTINCT u.user_id) FILTER (WHERE u.role = 'agent' AND u.status = 'ACTIVE') AS active_agents,
-          COUNT(DISTINCT u.user_id) FILTER (WHERE u.role = 'agent') AS total_agents,
-          COUNT(DISTINCT u.user_id) FILTER (WHERE u.role = 'admin_agency') AS admins,
-          COUNT(DISTINCT c.claim_id) AS total_claims,
-          COUNT(DISTINCT c.claim_id) FILTER (WHERE c.stage = 'APPROVED' OR c.stage = 'COMPLETED') AS approved_claims
-        FROM public.agency a
-        LEFT JOIN public.app_user u ON u.agency_id = a.agency_id
-        LEFT JOIN public.claim c ON c.agency_id = a.agency_id
-        ${whereClause}
-        GROUP BY a.agency_id, a.name, a.address, a.created_at
-        ORDER BY a.created_at DESC
-        LIMIT $${params.length + 1} OFFSET $${params.length + 2}`,
+                `
+                WITH page_agencies AS (
+                    SELECT a.agency_id, a.name, a.address, a.created_at
+                    FROM public.agency a
+                    ${whereClause}
+                    ORDER BY a.created_at DESC
+                    LIMIT $${params.length + 1} OFFSET $${params.length + 2}
+                )
+                SELECT
+                    pa.agency_id,
+                    pa.name,
+                    pa.address,
+                    pa.created_at,
+                    COALESCE(usr.active_agents, 0) AS active_agents,
+                    COALESCE(usr.total_agents, 0)  AS total_agents,
+                    COALESCE(usr.admins, 0)        AS admins,
+                    COALESCE(clm.total_claims, 0)  AS total_claims,
+                    COALESCE(clm.approved_claims, 0) AS approved_claims
+                FROM page_agencies pa
+                LEFT JOIN LATERAL (
+                    SELECT
+                        COUNT(*) FILTER (WHERE u.role = 'agent' AND u.status = 'ACTIVE')::int AS active_agents,
+                        COUNT(*) FILTER (WHERE u.role = 'agent')::int AS total_agents,
+                        COUNT(*) FILTER (WHERE u.role = 'admin_agency')::int AS admins
+                    FROM public.app_user u
+                    WHERE u.agency_id = pa.agency_id
+                ) usr ON TRUE
+                LEFT JOIN LATERAL (
+                    SELECT
+                        COUNT(*)::int AS total_claims,
+                        COUNT(*) FILTER (WHERE c.stage IN ('APPROVED', 'COMPLETED'))::int AS approved_claims
+                    FROM public.claim c
+                    WHERE c.agency_id = pa.agency_id
+                ) clm ON TRUE
+                ORDER BY pa.created_at DESC
+                `,
                 [...params, limit, offset]
             ).catch(async () => {
-                // Fallback: public.claim table may not exist yet — return 0 for claim columns
+                // Fallback: claim table may not exist yet.
                 return client.query(
-                    `SELECT
-              a.agency_id,
-              a.name,
-              a.address,
-              a.created_at,
-              COUNT(DISTINCT u.user_id) FILTER (WHERE u.role = 'agent' AND u.status = 'ACTIVE') AS active_agents,
-              COUNT(DISTINCT u.user_id) FILTER (WHERE u.role = 'agent') AS total_agents,
-              COUNT(DISTINCT u.user_id) FILTER (WHERE u.role = 'admin_agency') AS admins,
-              0 AS total_claims,
-              0 AS approved_claims
-            FROM public.agency a
-            LEFT JOIN public.app_user u ON u.agency_id = a.agency_id
-            ${whereClause}
-            GROUP BY a.agency_id, a.name, a.address, a.created_at
-            ORDER BY a.created_at DESC
-            LIMIT $${params.length + 1} OFFSET $${params.length + 2}`,
+                    `
+                    WITH page_agencies AS (
+                        SELECT a.agency_id, a.name, a.address, a.created_at
+                        FROM public.agency a
+                        ${whereClause}
+                        ORDER BY a.created_at DESC
+                        LIMIT $${params.length + 1} OFFSET $${params.length + 2}
+                    )
+                    SELECT
+                        pa.agency_id,
+                        pa.name,
+                        pa.address,
+                        pa.created_at,
+                        COALESCE(usr.active_agents, 0) AS active_agents,
+                        COALESCE(usr.total_agents, 0)  AS total_agents,
+                        COALESCE(usr.admins, 0)        AS admins,
+                        0 AS total_claims,
+                        0 AS approved_claims
+                    FROM page_agencies pa
+                    LEFT JOIN LATERAL (
+                        SELECT
+                            COUNT(*) FILTER (WHERE u.role = 'agent' AND u.status = 'ACTIVE')::int AS active_agents,
+                            COUNT(*) FILTER (WHERE u.role = 'agent')::int AS total_agents,
+                            COUNT(*) FILTER (WHERE u.role = 'admin_agency')::int AS admins
+                        FROM public.app_user u
+                        WHERE u.agency_id = pa.agency_id
+                    ) usr ON TRUE
+                    ORDER BY pa.created_at DESC
+                    `,
                     [...params, limit, offset]
                 );
             });
@@ -90,37 +122,63 @@ export async function GET(request: Request) {
             const total = parseInt(countRes.rows[0].count);
 
             const dataRes = await client.query(
-                `SELECT
-          h.hospital_id,
-          h.name,
-          h.address,
-          h.created_at,
-          COUNT(DISTINCT ur.user_id) AS admin_count,
-          COUNT(DISTINCT pr.request_id) AS patient_requests
-        FROM public.hospital h
-        LEFT JOIN public.user_role ur ON ur.scope_id = h.hospital_id AND ur.scope_type = 'HOSPITAL'
-        LEFT JOIN public.patient_data_request pr ON pr.hospital_id = h.hospital_id
-        ${whereClause}
-        GROUP BY h.hospital_id, h.name, h.address, h.created_at
-        ORDER BY h.created_at DESC
-        LIMIT $${params.length + 1} OFFSET $${params.length + 2}`,
+                `
+                WITH page_hospitals AS (
+                    SELECT h.hospital_id, h.name, h.address, h.created_at
+                    FROM public.hospital h
+                    ${whereClause}
+                    ORDER BY h.created_at DESC
+                    LIMIT $${params.length + 1} OFFSET $${params.length + 2}
+                )
+                SELECT
+                    ph.hospital_id,
+                    ph.name,
+                    ph.address,
+                    ph.created_at,
+                    COALESCE(ua.admin_count, 0) AS admin_count,
+                    COALESCE(pr.patient_requests, 0) AS patient_requests
+                FROM page_hospitals ph
+                LEFT JOIN LATERAL (
+                    SELECT COUNT(*)::int AS admin_count
+                    FROM public.user_role ur
+                    WHERE ur.scope_type = 'HOSPITAL'
+                      AND ur.scope_id = ph.hospital_id
+                ) ua ON TRUE
+                LEFT JOIN LATERAL (
+                    SELECT COUNT(*)::int AS patient_requests
+                    FROM public.patient_data_request pdr
+                    WHERE pdr.hospital_id = ph.hospital_id
+                ) pr ON TRUE
+                ORDER BY ph.created_at DESC
+                `,
                 [...params, limit, offset]
             ).catch(async () => {
-                // Fallback without patient_data_request if table doesn't exist
+                // Fallback without patient_data_request table.
                 return client.query(
-                    `SELECT
-            h.hospital_id,
-            h.name,
-            h.address,
-            h.created_at,
-            COUNT(DISTINCT ur.user_id) AS admin_count,
-            0 AS patient_requests
-          FROM public.hospital h
-          LEFT JOIN public.user_role ur ON ur.scope_id = h.hospital_id AND ur.scope_type = 'HOSPITAL'
-          ${whereClause}
-          GROUP BY h.hospital_id, h.name, h.address, h.created_at
-          ORDER BY h.created_at DESC
-          LIMIT $${params.length + 1} OFFSET $${params.length + 2}`,
+                    `
+                    WITH page_hospitals AS (
+                        SELECT h.hospital_id, h.name, h.address, h.created_at
+                        FROM public.hospital h
+                        ${whereClause}
+                        ORDER BY h.created_at DESC
+                        LIMIT $${params.length + 1} OFFSET $${params.length + 2}
+                    )
+                    SELECT
+                        ph.hospital_id,
+                        ph.name,
+                        ph.address,
+                        ph.created_at,
+                        COALESCE(ua.admin_count, 0) AS admin_count,
+                        0 AS patient_requests
+                    FROM page_hospitals ph
+                    LEFT JOIN LATERAL (
+                        SELECT COUNT(*)::int AS admin_count
+                        FROM public.user_role ur
+                        WHERE ur.scope_type = 'HOSPITAL'
+                          AND ur.scope_id = ph.hospital_id
+                    ) ua ON TRUE
+                    ORDER BY ph.created_at DESC
+                    `,
                     [...params, limit, offset]
                 );
             });

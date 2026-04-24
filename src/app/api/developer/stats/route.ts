@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getSystemStats } from "@/lib/auth-queries";
 import { getRoleFromCookies } from "@/lib/auth-cookies";
 import { getRecentActivity, ActivityItem } from "@/services/activity";
+import { cached, TTL } from "@/lib/cache";
 
 const allowed = new Set(["developer", "super_admin"]);
 
@@ -12,19 +13,19 @@ export async function GET() {
     }
 
     try {
-        console.log("Fetching system stats...");
-        const stats = await getSystemStats();
-        console.log("System stats fetched:", stats);
+        const payload = await cached<{ stats: ReturnType<typeof getSystemStats> extends Promise<infer T> ? T : never; activities: ActivityItem[] }>(
+            "v1:developer:stats:dashboard",
+            TTL.SHORT,
+            async () => {
+                const [stats, activities] = await Promise.all([
+                    getSystemStats(),
+                    getRecentActivity().catch(() => [] as ActivityItem[]),
+                ]);
+                return { stats, activities };
+            }
+        );
 
-        console.log("Fetching recent activity...");
-        let activities: ActivityItem[] = [];
-        try {
-            activities = await getRecentActivity();
-            console.log("Recent activity fetched:", activities);
-        } catch (actError) {
-             console.error("Failed to fetch recent activity", actError);
-        }
-        
+        const { stats, activities } = payload;
         return NextResponse.json({ stats: { ...stats, activities } });
     } catch (error) {
         console.error("Failed to load stats", error);
