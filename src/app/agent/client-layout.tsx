@@ -12,7 +12,7 @@ import {
     NavItem,
 } from "@/components/dashboard/dashboard-layout"
 
-import { LayoutDashboard, Users, FileText, LogOut, Settings, ClipboardList, Stethoscope, CalendarCheck, Gift, Globe, Search } from "lucide-react"
+import { LayoutDashboard, Users, FileText, LogOut, Settings, ClipboardList, Stethoscope, CalendarCheck, Gift, Globe, Search, Bell } from "lucide-react"
 import { Notifications } from "@/components/dashboard/notifications";
 import Link from "next/link"
 import Image from "next/image"
@@ -101,6 +101,7 @@ export function AgentLayoutClient({ children, initialBadges, serverUserName }: {
         { href: `${basePath}/clients`, icon: Users, label: t.clients, badge: undefined },
         { href: `${basePath}/claims`, icon: FileText, label: t.claims, badge: badges.totalClaims || undefined },
         { href: `${basePath}/appointments`, icon: CalendarCheck, label: t.appointments, badge: undefined },
+        { href: `${basePath}/reminders`, icon: Bell, label: "Pengingat", badge: undefined },
         { href: `${basePath}/requests`, icon: ClipboardList, label: t.requests, badge: badges.pendingContracts || undefined },
         { href: `${basePath}/network`, icon: Stethoscope, label: "Marketplace", badge: undefined },
         { href: `${basePath}/referral`, icon: Gift, label: t.referral, badge: undefined },

@@ -5,6 +5,7 @@ import { ArrowRight, LayoutDashboard, FileText, Users, Award, PhoneCall } from "
 import Link from "next/link";
 import { ClaimsList } from "@/components/dashboard/claims-list";
 import { PerformanceChart } from "@/components/dashboard/performance-chart";
+import { RemindersWidget } from "@/components/dashboard/reminders-widget";
 
 interface DashboardClientProps {
     metrics: {
@@ -137,6 +138,9 @@ export function DashboardClient({ metrics, claims, initialAgentName, insuranceNa
                     </div>
                 </div>
             </div>
+
+            {/* Pengingat (Reminders) */}
+            <RemindersWidget />
 
             {/* Claims list */}
             <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden transform transition-all duration-500 hover:shadow-md">

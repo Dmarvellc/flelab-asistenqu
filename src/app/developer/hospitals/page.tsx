@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import {
     Building2, Search, RefreshCw, ChevronLeft, ChevronRight,
-    Users, Activity, ChevronsUpDown, ChevronUp, ChevronDown, X, Copy, Check,
+    Users, Activity, ChevronsUpDown, ChevronUp, ChevronDown, X, Copy, Check, Trash2, Loader2,
 } from "lucide-react";
 
 interface Hospital {
@@ -82,6 +82,41 @@ function CopyIdButton({ id }: { id: string }) {
             {copied
                 ? <Check className="h-3.5 w-3.5 text-emerald-500" />
                 : <Copy className="h-3.5 w-3.5 text-gray-400" />}
+        </button>
+    );
+}
+
+function DeleteHospitalButton({ id, name, onDeleted }: { id: string; name: string; onDeleted: () => void }) {
+    const [busy, setBusy] = useState(false);
+
+    const handle = async () => {
+        const ok = window.confirm(`Hapus rumah sakit "${name}"?\n\nTindakan ini hanya bisa jika tidak ada admin, klaim, atau request terkait.`);
+        if (!ok) return;
+        setBusy(true);
+        try {
+            const res = await fetch(`/api/developer/hospitals/${id}`, { method: "DELETE" });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) {
+                const detail = data?.detail
+                    ? `\n\nAdmin: ${data.detail.admins ?? 0}\nKlaim: ${data.detail.claims ?? 0}\nRequest: ${data.detail.requests ?? 0}`
+                    : "";
+                alert((data?.error || "Gagal menghapus rumah sakit") + detail);
+                return;
+            }
+            onDeleted();
+        } finally {
+            setBusy(false);
+        }
+    };
+
+    return (
+        <button
+            onClick={handle}
+            disabled={busy}
+            title="Hapus rumah sakit"
+            className="p-1.5 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-600 transition-colors disabled:opacity-50"
+        >
+            {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
         </button>
     );
 }
@@ -261,7 +296,7 @@ export default function HospitalsPage() {
                                 <SortTh label="Admins" col="admin_count" sortBy={sortBy} sortOrder={sortOrder} onToggle={toggleSort} className="text-right" />
                                 <SortTh label="Patient Requests" col="patient_requests" sortBy={sortBy} sortOrder={sortOrder} onToggle={toggleSort} className="text-right" />
                                 <SortTh label="Registered" col="created_at" sortBy={sortBy} sortOrder={sortOrder} onToggle={toggleSort} className="text-right" />
-                                <th className="w-12 pr-5 py-3.5" />
+                                <th className="w-20 pr-5 py-3.5" />
                             </tr>
                         </thead>
                         <tbody>
@@ -340,9 +375,14 @@ export default function HospitalsPage() {
                                                     <span className="text-[10px] text-gray-400">{relDate(hospital.created_at)}</span>
                                                 </div>
                                             </td>
-                                            <td className="w-12 pr-5 py-4 text-right">
-                                                <div className="opacity-0 group-hover/row:opacity-100 translate-x-1.5 group-hover/row:translate-x-0 transition-all duration-150">
+                                            <td className="w-20 pr-5 py-4 text-right">
+                                                <div className="flex items-center justify-end gap-1 opacity-0 group-hover/row:opacity-100 translate-x-1.5 group-hover/row:translate-x-0 transition-all duration-150">
                                                     <CopyIdButton id={hospital.hospital_id} />
+                                                    <DeleteHospitalButton
+                                                        id={hospital.hospital_id}
+                                                        name={hospital.name}
+                                                        onDeleted={fetchHospitals}
+                                                    />
                                                 </div>
                                             </td>
                                         </tr>
