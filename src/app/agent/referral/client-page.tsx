@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import {
-    Copy, Check, Gift, TrendingUp, Users, Star, Share2, Banknote
+    Copy, Check, Gift, TrendingUp, Users, Star, Share2, Award
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion } from "motion/react";
@@ -74,7 +74,7 @@ export default function ReferralPage({ initialData }: { initialData: ReferralDat
 
     const shareCode = () => {
         if (!data?.referral_code) return;
-        const text = `Daftar AsistenQu sekarang dan gunakan kode referral saya: ${data.referral_code}\n\nKelola asuransi lebih mudah bersama AsistenQu!`;
+        const text = `Halo rekan agen! Gabung di AsistenQu pakai kode referral saya: ${data.referral_code}\n\nPlatform manajemen klien & klaim asuransi — bantu kamu kelola nasabah jauh lebih mudah.`;
         if (navigator.share) {
             navigator.share({ title: "Referral AsistenQu", text });
         } else {
@@ -94,7 +94,6 @@ export default function ReferralPage({ initialData }: { initialData: ReferralDat
     const stats = data?.stats;
     const totalReferrals = parseInt(stats?.total_referrals ?? "0");
     const creditedCount = parseInt(stats?.credited_count ?? "0");
-    const totalEarnedRupiah = parseInt(stats?.total_earned_rupiah ?? "0");
     const totalEarnedPoints = parseInt(stats?.total_earned_points ?? "0");
 
     return (
@@ -106,9 +105,9 @@ export default function ReferralPage({ initialData }: { initialData: ReferralDat
                         <Gift className="h-4 w-4" />
                         Program Referral
                     </p>
-                    <h1 className="text-2xl sm:text-4xl font-bold tracking-tight text-gray-900 mt-2">Kode Referral</h1>
+                    <h1 className="text-2xl sm:text-4xl font-bold tracking-tight text-gray-900 mt-2">Kode Referral Agen</h1>
                     <p className="mt-1 text-base text-gray-500">
-                        Bagikan kode unik Anda dan dapatkan reward setiap kali ada agen atau nasabah baru yang bergabung.
+                        Ajak sesama agen untuk bergabung di AsistenQu dan dapatkan <span className="font-semibold text-gray-700">poin reward</span> setiap kali ada agen baru yang mendaftar menggunakan kode Anda.
                     </p>
                 </div>
             </div>
@@ -175,17 +174,22 @@ export default function ReferralPage({ initialData }: { initialData: ReferralDat
                     className="bg-white border border-gray-100 rounded-3xl p-8 sm:p-10 shadow-sm flex flex-col justify-center"
                 >
                     <div className="mb-6">
-                        <p className="text-gray-500 font-medium mb-1">Total Reward Rupiah</p>
-                        <p className="text-4xl font-bold tabular-nums text-gray-900 tracking-tight">
-                            {new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(totalEarnedRupiah)}
+                        <p className="text-gray-500 font-medium mb-1 flex items-center gap-1.5">
+                            <Award className="h-4 w-4" /> Total Poin Terkumpul
                         </p>
+                        <div className="flex items-baseline gap-2">
+                            <p className="text-4xl font-bold tabular-nums text-gray-900 tracking-tight">
+                                {totalEarnedPoints.toLocaleString("id-ID")}
+                            </p>
+                            <span className="text-gray-400 font-semibold">poin</span>
+                        </div>
                     </div>
                     <div className="pt-6 border-t border-gray-100">
-                        <p className="text-gray-500 font-medium mb-1">Total Poin Referral</p>
-                        <div className="flex items-center gap-2">
-                            <p className="text-3xl font-bold tabular-nums text-gray-900">{totalEarnedPoints.toLocaleString("id-ID")}</p>
-                            <span className="text-gray-400 font-medium text-sm">poin</span>
-                        </div>
+                        <p className="text-gray-500 font-medium mb-1">Poin Aktif</p>
+                        <p className="text-2xl font-bold tabular-nums text-gray-900">
+                            {(data?.referral_points ?? 0).toLocaleString("id-ID")} <span className="text-gray-400 font-medium text-sm">poin</span>
+                        </p>
+                        <p className="text-xs text-gray-400 mt-2 leading-snug">Poin dapat ditukar dengan benefit platform. Program reward Rupiah menyusul.</p>
                     </div>
                 </motion.div>
             </div>
@@ -222,20 +226,20 @@ export default function ReferralPage({ initialData }: { initialData: ReferralDat
                         {
                             step: "1",
                             icon: Share2,
-                            title: "Bagikan Kode",
-                            desc: "Kirimkan kode eksklusif Anda ke calon nasabah atau rekan agen yang berminat bergabung.",
+                            title: "Bagikan ke Sesama Agen",
+                            desc: "Kirimkan kode eksklusif Anda ke rekan agen lain yang tertarik bergabung di AsistenQu.",
                         },
                         {
                             step: "2",
                             icon: Users,
-                            title: "Pendaftaran Berhasil",
-                            desc: "Mereka mendaftar ke AsistenQu menggunakan kode unik Anda saat registrasi.",
+                            title: "Mereka Mendaftar",
+                            desc: "Agen baru mendaftar memakai kode unik Anda dan mulai mengelola klien di platform.",
                         },
                         {
                             step: "3",
-                            icon: Banknote,
-                            title: "Nikmati Reward",
-                            desc: "Anda akan langsung menerima komisi Rupiah dan penambahan poin secara otomatis.",
+                            icon: Award,
+                            title: "Dapatkan Poin Reward",
+                            desc: "Poin otomatis masuk ke akun Anda setiap agen baru berhasil terdaftar. Poin dapat ditukar untuk benefit platform.",
                         },
                     ].map((step, i) => (
                         <motion.div
@@ -299,7 +303,7 @@ export default function ReferralPage({ initialData }: { initialData: ReferralDat
                                     </p>
                                     {ref.status === "CREDITED" && (
                                         <p className="text-[13px] font-semibold text-gray-900 mt-2">
-                                            + {new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(ref.reward_amount)} <span className="text-gray-400 mx-1">•</span> <span className="text-purple-600">+{ref.reward_points} pts</span>
+                                            <span className="text-amber-600">+{ref.reward_points.toLocaleString("id-ID")} poin</span>
                                         </p>
                                     )}
                                 </div>

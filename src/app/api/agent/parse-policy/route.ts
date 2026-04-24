@@ -49,6 +49,7 @@ IDENTITY
 - policy_type (one of: JIWA, KESEHATAN, JIWA_KESEHATAN, KECELAKAAN, UNITLINK)
 - policy_holder_name (string)
 - insured_person_name (string)
+- passport_number (string; optional — alphanumeric passport id of policyholder if visible)
 
 PERIOD & DUE
 - issue_date (YYYY-MM-DD)

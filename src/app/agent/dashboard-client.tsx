@@ -24,10 +24,10 @@ export function DashboardClient({ metrics, claims, initialAgentName, insuranceNa
     const { t } = useTranslation();
 
     const stats = [
-        { label: t.activeClients, value: metrics.activeClients, icon: Users },
-        { label: t.pendingPolicies, value: metrics.pendingContracts, icon: FileText },
-        { label: t.totalClaims, value: metrics.totalClaims, icon: LayoutDashboard },
-        { label: t.points, value: metrics.points, icon: Award },
+        { label: t.activeClients, value: metrics.activeClients, icon: Users, hint: null as string | null },
+        { label: t.pendingPolicies, value: metrics.pendingContracts, icon: FileText, hint: "Biasanya terjadi karena kekurangan dokumen" },
+        { label: t.totalClaims, value: metrics.totalClaims, icon: LayoutDashboard, hint: null },
+        { label: t.points, value: metrics.points, icon: Award, hint: null },
     ];
 
     return (
@@ -70,6 +70,9 @@ export function DashboardClient({ metrics, claims, initialAgentName, insuranceNa
                         </div>
                         <div className="relative z-10 text-[40px] font-bold text-gray-900 tracking-tight tabular-nums mb-3 leading-none">{stat.value}</div>
                         <p className="relative z-10 text-base font-medium text-gray-500">{stat.label}</p>
+                        {stat.hint && (
+                            <p className="relative z-10 text-xs text-gray-400 mt-1.5 leading-snug">{stat.hint}</p>
+                        )}
                     </div>
                 ))}
             </div>

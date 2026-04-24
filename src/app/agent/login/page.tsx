@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AlertCircle, Eye, EyeOff, Loader2, ArrowRight, Globe } from "lucide-react";
 import { useTranslation } from "@/components/providers/i18n-provider";
+import { WrongPortalAlert, type WrongPortalInfo } from "@/components/auth/wrong-portal-alert";
 
 export default function AgentLoginPage() {
   const router = useRouter();
@@ -16,12 +17,14 @@ export default function AgentLoginPage() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [wrongPortal, setWrongPortal] = useState<WrongPortalInfo | null>(null);
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
     setLoading(true);
     setError(null);
+    setWrongPortal(null);
 
     try {
       const response = await fetch("/api/auth/login", {
@@ -33,12 +36,21 @@ export default function AgentLoginPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        setError(data.error ?? "Login failed");
+        if (data?.reason === "WRONG_PORTAL") {
+          setWrongPortal({
+            error: data.error,
+            suggestedPortalLabel: data.suggestedPortalLabel ?? null,
+            suggestedPath: data.suggestedPath ?? null,
+            currentPortalLabel: data.currentPortalLabel,
+          });
+        } else {
+          setError(data.error ?? (lang === 'id' ? "Gagal masuk. Silakan coba lagi." : "Login failed. Please try again."));
+        }
         setLoading(false);
         return;
       }
 
-      if (data.user?.role !== "agent") {
+      if (data.user?.role !== "agent" && data.user?.role !== "agent_manager" && data.user?.role !== "super_admin") {
         setError(lang === 'id' ? "Akun ini tidak memiliki akses sebagai agen." : "This account does not have agent access.");
         setLoading(false);
         return;
@@ -48,7 +60,7 @@ export default function AgentLoginPage() {
       router.push("/agent");
     } catch (err) {
       console.error(err);
-      setError(lang === 'id' ? "Terjadi kesalahan yang tidak terduga." : "An unexpected error occurred.");
+      setError(lang === 'id' ? "Terjadi kesalahan jaringan. Periksa koneksi internet Anda lalu coba lagi." : "A network error occurred. Check your internet connection and try again.");
       setLoading(false);
     }
   }
@@ -93,6 +105,8 @@ export default function AgentLoginPage() {
           <h1 className="text-2xl font-bold text-gray-900 tracking-tight">{t.loginTitle}</h1>
           <p className="text-sm text-gray-500 mt-2 text-center">{t.loginSub}</p>
         </div>
+
+        {wrongPortal && <WrongPortalAlert info={wrongPortal} />}
 
         {error && (
           <div className="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-4 mb-6 animate-in zoom-in-95 duration-200">

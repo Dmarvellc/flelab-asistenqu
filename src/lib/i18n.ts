@@ -16,7 +16,7 @@ export const dict = {
 
         // Dashboard Stats
         activeClients: "Active Clients",
-        pendingPolicies: "Pending Policies",
+        pendingPolicies: "Pending Claims",
         totalClaims: "Total Claims",
         points: "Points",
 
@@ -71,7 +71,7 @@ export const dict = {
 
         // Dashboard Stats
         activeClients: "Klien Aktif",
-        pendingPolicies: "Polis Pending",
+        pendingPolicies: "Klaim Pending",
         totalClaims: "Total Klaim",
         points: "Poin",
 

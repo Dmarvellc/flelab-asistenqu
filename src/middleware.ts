@@ -16,6 +16,18 @@ const ROUTE_TO_PORTAL: Record<string, string> = {
 };
 
 /**
+ * Where to send a user whose session.portal doesn't match the URL portal.
+ * Used when a logged-in user accidentally navigates to a portal they don't
+ * belong to — we gently bounce them to their actual dashboard.
+ */
+const PORTAL_TO_DASHBOARD: Record<string, string> = {
+  agent: "/agent",
+  hospital: "/hospital",
+  developer: "/developer",
+  admin_agency: "/admin-agency",
+};
+
+/**
  * Known static route prefixes (NOT agency slugs).
  */
 const KNOWN_PREFIXES = new Set([
@@ -63,6 +75,15 @@ export async function middleware(request: NextRequest) {
         return NextResponse.redirect(new URL(dashboardPath, request.url));
       }
 
+      // Logged-in user is on the WRONG portal's login page.
+      // Send them to their own dashboard so they don't get stuck.
+      if (sessionPortal && PORTAL_TO_DASHBOARD[sessionPortal]) {
+        const dest = PORTAL_TO_DASHBOARD[sessionPortal];
+        if (!path.startsWith(dest)) {
+          return NextResponse.redirect(new URL(dest, request.url));
+        }
+      }
+
       return NextResponse.next();
     }
     return NextResponse.next();
@@ -85,6 +106,12 @@ export async function middleware(request: NextRequest) {
   const sessionPortal = request.cookies.get("session_portal")?.value;
 
   if (expectedPortal && sessionPortal && sessionPortal !== expectedPortal) {
+    // User is logged in but browsing a portal that doesn't match their role.
+    // Bounce them to their own dashboard instead of a login loop.
+    const ownDashboard = PORTAL_TO_DASHBOARD[sessionPortal];
+    if (ownDashboard) {
+      return NextResponse.redirect(new URL(ownDashboard, request.url));
+    }
     if (isDynamicAgentRoute) {
       return NextResponse.redirect(
         new URL(`/${routePrefix}/agent/login`, request.url)

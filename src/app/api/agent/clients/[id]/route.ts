@@ -17,7 +17,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
       `SELECT 
         c.client_id,
         p.full_name, p.phone_number, p.address,
-        p.birth_date, p.gender, p.id_card, p.email,
+        p.birth_date, p.gender, p.id_card, p.passport_number, p.email,
         p.occupation, p.marital_status,
         c.status, c.created_at
        FROM public.client c

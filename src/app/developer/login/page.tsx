@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AlertCircle, Eye, EyeOff, Loader2, ArrowRight } from "lucide-react";
+import { WrongPortalAlert, type WrongPortalInfo } from "@/components/auth/wrong-portal-alert";
 
 const LOGO_URL =
   "https://jzupwygwzatugbrmqjau.supabase.co/storage/v1/object/sign/image/m_logotext.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV82NWE4NDk3Zi1iNTdiLTQ1ZDMtOWI3ZC0yNDAxNzU4Njg1NTAiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJpbWFnZS9tX2xvZ290ZXh0LnBuZyIsImlhdCI6MTc3MTkwMjgxNywiZXhwIjozMzI3NjM2NjgxN30.BDtpL6pQ6FhAGQF3V05PMC3gHkJ44R2O4vm3yfY2iyQ";
@@ -16,12 +17,14 @@ export default function DeveloperLoginPage() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [wrongPortal, setWrongPortal] = useState<WrongPortalInfo | null>(null);
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
     setLoading(true);
     setError(null);
+    setWrongPortal(null);
 
     try {
       const response = await fetch("/api/auth/login", {
@@ -33,7 +36,16 @@ export default function DeveloperLoginPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        setError(data.error ?? "Login failed");
+        if (data?.reason === "WRONG_PORTAL") {
+          setWrongPortal({
+            error: data.error,
+            suggestedPortalLabel: data.suggestedPortalLabel ?? null,
+            suggestedPath: data.suggestedPath ?? null,
+            currentPortalLabel: data.currentPortalLabel,
+          });
+        } else {
+          setError(data.error ?? "Gagal masuk. Silakan coba lagi.");
+        }
         setLoading(false);
         return;
       }
@@ -42,7 +54,7 @@ export default function DeveloperLoginPage() {
         data.user?.role !== "developer" &&
         data.user?.role !== "super_admin"
       ) {
-        setError("Account is not authorized for developer access.");
+        setError("Akun ini tidak memiliki akses Developer Console.");
         setLoading(false);
         return;
       }
@@ -51,7 +63,7 @@ export default function DeveloperLoginPage() {
       router.push("/developer");
     } catch (err) {
       console.error(err);
-      setError("An unexpected error occurred. Please try again.");
+      setError("Terjadi kesalahan jaringan. Periksa koneksi internet Anda lalu coba lagi.");
       setLoading(false);
     }
   }
@@ -78,6 +90,8 @@ export default function DeveloperLoginPage() {
           <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Developer Console</h1>
           <p className="text-sm text-gray-500 mt-2 text-center">Sign in to access platform configuration and developer tools.</p>
         </div>
+
+        {wrongPortal && <WrongPortalAlert info={wrongPortal} />}
 
         {error && (
           <div className="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-4 mb-6 animate-in zoom-in-95 duration-200">

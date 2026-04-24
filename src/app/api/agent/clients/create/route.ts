@@ -85,12 +85,13 @@ export async function POST(req: Request) {
 
     /* ── Person (policy holder) ───────────────────────────────── */
     const personRes = await client.query(
-      `INSERT INTO public.person (full_name, id_card, phone_number, address, birth_date, gender, email, occupation, marital_status)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+      `INSERT INTO public.person (full_name, id_card, passport_number, phone_number, address, birth_date, gender, email, occupation, marital_status)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
        RETURNING person_id`,
       [
         body.fullName,
         body.nik,
+        body.passportNumber ? String(body.passportNumber).trim().toUpperCase() : null,
         body.phoneNumber,
         body.address,
         toDate(body.birthDate),

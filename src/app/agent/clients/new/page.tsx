@@ -157,6 +157,7 @@ export default function NewClientPage() {
         // Step 5 — Data Klien
         fullName: "",
         nik: "",
+        passportNumber: "",
         birthDate: "",
         gender: "",
         phoneNumber: "",
@@ -330,6 +331,7 @@ export default function NewClientPage() {
                     benefitDisability:     p.benefit_disability?.toString() || "",
                     benefitCritical:       p.benefit_critical?.toString()  || "",
                     fullName:              p.policy_holder_name     || "",
+                    passportNumber:        p.passport_number        || "",
                 }));
                 if (p.riders?.length)        setRiders(p.riders);
                 if (p.beneficiaries?.length) setBeneficiaries(p.beneficiaries.map((b: { name: string; relationship: string; percentage: number }) => ({ ...b, percentage: b.percentage?.toString() || "" })));
@@ -1211,6 +1213,14 @@ export default function NewClientPage() {
                                                     <Input value={formData.nik} onChange={e => update("nik", e.target.value)} placeholder="16 digit NIK" maxLength={16} className={cn("h-10 rounded-lg bg-background pl-9 tracking-widest", fieldErrors.nik && "border-red-500")} />
                                                 </div>
                                                 <ErrMsg show={fieldErrors.nik} msg="NIK wajib diisi (16 digit)." />
+                                            </div>
+                                            <div className="space-y-1.5">
+                                                <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                                                    Nomor Paspor <span className="normal-case text-[10px] text-gray-400 ml-1">(opsional, sering diminta asuransi)</span>
+                                                </Label>
+                                                <div className="relative"><Globe className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                                                    <Input value={formData.passportNumber} onChange={e => update("passportNumber", e.target.value.toUpperCase())} placeholder="Contoh: A1234567" maxLength={15} className="h-10 rounded-lg bg-background pl-9 tracking-widest uppercase" />
+                                                </div>
                                             </div>
                                             <div className="space-y-1.5">
                                                 <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Email *</Label>

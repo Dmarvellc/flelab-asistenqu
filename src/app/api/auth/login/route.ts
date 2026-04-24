@@ -24,6 +24,29 @@ const PORTAL_ALLOWED_ROLES: Record<LoginPortal, Set<string>> = {
   admin_agency: new Set(["admin_agency", "insurance_admin", "super_admin"]),
 };
 
+const PORTAL_LABEL: Record<LoginPortal, string> = {
+  agent: "Agen",
+  hospital: "Rumah Sakit",
+  developer: "Developer",
+  admin_agency: "Admin Agency",
+};
+
+const PORTAL_LOGIN_PATH: Record<LoginPortal, string> = {
+  agent: "/agent/login",
+  hospital: "/hospital/login",
+  developer: "/developer/login",
+  admin_agency: "/admin-agency/login",
+};
+
+/** Given a user's role, suggest which portal they should use. */
+function suggestPortalForRole(role: string): LoginPortal | null {
+  if (role === "agent" || role === "agent_manager") return "agent";
+  if (role === "admin_agency" || role === "insurance_admin") return "admin_agency";
+  if (role === "hospital_admin") return "hospital";
+  if (role === "developer") return "developer";
+  return null;
+}
+
 const loginSchema = z.object({
   email: z.string().trim().email().max(320).transform((value) => value.toLowerCase()),
   password: z.string().min(8).max(200),
@@ -36,7 +59,10 @@ export async function POST(request: Request) {
   const parsed = loginSchema.safeParse(rawBody);
 
   if (!parsed.success) {
-    return NextResponse.json({ error: "Invalid login payload" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Data login tidak valid. Pastikan email & kata sandi terisi benar." },
+      { status: 400 }
+    );
   }
 
   const body = parsed.data;
@@ -49,7 +75,7 @@ export async function POST(request: Request) {
 
   if (!rateLimit.allowed) {
     return NextResponse.json(
-      { error: "Too many login attempts. Please try again later." },
+      { error: "Terlalu banyak percobaan masuk. Silakan tunggu beberapa menit lalu coba lagi." },
       {
         status: 429,
         headers: {
@@ -66,19 +92,42 @@ export async function POST(request: Request) {
     });
 
     if (!user) {
-      return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
+      return NextResponse.json(
+        { error: "Email atau kata sandi salah. Periksa kembali lalu coba lagi." },
+        { status: 401 }
+      );
     }
 
     const role = normalizeRole(user.role);
     if (!role) {
-      return NextResponse.json({ error: "Account role is invalid" }, { status: 403 });
+      return NextResponse.json(
+        { error: "Peran akun Anda tidak dikenali. Hubungi admin untuk bantuan." },
+        { status: 403 }
+      );
     }
 
     if (body.portal) {
       const allowedRoles = PORTAL_ALLOWED_ROLES[body.portal];
       if (!allowedRoles.has(role)) {
+        const currentLabel = PORTAL_LABEL[body.portal];
+        const suggested = suggestPortalForRole(role);
+        const suggestedLabel = suggested ? PORTAL_LABEL[suggested] : null;
+        const suggestedPath = suggested ? PORTAL_LOGIN_PATH[suggested] : null;
+
+        const message = suggestedLabel && suggestedPath
+          ? `Akun ini adalah akun ${suggestedLabel}, tidak bisa masuk di Portal ${currentLabel}. Silakan gunakan Portal ${suggestedLabel}.`
+          : `Akun ini tidak memiliki akses ke Portal ${currentLabel}. Hubungi admin jika Anda merasa ini keliru.`;
+
         const forbiddenResponse = NextResponse.json(
-          { error: "This account is not allowed to sign in on this portal." },
+          {
+            error: message,
+            reason: "WRONG_PORTAL",
+            suggestedPortal: suggested,
+            suggestedPortalLabel: suggestedLabel,
+            suggestedPath,
+            currentPortal: body.portal,
+            currentPortalLabel: currentLabel,
+          },
           { status: 403 }
         );
         clearLegacyAuthCookies(forbiddenResponse);
@@ -159,7 +208,7 @@ export async function POST(request: Request) {
         : "";
 
     return NextResponse.json(
-      { error: `Login failed${detail}` },
+      { error: `Gagal masuk. Silakan coba lagi dalam beberapa saat${detail}` },
       { status: 500 }
     );
   }

@@ -21,6 +21,7 @@ type ClientDetail = {
     birth_date: string;
     gender: string;
     id_card: string;
+    passport_number?: string | null;
     email?: string;
     occupation?: string;
     marital_status?: string;
@@ -258,6 +259,7 @@ export default function ClientDetailPage() {
                     <div className="p-6 space-y-5">
                         <div className="grid grid-cols-2 gap-4">
                             <Stat label="NIK" value={client.id_card || "—"} />
+                            <Stat label="Nomor Paspor" value={client.passport_number || "—"} />
                             <Stat label="JK" value={<span className="capitalize">{client.gender?.toLowerCase().replace("_"," ") || "—"}</span>} />
                             <Stat label="Lahir" value={date(client.birth_date)} />
                             <Stat label="Status" value={<span className="capitalize">{client.marital_status?.toLowerCase().replace("_"," ") || "—"}</span>} />

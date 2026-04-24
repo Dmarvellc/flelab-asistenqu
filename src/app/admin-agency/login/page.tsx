@@ -6,7 +6,8 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { AlertCircle, Eye, EyeOff, Loader2, ArrowRight, Shield } from "lucide-react";
+import { AlertCircle, Eye, EyeOff, Loader2, ArrowRight } from "lucide-react";
+import { WrongPortalAlert, type WrongPortalInfo } from "@/components/auth/wrong-portal-alert";
 
 export default function AdminAgencyLoginPage() {
   const router = useRouter();
@@ -14,12 +15,14 @@ export default function AdminAgencyLoginPage() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [wrongPortal, setWrongPortal] = useState<WrongPortalInfo | null>(null);
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
     setLoading(true);
     setError(null);
+    setWrongPortal(null);
 
     try {
       const response = await fetch("/api/auth/login", {
@@ -31,18 +34,26 @@ export default function AdminAgencyLoginPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        setError(data.error ?? "Login gagal");
+        if (data?.reason === "WRONG_PORTAL") {
+          setWrongPortal({
+            error: data.error,
+            suggestedPortalLabel: data.suggestedPortalLabel ?? null,
+            suggestedPath: data.suggestedPath ?? null,
+            currentPortalLabel: data.currentPortalLabel,
+          });
+        } else {
+          setError(data.error ?? "Gagal masuk. Silakan coba lagi.");
+        }
         setLoading(false);
         return;
       }
 
-      // Check role
       if (
         data.user?.role !== "admin_agency" &&
         data.user?.role !== "insurance_admin" &&
         data.user?.role !== "super_admin"
       ) {
-        setError("Akun ini tidak memiliki akses sebagai admin agency.");
+        setError("Akun ini tidak memiliki akses sebagai Admin Agency.");
         setLoading(false);
         return;
       }
@@ -50,7 +61,7 @@ export default function AdminAgencyLoginPage() {
       router.push("/admin-agency");
     } catch (err) {
       console.error(err);
-      setError("Terjadi kesalahan yang tidak terduga.");
+      setError("Terjadi kesalahan jaringan. Periksa koneksi internet Anda lalu coba lagi.");
       setLoading(false);
     }
   }
@@ -78,6 +89,8 @@ export default function AdminAgencyLoginPage() {
           <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Login Portal Agency</h1>
           <p className="text-sm text-gray-500 mt-2 text-center">Masuk ke dashboard manajemen operasional agensi untuk melanjutkan.</p>
         </div>
+
+        {wrongPortal && <WrongPortalAlert info={wrongPortal} />}
 
         {error && (
           <div className="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-4 mb-6 animate-in zoom-in-95 duration-200">
