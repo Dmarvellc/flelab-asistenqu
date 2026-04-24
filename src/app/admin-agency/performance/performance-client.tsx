@@ -64,7 +64,7 @@ export default function AdminAgentPerformanceClient({ initialAgents }: { initial
                 </div>
                 <h1 className="text-xl sm:text-3xl font-bold tracking-tight text-gray-900">Performa Agen</h1>
                 <p className="mt-1 text-sm text-gray-500">
-                    Pantau kinerja, poin, rank, dan komisi agen dalam agensi Anda.
+                    Pantau kinerja, poin, rank, dan produktivitas agen dalam agensi Anda.
                 </p>
             </div>
 
@@ -121,7 +121,7 @@ export default function AdminAgentPerformanceClient({ initialAgents }: { initial
                             >
                                 Klaim <SortIcon k="total_claims" />
                             </div>
-                            <div className="col-span-2 text-center">Multiplier</div>
+                            <div className="col-span-2 text-center">Faktor Rank</div>
                         </div>
 
                         {sorted.map((agent, i) => {
@@ -187,7 +187,7 @@ export default function AdminAgentPerformanceClient({ initialAgents }: { initial
                                             </div>
                                         </div>
 
-                                        {/* Commission Multiplier */}
+                                        {/* Rank factor */}
                                         <div className="col-span-2 flex items-center justify-center">
                                             <div className="text-center">
                                                 <p className="text-lg font-bold text-gray-900">{Number(agent.commission_multiplier || 1).toFixed(2)}×</p>
@@ -227,7 +227,7 @@ export default function AdminAgentPerformanceClient({ initialAgents }: { initial
                                                     </p>
                                                 </div>
                                                 <div>
-                                                    <p className="text-xs text-gray-400">Klaim Pending</p>
+                                                    <p className="text-xs text-gray-400">Pending Klaim</p>
                                                     <p className="text-lg font-bold text-gray-900 flex items-center gap-1">
                                                         <Clock className="h-4 w-4 text-gray-400" />
                                                         {agent.pending_claims}

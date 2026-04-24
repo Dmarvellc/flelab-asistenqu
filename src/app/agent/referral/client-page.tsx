@@ -189,7 +189,7 @@ export default function ReferralPage({ initialData }: { initialData: ReferralDat
                         <p className="text-2xl font-bold tabular-nums text-gray-900">
                             {(data?.referral_points ?? 0).toLocaleString("id-ID")} <span className="text-gray-400 font-medium text-sm">poin</span>
                         </p>
-                        <p className="text-xs text-gray-400 mt-2 leading-snug">Poin dapat ditukar dengan benefit platform. Program reward Rupiah menyusul.</p>
+                        <p className="text-xs text-gray-400 mt-2 leading-snug">Poin digunakan sebagai reward aktivitas di platform. Tidak ada nominal uang yang ditampilkan di halaman ini.</p>
                     </div>
                 </motion.div>
             </div>

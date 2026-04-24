@@ -116,7 +116,7 @@ export function DashboardClient({ metrics, claims, initialAgentName, insuranceNa
 
                 <div className="bg-white rounded-3xl border border-gray-100 p-8 shadow-sm flex flex-col justify-center">
                     <h3 className="text-xl font-bold text-gray-900 mb-2">Ayo Tingkatkan Performa!</h3>
-                    <p className="text-[15px] text-gray-500 mb-8 leading-relaxed">Capai target bulan ini untuk menaikkan peringkat kejuaraan dan kalikan komisi Anda.</p>
+                    <p className="text-[15px] text-gray-500 mb-8 leading-relaxed">Capai target bulan ini untuk menaikkan peringkat kejuaraan dan kumpulkan lebih banyak poin prestasi.</p>
 
                     <div className="space-y-4">
                         <Link href="/agent/clients/new" className="flex items-center justify-between p-4 rounded-2xl bg-gray-50 hover:bg-gray-100 border border-gray-100 transition-colors group">

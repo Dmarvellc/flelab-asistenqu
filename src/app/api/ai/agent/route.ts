@@ -36,7 +36,7 @@ Tugas Anda: Membantu agen menulis draf (berikan DRAF SAJA tanpa basa-basi), menj
             }
 
             if (metrics) {
-                systemContext += `\n\n=== Data Performa Anda (Real-Time) ===\n- Total Klien Aktif: ${metrics.activeClients}\n- Polis Pending: ${metrics.pendingContracts}\n- Total Klaim (Semua): ${metrics.totalClaims}\n- Poin Prestasi: ${metrics.points}\n\nAnalisislah metrik ini dan berikan pujian atau dorongan layaknya mentor jika diminta rekapan performa. Jangan sekadar membuat tabel kaku! Berikan narasi yang membangun.`;
+                systemContext += `\n\n=== Data Performa Anda (Real-Time) ===\n- Total Klien Aktif: ${metrics.activeClients}\n- Pending Klaim / Kurang Dokumen: ${metrics.pendingContracts}\n- Total Klaim (Semua): ${metrics.totalClaims}\n- Poin Prestasi: ${metrics.points}\n\nAnalisislah metrik ini dan berikan pujian atau dorongan layaknya mentor jika diminta rekapan performa. Jangan sekadar membuat tabel kaku! Berikan narasi yang membangun.`;
             }
 
             let clientsInfo = "";
