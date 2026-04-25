@@ -2,9 +2,12 @@ import React, { useState } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
   KeyboardAvoidingView, Platform, ActivityIndicator, Pressable,
-  ScrollView,
+  ScrollView, Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+
+const LOGO_URL =
+  'https://jzupwygwzatugbrmqjau.supabase.co/storage/v1/object/sign/image/m_logotext.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV82NWE4NDk3Zi1iNTdiLTQ1ZDMtOWI3ZC0yNDAxNzU4Njg1NTAiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJpbWFnZS9tX2xvZ290ZXh0LnBuZyIsImlhdCI6MTc3MTkwMjgxNywiZXhwIjozMzI3NjM2NjgxN30.BDtpL6pQ6FhAGQF3V05PMC3gHkJ44R2O4vm3yfY2iyQ';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { login } from '@/lib/auth';
@@ -44,13 +47,13 @@ export default function LoginScreen() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          {/* Logo / Brand */}
+          {/* Logo */}
           <View style={styles.brand}>
-            <View style={styles.logoBox}>
-              <Text style={styles.logoLetters}>AQ</Text>
-            </View>
-            <Text style={styles.appName}>AsistenQu</Text>
-            <Text style={styles.tagline}>Platform Manajemen Asuransi</Text>
+            <Image
+              source={{ uri: LOGO_URL }}
+              style={styles.logo}
+              resizeMode="contain"
+            />
           </View>
 
           {/* Form */}
@@ -133,14 +136,7 @@ const styles = StyleSheet.create({
   scroll: { flexGrow: 1, paddingHorizontal: Spacing.lg },
 
   brand: { alignItems: 'center', paddingTop: 64, paddingBottom: 48 },
-  logoBox: {
-    width: 64, height: 64, borderRadius: Radius.xl,
-    backgroundColor: Colors.accent,
-    alignItems: 'center', justifyContent: 'center', marginBottom: 16,
-  },
-  logoLetters: { fontSize: FontSize.xl, fontWeight: '800', color: '#fff', letterSpacing: 1 },
-  appName: { fontSize: FontSize.xxl, fontWeight: '800', color: Colors.text, letterSpacing: -0.5 },
-  tagline: { fontSize: FontSize.sm, color: Colors.textFaint, marginTop: 4 },
+  logo: { width: 180, height: 40 },
 
   form: {
     borderWidth: 1, borderColor: Colors.border,
