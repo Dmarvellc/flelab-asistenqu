@@ -1,70 +1,73 @@
 export const Colors = {
-  primary: '#0f172a',
+  // Backgrounds
+  bg: '#ffffff',
+  bgSubtle: '#f9fafb',       // gray-50
+
+  // Borders
+  border: '#f3f4f6',         // gray-100
+  borderMid: '#e5e7eb',      // gray-200
+
+  // Text
+  text: '#111827',           // gray-900
+  textSecondary: '#374151',  // gray-700
+  textMuted: '#6b7280',      // gray-500
+  textFaint: '#9ca3af',      // gray-400
+
+  // Accent (indigo)
   accent: '#6366f1',
   accentLight: '#818cf8',
-  success: '#10b981',
-  warning: '#f59e0b',
-  danger: '#ef4444',
-  background: '#f1f5f9',
-  card: '#ffffff',
-  border: '#e2e8f0',
-  text: '#0f172a',
-  textSecondary: '#64748b',
-  textMuted: '#94a3b8',
-  white: '#ffffff',
+  accentBg: '#eef2ff',       // indigo-50
 
-  gradientDark: ['#0f172a', '#1e293b'] as const,
-  gradientAccent: ['#6366f1', '#818cf8'] as const,
-  gradientSuccess: ['#059669', '#10b981'] as const,
+  // Semantic
+  success: '#059669',        // emerald-600
+  successBg: '#d1fae5',      // emerald-100
+  warning: '#d97706',        // amber-600
+  warningBg: '#fef3c7',      // amber-100
+  danger: '#dc2626',         // red-600
+  dangerBg: '#fee2e2',       // red-100
+
+  // Avatar spectrum (matches web)
+  avatars: [
+    { bg: '#dbeafe', text: '#1d4ed8' },   // blue-100 / blue-700
+    { bg: '#ede9fe', text: '#6d28d9' },   // violet-100 / violet-700
+    { bg: '#d1fae5', text: '#065f46' },   // emerald-100 / emerald-700
+    { bg: '#fef3c7', text: '#92400e' },   // amber-100 / amber-700
+    { bg: '#ffe4e6', text: '#9f1239' },   // rose-100 / rose-700
+    { bg: '#ccfbf1', text: '#115e59' },   // teal-100 / teal-700
+  ],
+
+  // Badge colors
+  violet: '#7c3aed',
+  violetBg: '#ede9fe',
+  blue: '#1d4ed8',
+  blueBg: '#dbeafe',
 };
 
 export const Spacing = {
   xs: 4,
   sm: 8,
   md: 16,
-  lg: 24,
-  xl: 32,
-  xxl: 48,
+  lg: 20,      // px-5 = 20px
+  xl: 24,
+  xxl: 32,
 };
 
 export const Radius = {
-  sm: 8,
-  md: 12,
-  lg: 16,
-  xl: 24,
+  sm: 6,
+  md: 10,
+  lg: 14,
+  xl: 18,
+  xxl: 22,
   full: 999,
 };
 
 export const FontSize = {
+  xxs: 10,
   xs: 11,
   sm: 13,
   md: 15,
   lg: 17,
   xl: 20,
   xxl: 24,
-  xxxl: 32,
-};
-
-export const Shadow = {
-  sm: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  md: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.10,
-    shadowRadius: 12,
-    elevation: 5,
-  },
-  lg: {
-    shadowColor: '#6366f1',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.20,
-    shadowRadius: 20,
-    elevation: 10,
-  },
+  xxxl: 30,
 };

@@ -7,7 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { api } from '@/lib/api';
-import { Colors, FontSize, Radius, Shadow, Spacing } from '@/constants/theme';
+import { Colors, FontSize, Radius, Spacing } from '@/constants/theme';
 
 interface Client {
   client_id: string;
@@ -20,62 +20,48 @@ interface Client {
   total_claims: number;
 }
 
-const AVATAR_COLORS = [
-  { bg: '#ede9fe', text: '#7c3aed' },
-  { bg: '#d1fae5', text: '#065f46' },
-  { bg: '#dbeafe', text: '#1e40af' },
-  { bg: '#fef3c7', text: '#92400e' },
-  { bg: '#ffe4e6', text: '#9f1239' },
-];
-
 function avatarColor(name: string) {
   const sum = [...name].reduce((s, c) => s + c.charCodeAt(0), 0);
-  return AVATAR_COLORS[sum % AVATAR_COLORS.length];
+  return Colors.avatars[sum % Colors.avatars.length];
 }
 
-function ClientCard({ client, onPress }: { client: Client; onPress: () => void }) {
+function fmtDate(iso: string) {
+  const d = new Date(iso);
+  const diff = Date.now() - d.getTime();
+  const days = Math.floor(diff / 86400000);
+  if (days < 1) return 'Hari ini';
+  if (days < 30) return `${days}h lalu`;
+  return d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+
+function ClientRow({ client, onPress, last }: { client: Client; onPress: () => void; last?: boolean }) {
   const av = avatarColor(client.full_name);
   return (
-    <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.75}>
+    <TouchableOpacity
+      style={[styles.row, last && styles.rowLast]}
+      onPress={onPress}
+      activeOpacity={0.55}
+    >
       <View style={[styles.avatar, { backgroundColor: av.bg }]}>
         <Text style={[styles.avatarText, { color: av.text }]}>
           {client.full_name[0]?.toUpperCase()}
         </Text>
       </View>
-      <View style={{ flex: 1 }}>
-        <Text style={styles.clientName} numberOfLines={1}>{client.full_name}</Text>
-        <Text style={styles.clientMeta} numberOfLines={1}>
-          {client.agent_name ?? '—'} · {client.agency_name ?? '—'}
+      <View style={styles.rowBody}>
+        <Text style={styles.rowName} numberOfLines={1}>{client.full_name}</Text>
+        <Text style={styles.rowMeta} numberOfLines={1}>
+          {client.agent_name ?? '—'}
+          {client.agency_name ? ` · ${client.agency_name}` : ''}
         </Text>
-        <View style={styles.badges}>
-          <View style={styles.badge}>
-            <Ionicons name="shield-checkmark-outline" size={11} color={Colors.accent} />
-            <Text style={[styles.badgeText, { color: Colors.accent }]}>{client.total_policies} polis</Text>
-          </View>
-          <View style={[styles.badge, { backgroundColor: '#fef3c7' }]}>
-            <Ionicons name="document-text-outline" size={11} color="#b45309" />
-            <Text style={[styles.badgeText, { color: '#b45309' }]}>{client.total_claims} klaim</Text>
-          </View>
+      </View>
+      <View style={styles.rowRight}>
+        <View style={styles.polisTag}>
+          <Text style={styles.polisTagText}>{client.total_policies} polis</Text>
         </View>
+        <Text style={styles.rowDate}>{fmtDate(client.created_at)}</Text>
       </View>
-      <Ionicons name="chevron-forward" size={16} color={Colors.textMuted} />
+      <Ionicons name="chevron-forward" size={14} color={Colors.textFaint} style={{ marginLeft: 4 }} />
     </TouchableOpacity>
-  );
-}
-
-function EmptyState({ search }: { search: string }) {
-  return (
-    <View style={styles.empty}>
-      <View style={styles.emptyIcon}>
-        <Ionicons name="people-outline" size={32} color={Colors.textMuted} />
-      </View>
-      <Text style={styles.emptyTitle}>
-        {search ? 'Klien tidak ditemukan' : 'Belum ada klien'}
-      </Text>
-      <Text style={styles.emptySub}>
-        {search ? `Tidak ada hasil untuk "${search}"` : 'Klien yang Anda daftarkan akan muncul di sini'}
-      </Text>
-    </View>
   );
 }
 
@@ -86,69 +72,65 @@ export default function ClientsScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [search, setSearch] = useState('');
+  const [searchFocused, setSearchFocused] = useState(false);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [total, setTotal] = useState(0);
   const [loadingMore, setLoadingMore] = useState(false);
   const debounce = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const fetchClients = useCallback(async (q: string, pg: number, append = false) => {
-    if (pg === 1) !append && setLoading(true);
-    else setLoadingMore(true);
+    if (pg === 1 && !append) setLoading(true);
+    else if (pg > 1) setLoadingMore(true);
     try {
       const params = new URLSearchParams({ page: pg.toString(), limit: '20', search: q });
-      const res = await api.get<{ data: Client[]; meta: { totalPages: number } }>(
+      const res = await api.get<{ data: Client[]; meta: { totalPages: number; total: number } }>(
         `/api/agent/clients?${params}`
       );
       setClients(prev => append ? [...prev, ...res.data] : res.data);
       setTotalPages(res.meta.totalPages);
-    } catch { /* silent */ } finally {
-      setLoading(false);
-      setRefreshing(false);
-      setLoadingMore(false);
+      setTotal(res.meta.total);
+    } catch { } finally {
+      setLoading(false); setRefreshing(false); setLoadingMore(false);
     }
   }, []);
 
   useEffect(() => {
     if (debounce.current) clearTimeout(debounce.current);
-    debounce.current = setTimeout(() => {
-      setPage(1);
-      fetchClients(search, 1);
-    }, 350);
+    debounce.current = setTimeout(() => { setPage(1); fetchClients(search, 1); }, 320);
     return () => { if (debounce.current) clearTimeout(debounce.current); };
   }, [search, fetchClients]);
 
-  const onEndReached = () => {
-    if (loadingMore || page >= totalPages) return;
-    const next = page + 1;
-    setPage(next);
-    fetchClients(search, next, true);
-  };
-
   return (
-    <View style={{ flex: 1, backgroundColor: Colors.background }}>
+    <View style={[styles.root, { paddingTop: insets.top }]}>
       {/* Header */}
-      <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
-        <Text style={styles.headerTitle}>Klien</Text>
-        <TouchableOpacity style={styles.addBtn} activeOpacity={0.8}>
-          <Ionicons name="add" size={20} color="#fff" />
-        </TouchableOpacity>
-      </View>
+      <View style={styles.header}>
+        <View style={styles.headerTop}>
+          <View>
+            <Text style={styles.pageTitle}>Klien</Text>
+            <Text style={styles.pageCount}>{total.toLocaleString('id-ID')} terdaftar</Text>
+          </View>
+          <TouchableOpacity style={styles.addBtn} activeOpacity={0.8}>
+            <Ionicons name="add" size={19} color="#fff" />
+          </TouchableOpacity>
+        </View>
 
-      {/* Search */}
-      <View style={styles.searchWrap}>
-        <View style={styles.searchBox}>
-          <Ionicons name="search-outline" size={16} color={Colors.textMuted} />
+        {/* Search */}
+        <View style={[styles.searchRow, searchFocused && styles.searchRowFocused]}>
+          <Ionicons name="search-outline" size={15} color={Colors.textFaint} />
           <TextInput
             style={styles.searchInput}
             value={search}
             onChangeText={setSearch}
+            onFocus={() => setSearchFocused(true)}
+            onBlur={() => setSearchFocused(false)}
             placeholder="Cari nama, agen, agensi…"
-            placeholderTextColor={Colors.textMuted}
+            placeholderTextColor={Colors.textFaint}
             returnKeyType="search"
           />
           {search ? (
-            <Pressable onPress={() => setSearch('')}>
-              <Ionicons name="close-circle" size={16} color={Colors.textMuted} />
+            <Pressable onPress={() => setSearch('')} hitSlop={8}>
+              <Ionicons name="close-circle" size={15} color={Colors.textFaint} />
             </Pressable>
           ) : null}
         </View>
@@ -156,36 +138,53 @@ export default function ClientsScreen() {
 
       {loading ? (
         <View style={styles.loader}>
-          <ActivityIndicator color={Colors.accent} size="large" />
+          <ActivityIndicator color={Colors.textMuted} />
         </View>
       ) : (
         <FlatList
           data={clients}
           keyExtractor={item => item.client_id}
-          renderItem={({ item }) => (
-            <ClientCard
+          renderItem={({ item, index }) => (
+            <ClientRow
               client={item}
               onPress={() => router.push(`/clients/${item.client_id}`)}
+              last={index === clients.length - 1}
             />
           )}
           contentContainerStyle={[
             styles.list,
             { paddingBottom: insets.bottom + 80 },
-            clients.length === 0 && { flex: 1 },
+            clients.length === 0 && styles.listEmpty,
           ]}
-          ListEmptyComponent={<EmptyState search={search} />}
+          ListEmptyComponent={
+            <View style={styles.empty}>
+              <View style={styles.emptyIcon}>
+                <Ionicons name="people-outline" size={28} color={Colors.textFaint} />
+              </View>
+              <Text style={styles.emptyTitle}>
+                {search ? 'Tidak ditemukan' : 'Belum ada klien'}
+              </Text>
+              <Text style={styles.emptySub}>
+                {search ? `Tidak ada hasil untuk "${search}"` : 'Klien yang didaftarkan akan muncul di sini'}
+              </Text>
+            </View>
+          }
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
               onRefresh={() => { setRefreshing(true); setPage(1); fetchClients(search, 1); }}
-              tintColor={Colors.accent}
+              tintColor={Colors.textMuted}
             />
           }
-          onEndReached={onEndReached}
-          onEndReachedThreshold={0.3}
+          onEndReached={() => {
+            if (loadingMore || page >= totalPages) return;
+            const next = page + 1; setPage(next);
+            fetchClients(search, next, true);
+          }}
+          onEndReachedThreshold={0.4}
           ListFooterComponent={
             loadingMore
-              ? <ActivityIndicator style={{ marginVertical: 16 }} color={Colors.accent} />
+              ? <ActivityIndicator style={{ marginVertical: 20 }} color={Colors.textMuted} />
               : null
           }
           showsVerticalScrollIndicator={false}
@@ -196,58 +195,69 @@ export default function ClientsScreen() {
 }
 
 const styles = StyleSheet.create({
+  root: { flex: 1, backgroundColor: Colors.bg },
+
   header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    backgroundColor: Colors.card,
     paddingHorizontal: Spacing.lg, paddingBottom: Spacing.md,
     borderBottomWidth: 1, borderBottomColor: Colors.border,
+    gap: 12,
   },
-  headerTitle: { fontSize: FontSize.xxl, fontWeight: '800', color: Colors.text },
+  headerTop: {
+    flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between',
+    paddingTop: 14,
+  },
+  pageTitle: { fontSize: FontSize.xxl, fontWeight: '800', color: Colors.text, letterSpacing: -0.3 },
+  pageCount: { fontSize: FontSize.sm, color: Colors.textFaint, marginTop: 2 },
   addBtn: {
-    width: 36, height: 36, borderRadius: Radius.md,
-    backgroundColor: Colors.accent,
+    width: 34, height: 34, borderRadius: Radius.md,
+    backgroundColor: Colors.text,
     alignItems: 'center', justifyContent: 'center',
   },
 
-  searchWrap: {
-    paddingHorizontal: Spacing.lg, paddingVertical: Spacing.md,
-    backgroundColor: Colors.card, borderBottomWidth: 1, borderBottomColor: Colors.border,
-  },
-  searchBox: {
+  searchRow: {
     flexDirection: 'row', alignItems: 'center', gap: 8,
-    backgroundColor: Colors.background, borderRadius: Radius.lg,
-    paddingHorizontal: 12, height: 40,
+    borderWidth: 1.5, borderColor: Colors.borderMid,
+    borderRadius: Radius.md, paddingHorizontal: 12, height: 40,
+    backgroundColor: Colors.bgSubtle,
   },
+  searchRowFocused: { borderColor: Colors.text, backgroundColor: Colors.bg },
   searchInput: { flex: 1, fontSize: FontSize.sm, color: Colors.text },
 
   loader: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  list: { padding: Spacing.lg, gap: 10 },
+  list: { paddingTop: 0 },
+  listEmpty: { flex: 1 },
 
-  card: {
+  row: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
-    backgroundColor: Colors.card, borderRadius: Radius.lg,
-    padding: Spacing.md, ...Shadow.sm,
+    paddingHorizontal: Spacing.lg, paddingVertical: 14,
+    borderBottomWidth: 1, borderBottomColor: Colors.border,
+    backgroundColor: Colors.bg,
   },
-  avatar: {
-    width: 44, height: 44, borderRadius: Radius.full,
-    alignItems: 'center', justifyContent: 'center',
-  },
-  avatarText: { fontSize: FontSize.lg, fontWeight: '800' },
-  clientName: { fontSize: FontSize.md, fontWeight: '700', color: Colors.text, marginBottom: 2 },
-  clientMeta: { fontSize: FontSize.xs, color: Colors.textMuted, marginBottom: 6 },
-  badges: { flexDirection: 'row', gap: 6 },
-  badge: {
-    flexDirection: 'row', alignItems: 'center', gap: 3,
-    backgroundColor: 'rgba(99,102,241,0.1)',
-    borderRadius: Radius.full, paddingHorizontal: 7, paddingVertical: 3,
-  },
-  badgeText: { fontSize: 10, fontWeight: '600' },
+  rowLast: { borderBottomWidth: 0 },
 
-  empty: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: Spacing.xxl },
-  emptyIcon: {
-    width: 72, height: 72, borderRadius: Radius.xl,
-    backgroundColor: Colors.border, alignItems: 'center', justifyContent: 'center', marginBottom: Spacing.md,
+  avatar: {
+    width: 40, height: 40, borderRadius: Radius.full,
+    alignItems: 'center', justifyContent: 'center', flexShrink: 0,
   },
-  emptyTitle: { fontSize: FontSize.lg, fontWeight: '700', color: Colors.text, marginBottom: 6 },
-  emptySub: { fontSize: FontSize.sm, color: Colors.textMuted, textAlign: 'center' },
+  avatarText: { fontSize: FontSize.md, fontWeight: '800' },
+
+  rowBody: { flex: 1, minWidth: 0 },
+  rowName: { fontSize: FontSize.sm, fontWeight: '700', color: Colors.text, marginBottom: 2 },
+  rowMeta: { fontSize: FontSize.xs, color: Colors.textFaint },
+
+  rowRight: { alignItems: 'flex-end', gap: 4 },
+  polisTag: {
+    backgroundColor: Colors.accentBg,
+    borderRadius: Radius.full, paddingHorizontal: 7, paddingVertical: 2,
+  },
+  polisTagText: { fontSize: FontSize.xxs, fontWeight: '700', color: Colors.accent },
+  rowDate: { fontSize: FontSize.xxs, color: Colors.textFaint },
+
+  empty: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 40 },
+  emptyIcon: {
+    width: 56, height: 56, borderRadius: Radius.full,
+    backgroundColor: Colors.border, alignItems: 'center', justifyContent: 'center', marginBottom: 12,
+  },
+  emptyTitle: { fontSize: FontSize.lg, fontWeight: '700', color: Colors.text, marginBottom: 4 },
+  emptySub: { fontSize: FontSize.sm, color: Colors.textFaint, textAlign: 'center', lineHeight: 20 },
 });

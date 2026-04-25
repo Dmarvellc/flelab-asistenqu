@@ -1,13 +1,12 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   View, Text, FlatList, StyleSheet, TouchableOpacity,
-  ActivityIndicator, RefreshControl,
+  ActivityIndicator, RefreshControl, ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { api } from '@/lib/api';
-import { Colors, FontSize, Radius, Shadow, Spacing } from '@/constants/theme';
+import { Colors, FontSize, Radius, Spacing } from '@/constants/theme';
 
 interface Claim {
   claim_id: string;
@@ -16,53 +15,53 @@ interface Claim {
   status: string;
   amount: number;
   submitted_at: string;
-  claim_type?: string;
 }
 
-const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; icon: keyof typeof Ionicons.glyphMap }> = {
-  PENDING:   { label: 'Menunggu',  color: '#b45309', bg: '#fef3c7', icon: 'time-outline' },
-  REVIEW:    { label: 'Ditinjau', color: '#1e40af', bg: '#dbeafe', icon: 'eye-outline' },
-  APPROVED:  { label: 'Disetujui', color: '#065f46', bg: '#d1fae5', icon: 'checkmark-circle-outline' },
-  REJECTED:  { label: 'Ditolak',  color: '#9f1239', bg: '#ffe4e6', icon: 'close-circle-outline' },
-  PAID:      { label: 'Dibayar',  color: '#065f46', bg: '#d1fae5', icon: 'cash-outline' },
+const STATUS: Record<string, { label: string; color: string; bg: string }> = {
+  PENDING:  { label: 'Menunggu',  color: Colors.warning,  bg: Colors.warningBg },
+  REVIEW:   { label: 'Ditinjau', color: Colors.blue,     bg: Colors.blueBg },
+  APPROVED: { label: 'Disetujui', color: Colors.success,  bg: Colors.successBg },
+  REJECTED: { label: 'Ditolak',  color: Colors.danger,   bg: Colors.dangerBg },
+  PAID:     { label: 'Dibayar',  color: Colors.success,  bg: Colors.successBg },
 };
 
+const FILTERS = [
+  { key: '',         label: 'Semua' },
+  { key: 'PENDING',  label: 'Menunggu' },
+  { key: 'REVIEW',   label: 'Ditinjau' },
+  { key: 'APPROVED', label: 'Disetujui' },
+];
+
 function fmtCurrency(n: number) {
-  return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(n);
+  return new Intl.NumberFormat('id-ID', {
+    style: 'currency', currency: 'IDR', maximumFractionDigits: 0,
+  }).format(n);
 }
 
 function fmtDate(iso: string) {
   return new Date(iso).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
-function ClaimCard({ item }: { item: Claim }) {
-  const cfg = STATUS_CONFIG[item.status] ?? STATUS_CONFIG['PENDING'];
+function ClaimRow({ item, last }: { item: Claim; last?: boolean }) {
+  const cfg = STATUS[item.status] ?? STATUS['PENDING'];
   return (
-    <View style={[styles.card, Shadow.sm]}>
-      <View style={styles.cardTop}>
-        <View>
+    <View style={[styles.row, last && styles.rowLast]}>
+      <View style={styles.rowLeft}>
+        <View style={styles.rowTop}>
           <Text style={styles.claimNum}>{item.claim_number}</Text>
-          <Text style={styles.clientName} numberOfLines={1}>{item.client_name}</Text>
+          <View style={[styles.statusPill, { backgroundColor: cfg.bg }]}>
+            <Text style={[styles.statusText, { color: cfg.color }]}>{cfg.label}</Text>
+          </View>
         </View>
-        <View style={[styles.statusBadge, { backgroundColor: cfg.bg }]}>
-          <Ionicons name={cfg.icon} size={12} color={cfg.color} />
-          <Text style={[styles.statusText, { color: cfg.color }]}>{cfg.label}</Text>
-        </View>
+        <Text style={styles.clientName} numberOfLines={1}>{item.client_name}</Text>
       </View>
-      <View style={styles.cardBottom}>
+      <View style={styles.rowRight}>
         <Text style={styles.amount}>{fmtCurrency(item.amount)}</Text>
         <Text style={styles.date}>{fmtDate(item.submitted_at)}</Text>
       </View>
     </View>
   );
 }
-
-const FILTER_TABS = [
-  { key: '', label: 'Semua' },
-  { key: 'PENDING', label: 'Menunggu' },
-  { key: 'REVIEW', label: 'Ditinjau' },
-  { key: 'APPROVED', label: 'Disetujui' },
-];
 
 export default function ClaimsScreen() {
   const insets = useSafeAreaInsets();
@@ -76,64 +75,64 @@ export default function ClaimsScreen() {
       const params = filter ? `?status=${filter}` : '';
       const res = await api.get<{ data: Claim[] }>(`/api/agent/claims${params}`);
       setClaims(res.data ?? []);
-    } catch { /* silent */ } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
+    } catch { } finally { setLoading(false); setRefreshing(false); }
   }, [filter]);
 
   useEffect(() => { fetchClaims(); }, [fetchClaims]);
 
-  const totalPending = claims.filter(c => c.status === 'PENDING').length;
+  const pending = claims.filter(c => c.status === 'PENDING').length;
 
   return (
-    <View style={{ flex: 1, backgroundColor: Colors.background }}>
+    <View style={[styles.root, { paddingTop: insets.top }]}>
       {/* Header */}
-      <LinearGradient
-        colors={['#0f172a', '#1e293b']}
-        style={[styles.header, { paddingTop: insets.top + 8 }]}
-      >
-        <Text style={styles.headerTitle}>Klaim</Text>
-        {totalPending > 0 && (
-          <View style={styles.pendingBadge}>
-            <Text style={styles.pendingText}>{totalPending} menunggu</Text>
+      <View style={styles.header}>
+        <View style={styles.headerTop}>
+          <View>
+            <Text style={styles.pageTitle}>Klaim</Text>
+            <Text style={styles.pageCount}>{claims.length.toLocaleString('id-ID')} klaim</Text>
           </View>
-        )}
-      </LinearGradient>
+          {pending > 0 && (
+            <View style={[styles.pendingPill, { backgroundColor: Colors.warningBg }]}>
+              <Text style={[styles.pendingText, { color: Colors.warning }]}>{pending} menunggu</Text>
+            </View>
+          )}
+        </View>
 
-      {/* Filter tabs */}
-      <View style={styles.filterRow}>
-        {FILTER_TABS.map(tab => (
-          <TouchableOpacity
-            key={tab.key}
-            style={[styles.filterTab, filter === tab.key && styles.filterTabActive]}
-            onPress={() => setFilter(tab.key)}
-            activeOpacity={0.7}
-          >
-            <Text style={[styles.filterText, filter === tab.key && styles.filterTextActive]}>
-              {tab.label}
-            </Text>
-          </TouchableOpacity>
-        ))}
+        {/* Filter tabs */}
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll}>
+          <View style={styles.filterRow}>
+            {FILTERS.map(f => (
+              <TouchableOpacity
+                key={f.key}
+                onPress={() => setFilter(f.key)}
+                style={[styles.filterTab, filter === f.key && styles.filterTabActive]}
+                activeOpacity={0.7}
+              >
+                <Text style={[styles.filterText, filter === f.key && styles.filterTextActive]}>
+                  {f.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </ScrollView>
       </View>
 
       {loading ? (
-        <View style={styles.loader}>
-          <ActivityIndicator color={Colors.accent} size="large" />
-        </View>
+        <View style={styles.loader}><ActivityIndicator color={Colors.textMuted} /></View>
       ) : (
         <FlatList
           data={claims}
           keyExtractor={item => item.claim_id}
-          renderItem={({ item }) => <ClaimCard item={item} />}
+          renderItem={({ item, index }) => (
+            <ClaimRow item={item} last={index === claims.length - 1} />
+          )}
           contentContainerStyle={[
-            styles.list,
             { paddingBottom: insets.bottom + 80 },
             claims.length === 0 && { flex: 1 },
           ]}
           ListEmptyComponent={
             <View style={styles.empty}>
-              <Ionicons name="document-text-outline" size={48} color={Colors.textMuted} />
+              <Ionicons name="document-text-outline" size={28} color={Colors.textFaint} />
               <Text style={styles.emptyText}>Belum ada klaim</Text>
             </View>
           }
@@ -141,7 +140,7 @@ export default function ClaimsScreen() {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={() => { setRefreshing(true); fetchClaims(); }}
-              tintColor={Colors.accent}
+              tintColor={Colors.textMuted}
             />
           }
           showsVerticalScrollIndicator={false}
@@ -152,54 +151,54 @@ export default function ClaimsScreen() {
 }
 
 const styles = StyleSheet.create({
+  root: { flex: 1, backgroundColor: Colors.bg },
+
   header: {
-    paddingHorizontal: Spacing.lg, paddingBottom: Spacing.lg,
-    flexDirection: 'row', alignItems: 'center', gap: 10,
+    paddingHorizontal: Spacing.lg, paddingBottom: Spacing.sm,
+    borderBottomWidth: 1, borderBottomColor: Colors.border,
+    gap: 10,
   },
-  headerTitle: { fontSize: FontSize.xxl, fontWeight: '800', color: '#fff' },
-  pendingBadge: {
-    backgroundColor: '#fbbf24',
+  headerTop: {
+    flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', paddingTop: 14,
+  },
+  pageTitle: { fontSize: FontSize.xxl, fontWeight: '800', color: Colors.text, letterSpacing: -0.3 },
+  pageCount: { fontSize: FontSize.sm, color: Colors.textFaint, marginTop: 2 },
+  pendingPill: {
     borderRadius: Radius.full, paddingHorizontal: 10, paddingVertical: 4,
   },
-  pendingText: { fontSize: FontSize.xs, fontWeight: '700', color: '#92400e' },
+  pendingText: { fontSize: FontSize.xs, fontWeight: '700' },
 
-  filterRow: {
-    flexDirection: 'row', gap: 8, paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.md, backgroundColor: Colors.card,
-    borderBottomWidth: 1, borderBottomColor: Colors.border,
-  },
+  filterScroll: { marginHorizontal: -Spacing.lg },
+  filterRow: { flexDirection: 'row', gap: 6, paddingHorizontal: Spacing.lg, paddingBottom: 2 },
   filterTab: {
     paddingHorizontal: 14, paddingVertical: 6,
-    borderRadius: Radius.full, backgroundColor: Colors.background,
+    borderRadius: Radius.full, borderWidth: 1, borderColor: Colors.borderMid,
   },
-  filterTabActive: { backgroundColor: Colors.accent },
-  filterText: { fontSize: FontSize.xs, fontWeight: '600', color: Colors.textSecondary },
+  filterTabActive: { backgroundColor: Colors.text, borderColor: Colors.text },
+  filterText: { fontSize: FontSize.xs, fontWeight: '600', color: Colors.textMuted },
   filterTextActive: { color: '#fff' },
 
   loader: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  list: { padding: Spacing.lg, gap: 10 },
 
-  card: {
-    backgroundColor: Colors.card, borderRadius: Radius.lg, padding: Spacing.md,
+  row: {
+    flexDirection: 'row', alignItems: 'center', gap: 12,
+    paddingHorizontal: Spacing.lg, paddingVertical: 14,
+    borderBottomWidth: 1, borderBottomColor: Colors.border,
   },
-  cardTop: {
-    flexDirection: 'row', alignItems: 'flex-start',
-    justifyContent: 'space-between', marginBottom: Spacing.md,
+  rowLast: { borderBottomWidth: 0 },
+  rowLeft: { flex: 1, minWidth: 0 },
+  rowTop: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 3 },
+  claimNum: { fontSize: FontSize.sm, fontWeight: '700', color: Colors.text },
+  statusPill: {
+    borderRadius: Radius.full, paddingHorizontal: 7, paddingVertical: 2,
   },
-  claimNum: { fontSize: FontSize.sm, fontWeight: '700', color: Colors.text, marginBottom: 2 },
-  clientName: { fontSize: FontSize.xs, color: Colors.textMuted, maxWidth: 200 },
-  statusBadge: {
-    flexDirection: 'row', alignItems: 'center', gap: 4,
-    borderRadius: Radius.full, paddingHorizontal: 8, paddingVertical: 4,
-  },
-  statusText: { fontSize: 10, fontWeight: '700' },
-  cardBottom: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingTop: Spacing.md, borderTopWidth: 1, borderTopColor: Colors.border,
-  },
-  amount: { fontSize: FontSize.md, fontWeight: '800', color: Colors.text },
-  date: { fontSize: FontSize.xs, color: Colors.textMuted },
+  statusText: { fontSize: FontSize.xxs, fontWeight: '700' },
+  clientName: { fontSize: FontSize.xs, color: Colors.textFaint },
+
+  rowRight: { alignItems: 'flex-end', gap: 3 },
+  amount: { fontSize: FontSize.sm, fontWeight: '800', color: Colors.text },
+  date: { fontSize: FontSize.xxs, color: Colors.textFaint },
 
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 8 },
-  emptyText: { fontSize: FontSize.md, color: Colors.textMuted, fontWeight: '500' },
+  emptyText: { fontSize: FontSize.md, color: Colors.textFaint, fontWeight: '500' },
 });

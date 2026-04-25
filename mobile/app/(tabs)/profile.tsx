@@ -3,45 +3,60 @@ import {
   View, Text, StyleSheet, TouchableOpacity,
   ScrollView, Alert,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { logout } from '@/lib/auth';
 import { useAuth } from '@/lib/context';
-import { Colors, FontSize, Radius, Shadow, Spacing } from '@/constants/theme';
+import { Colors, FontSize, Radius, Spacing } from '@/constants/theme';
 
-interface MenuItemProps {
+const ROLE_LABELS: Record<string, string> = {
+  agent:          'Agen Asuransi',
+  developer:      'Developer',
+  super_admin:    'Super Admin',
+  admin_agency:   'Admin Agensi',
+  hospital_admin: 'Admin Rumah Sakit',
+};
+
+function SectionTitle({ title }: { title: string }) {
+  return (
+    <Text style={styles.sectionTitle}>{title}</Text>
+  );
+}
+
+function MenuRow({
+  icon, label, subtitle, onPress, rightLabel, danger, last,
+}: {
   icon: keyof typeof Ionicons.glyphMap;
   label: string;
   subtitle?: string;
   onPress: () => void;
+  rightLabel?: string;
   danger?: boolean;
-  rightEl?: React.ReactNode;
-}
-
-function MenuItem({ icon, label, subtitle, onPress, danger, rightEl }: MenuItemProps) {
-  const color = danger ? Colors.danger : Colors.text;
+  last?: boolean;
+}) {
   return (
-    <TouchableOpacity style={styles.menuItem} onPress={onPress} activeOpacity={0.7}>
-      <View style={[styles.menuIcon, { backgroundColor: danger ? '#fef2f2' : Colors.background }]}>
-        <Ionicons name={icon} size={18} color={danger ? Colors.danger : Colors.accent} />
+    <TouchableOpacity
+      style={[styles.menuRow, last && styles.menuRowLast]}
+      onPress={onPress}
+      activeOpacity={0.55}
+    >
+      <View style={[styles.menuIconWrap, danger && { backgroundColor: Colors.dangerBg }]}>
+        <Ionicons
+          name={icon}
+          size={17}
+          color={danger ? Colors.danger : Colors.textSecondary}
+        />
       </View>
       <View style={{ flex: 1 }}>
-        <Text style={[styles.menuLabel, { color }]}>{label}</Text>
-        {subtitle && <Text style={styles.menuSub}>{subtitle}</Text>}
+        <Text style={[styles.menuLabel, danger && { color: Colors.danger }]}>{label}</Text>
+        {subtitle ? <Text style={styles.menuSub}>{subtitle}</Text> : null}
       </View>
-      {rightEl ?? <Ionicons name="chevron-forward" size={16} color={Colors.textMuted} />}
+      {rightLabel
+        ? <Text style={styles.menuRight}>{rightLabel}</Text>
+        : <Ionicons name="chevron-forward" size={14} color={Colors.textFaint} />
+      }
     </TouchableOpacity>
-  );
-}
-
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <View style={styles.section}>
-      <Text style={styles.sectionTitle}>{title}</Text>
-      <View style={[styles.sectionCard, Shadow.sm]}>{children}</View>
-    </View>
   );
 }
 
@@ -50,166 +65,135 @@ export default function ProfileScreen() {
   const router = useRouter();
   const { user, setUser } = useAuth();
 
-  const roleLabelMap: Record<string, string> = {
-    agent: 'Agen Asuransi',
-    developer: 'Developer',
-    super_admin: 'Super Admin',
-    admin_agency: 'Admin Agensi',
-    hospital_admin: 'Admin Rumah Sakit',
-  };
+  const displayName = user?.name || user?.email?.split('@')[0] || 'Pengguna';
+  const initials = displayName.split(' ').map((w: string) => w[0]).slice(0, 2).join('').toUpperCase();
 
-  const handleLogout = () => {
-    Alert.alert(
-      'Keluar',
-      'Apakah Anda yakin ingin keluar dari akun ini?',
-      [
-        { text: 'Batal', style: 'cancel' },
-        {
-          text: 'Keluar', style: 'destructive',
-          onPress: async () => {
-            await logout();
-            setUser(null);
-            router.replace('/(auth)/login');
-          },
-        },
-      ]
-    );
-  };
+  function avatarColor() {
+    const sum = [...displayName].reduce((s, c) => s + c.charCodeAt(0), 0);
+    return Colors.avatars[sum % Colors.avatars.length];
+  }
+  const av = avatarColor();
 
-  const initials = (user?.name || user?.email || 'U')
-    .split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase();
+  const handleLogout = () =>
+    Alert.alert('Keluar', 'Yakin ingin keluar dari akun ini?', [
+      { text: 'Batal', style: 'cancel' },
+      {
+        text: 'Keluar', style: 'destructive',
+        onPress: async () => { await logout(); setUser(null); router.replace('/(auth)/login'); },
+      },
+    ]);
 
   return (
-    <View style={{ flex: 1, backgroundColor: Colors.background }}>
+    <View style={[styles.root, { paddingTop: insets.top }]}>
       {/* Header */}
-      <LinearGradient
-        colors={['#0f172a', '#1e293b']}
-        style={[styles.header, { paddingTop: insets.top + 8 }]}
+      <View style={styles.header}>
+        <Text style={styles.pageTitle}>Profil</Text>
+      </View>
+
+      <ScrollView
+        contentContainerStyle={{ paddingBottom: insets.bottom + 80 }}
+        showsVerticalScrollIndicator={false}
       >
-        <View style={styles.profileRow}>
-          <View style={styles.avatarCircle}>
-            <Text style={styles.avatarText}>{initials}</Text>
+        {/* Identity block */}
+        <View style={styles.identityBlock}>
+          <View style={[styles.avatarCircle, { backgroundColor: av.bg }]}>
+            <Text style={[styles.avatarLetters, { color: av.text }]}>{initials}</Text>
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={styles.userName} numberOfLines={1}>
-              {user?.name || 'Pengguna'}
-            </Text>
+            <Text style={styles.userName} numberOfLines={1}>{displayName}</Text>
             <Text style={styles.userEmail} numberOfLines={1}>{user?.email}</Text>
-            <View style={styles.rolePill}>
-              <Text style={styles.roleText}>
-                {roleLabelMap[user?.role ?? ''] ?? user?.role}
+            <View style={[styles.rolePill, { backgroundColor: Colors.accentBg }]}>
+              <Text style={[styles.roleText, { color: Colors.accent }]}>
+                {ROLE_LABELS[user?.role ?? ''] ?? user?.role}
               </Text>
             </View>
           </View>
         </View>
-      </LinearGradient>
 
-      <ScrollView
-        contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}
-        showsVerticalScrollIndicator={false}
-      >
-        <Section title="Akun">
-          <MenuItem
-            icon="person-outline"
-            label="Edit Profil"
-            subtitle="Ubah nama & foto"
-            onPress={() => {}}
-          />
-          <View style={styles.divider} />
-          <MenuItem
-            icon="lock-closed-outline"
-            label="Ubah Password"
-            onPress={() => {}}
-          />
-          <View style={styles.divider} />
-          <MenuItem
-            icon="notifications-outline"
-            label="Notifikasi"
-            subtitle="Atur preferensi notifikasi"
-            onPress={() => {}}
-          />
-        </Section>
+        <View style={styles.divider} />
 
-        <Section title="Aplikasi">
-          <MenuItem
-            icon="information-circle-outline"
-            label="Tentang AsistenQu"
-            subtitle="Versi 1.0.0"
-            onPress={() => {}}
-            rightEl={<Text style={styles.version}>v1.0.0</Text>}
-          />
-          <View style={styles.divider} />
-          <MenuItem
-            icon="help-circle-outline"
-            label="Bantuan & Dukungan"
-            onPress={() => {}}
-          />
-          <View style={styles.divider} />
-          <MenuItem
-            icon="document-text-outline"
-            label="Kebijakan Privasi"
-            onPress={() => {}}
-          />
-        </Section>
+        {/* Account section */}
+        <SectionTitle title="Akun" />
+        <MenuRow icon="person-outline"       label="Edit Profil"          subtitle="Nama & foto"            onPress={() => {}} />
+        <MenuRow icon="lock-closed-outline"  label="Ubah Password"                                          onPress={() => {}} />
+        <MenuRow icon="notifications-outline" label="Notifikasi"          subtitle="Preferensi pemberitahuan" onPress={() => {}} last />
 
-        <Section title="">
-          <MenuItem
-            icon="log-out-outline"
-            label="Keluar"
-            onPress={handleLogout}
-            danger
-          />
-        </Section>
+        <View style={styles.divider} />
 
-        <Text style={styles.footNote}>AsistenQu © 2025 · FLELab</Text>
+        {/* App section */}
+        <SectionTitle title="Aplikasi" />
+        <MenuRow icon="information-circle-outline" label="Tentang AsistenQu" rightLabel="v1.0.0" onPress={() => {}} />
+        <MenuRow icon="help-circle-outline"        label="Bantuan & Dukungan"                   onPress={() => {}} />
+        <MenuRow icon="document-text-outline"      label="Kebijakan Privasi"                    onPress={() => {}} last />
+
+        <View style={styles.divider} />
+
+        {/* Logout */}
+        <MenuRow
+          icon="log-out-outline"
+          label="Keluar"
+          onPress={handleLogout}
+          danger
+          last
+        />
+
+        <Text style={styles.footer}>AsistenQu © 2025 · FLELab</Text>
       </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  root: { flex: 1, backgroundColor: Colors.bg },
+
   header: {
-    paddingHorizontal: Spacing.lg, paddingBottom: Spacing.xl,
+    paddingHorizontal: Spacing.lg, paddingTop: 14, paddingBottom: 14,
+    borderBottomWidth: 1, borderBottomColor: Colors.border,
   },
-  profileRow: { flexDirection: 'row', alignItems: 'center', gap: 14 },
+  pageTitle: { fontSize: FontSize.xxl, fontWeight: '800', color: Colors.text, letterSpacing: -0.3 },
+
+  identityBlock: {
+    flexDirection: 'row', alignItems: 'center', gap: 14,
+    paddingHorizontal: Spacing.lg, paddingVertical: Spacing.xl,
+  },
   avatarCircle: {
-    width: 64, height: 64, borderRadius: Radius.full,
-    backgroundColor: 'rgba(99,102,241,0.25)',
-    borderWidth: 2, borderColor: 'rgba(99,102,241,0.4)',
-    alignItems: 'center', justifyContent: 'center',
+    width: 60, height: 60, borderRadius: Radius.full,
+    alignItems: 'center', justifyContent: 'center', flexShrink: 0,
   },
-  avatarText: { fontSize: FontSize.xl, fontWeight: '800', color: Colors.accentLight },
-  userName: { fontSize: FontSize.lg, fontWeight: '800', color: '#fff', marginBottom: 2 },
-  userEmail: { fontSize: FontSize.xs, color: 'rgba(255,255,255,0.5)', marginBottom: 8 },
+  avatarLetters: { fontSize: FontSize.xl, fontWeight: '800' },
+  userName: { fontSize: FontSize.lg, fontWeight: '800', color: Colors.text, marginBottom: 2 },
+  userEmail: { fontSize: FontSize.sm, color: Colors.textFaint, marginBottom: 8 },
   rolePill: {
     alignSelf: 'flex-start',
-    backgroundColor: 'rgba(99,102,241,0.2)',
-    borderRadius: Radius.full, paddingHorizontal: 10, paddingVertical: 3,
+    borderRadius: Radius.full, paddingHorizontal: 8, paddingVertical: 3,
   },
-  roleText: { fontSize: FontSize.xs, fontWeight: '700', color: Colors.accentLight },
+  roleText: { fontSize: FontSize.xxs, fontWeight: '700', letterSpacing: 0.3 },
 
-  section: { paddingHorizontal: Spacing.lg, marginTop: Spacing.lg },
+  divider: { height: 8, backgroundColor: Colors.bgSubtle, borderTopWidth: 1, borderBottomWidth: 1, borderColor: Colors.border },
+
   sectionTitle: {
-    fontSize: FontSize.xs, fontWeight: '700', color: Colors.textMuted,
-    letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 8,
+    fontSize: FontSize.xs, fontWeight: '700', color: Colors.textFaint,
+    textTransform: 'uppercase', letterSpacing: 1,
+    paddingHorizontal: Spacing.lg, paddingTop: 20, paddingBottom: 6,
   },
-  sectionCard: { backgroundColor: Colors.card, borderRadius: Radius.lg, overflow: 'hidden' },
 
-  menuItem: {
+  menuRow: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
-    padding: Spacing.md,
+    paddingHorizontal: Spacing.lg, paddingVertical: 13,
+    borderBottomWidth: 1, borderBottomColor: Colors.border,
   },
-  menuIcon: {
-    width: 36, height: 36, borderRadius: Radius.md,
+  menuRowLast: { borderBottomWidth: 0 },
+  menuIconWrap: {
+    width: 32, height: 32, borderRadius: Radius.md,
+    backgroundColor: Colors.bgSubtle,
     alignItems: 'center', justifyContent: 'center',
   },
-  menuLabel: { fontSize: FontSize.md, fontWeight: '600' },
-  menuSub: { fontSize: FontSize.xs, color: Colors.textMuted, marginTop: 1 },
-  divider: { height: 1, backgroundColor: Colors.border, marginLeft: 60 },
-  version: { fontSize: FontSize.xs, color: Colors.textMuted, fontWeight: '600' },
+  menuLabel: { fontSize: FontSize.sm, fontWeight: '600', color: Colors.text },
+  menuSub: { fontSize: FontSize.xs, color: Colors.textFaint, marginTop: 1 },
+  menuRight: { fontSize: FontSize.sm, color: Colors.textFaint, fontWeight: '500' },
 
-  footNote: {
+  footer: {
     textAlign: 'center', fontSize: FontSize.xs,
-    color: Colors.textMuted, marginTop: Spacing.xl,
+    color: Colors.textFaint, marginTop: 32, marginBottom: 8,
   },
 });
