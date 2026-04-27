@@ -20,6 +20,7 @@ import {
   Server,
   Building2,
   UserCheck,
+  FlaskConical,
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -133,6 +134,18 @@ export default function DeveloperLayout({
           active={pathname === "/developer/clients"}
         >
           Klien
+        </NavItem>
+
+        {/* ── Developer Tools ── */}
+        <div className="px-2 pb-1 pt-4">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 px-2">Dev Tools</p>
+        </div>
+        <NavItem
+          href="/developer/sandbox"
+          icon={FlaskConical}
+          active={pathname === "/developer/sandbox"}
+        >
+          Sandbox
         </NavItem>
       </SidebarContent>
 
