@@ -155,7 +155,7 @@ export function AgentLayoutClient({ children, initialBadges, serverUserName }: {
             <SidebarFooter>
                 {userName && (
                     <div className="mb-6 px-2">
-                        <p className="text-xs font-semibold text-gray-400 tracking-wider uppercase mb-1">Logged in as</p>
+                        <p className="text-xs font-semibold text-gray-400 tracking-wider uppercase mb-1">Masuk sebagai</p>
                         <p className="text-sm font-semibold text-gray-900 truncate">{userName}</p>
                     </div>
                 )}
@@ -164,7 +164,7 @@ export function AgentLayoutClient({ children, initialBadges, serverUserName }: {
                 <div className="flex items-center justify-between px-2 py-3 text-gray-500 mb-2 border-b border-gray-100 pb-4">
                     <div className="flex items-center gap-2 text-[13px] font-medium">
                         <Globe className="w-4 h-4 text-gray-400" />
-                        <span>Language</span>
+                        <span>Bahasa</span>
                     </div>
                     <div className="flex gap-1 bg-gray-100 rounded-lg p-1 shadow-inner">
                         <button

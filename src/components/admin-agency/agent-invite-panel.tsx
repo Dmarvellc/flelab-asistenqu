@@ -209,7 +209,7 @@ export function AgentInvitePanel() {
                 Link berlaku sampai {result.expiresAt && fmt(result.expiresAt)}.
               </p>
               <div className="flex items-stretch gap-2">
-                <div className="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-xs text-gray-700 font-mono break-all">
+                <div className="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-xs text-gray-700 break-all">
                   {result.inviteUrl}
                 </div>
                 <Button onClick={() => copy(result.inviteUrl!)} className="bg-gray-900 hover:bg-gray-800 rounded-xl gap-1.5 shrink-0">
@@ -232,15 +232,15 @@ export function AgentInvitePanel() {
             <>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1 block">Email *</label>
+                  <label className="text-xs font-medium text-gray-500 mb-1 block">Email *</label>
                   <Input value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} placeholder="agen@email.com" className="rounded-xl" />
                 </div>
                 <div>
-                  <label className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1 block">Nama Lengkap</label>
+                  <label className="text-xs font-medium text-gray-500 mb-1 block">Nama Lengkap</label>
                   <Input value={form.fullName} onChange={e => setForm({ ...form, fullName: e.target.value })} placeholder="Nama lengkap" className="rounded-xl" />
                 </div>
                 <div className="sm:col-span-2">
-                  <label className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1 block">No. HP (opsional)</label>
+                  <label className="text-xs font-medium text-gray-500 mb-1 block">No. HP (opsional)</label>
                   <Input value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} placeholder="+62812..." className="rounded-xl" />
                 </div>
               </div>
@@ -277,11 +277,7 @@ export function AgentInvitePanel() {
               const isProc = reqProcessing === req.request_id;
               return (
                 <div key={req.request_id} className="flex flex-col sm:flex-row sm:items-center gap-3 px-5 sm:px-6 py-4 hover:bg-gray-50/50 transition-colors">
-                  <div className="flex items-start gap-3 flex-1 min-w-0">
-                    <div className="h-10 w-10 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center shrink-0 text-sm font-bold text-blue-700">
-                      {label.charAt(0).toUpperCase()}
-                    </div>
-                    <div className="min-w-0 flex-1">
+                  <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold text-gray-900 truncate">{label}</p>
                       <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 mt-0.5">
                         <span className="text-[11px] text-gray-400 flex items-center gap-1 truncate">
@@ -300,7 +296,6 @@ export function AgentInvitePanel() {
                         </p>
                       )}
                       <p className="text-[10px] text-gray-400 mt-1">Dikirim {fmt(req.created_at)}</p>
-                    </div>
                   </div>
                   <div className="flex items-center gap-2 sm:shrink-0">
                     <Button onClick={() => handleJoin(req.request_id, "reject", label)} variant="outline" size="sm" disabled={isProc} className="rounded-xl gap-1.5 text-xs">

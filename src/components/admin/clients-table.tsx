@@ -19,15 +19,6 @@ import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
-/* ─── Shared utils ──────────────────────────────────────────────── */
-const AVATAR_COLORS = [
-  "bg-violet-100 text-violet-700", "bg-blue-100 text-blue-700",
-  "bg-emerald-100 text-emerald-700", "bg-amber-100 text-amber-700",
-  "bg-rose-100 text-rose-700", "bg-cyan-100 text-cyan-700",
-  "bg-pink-100 text-pink-700", "bg-indigo-100 text-indigo-700",
-];
-const avatarColor = (s: string) => AVATAR_COLORS[(s.charCodeAt(0) || 0) % AVATAR_COLORS.length];
-
 type SortKey = "full_name" | "total_policies" | "agent_name";
 type SortDir = "asc" | "desc";
 
@@ -227,8 +218,6 @@ export function ClientsTable({ clients: initialClients, agents }: Props) {
               ) : (
                 rows.map((client, idx) => {
                   const isSel    = selected.has(client.client_id);
-                  const color    = avatarColor(client.full_name);
-                  const agentClr = avatarColor(client.agent_name);
                   const polPct   = Math.round((client.total_policies / maxPolicies) * 100);
                   return (
                     <tr key={client.client_id}
@@ -242,12 +231,7 @@ export function ClientsTable({ clients: initialClients, agents }: Props) {
 
                       {/* Client */}
                       <td className="py-3.5 pr-4">
-                        <div className="flex items-center gap-2.5">
-                          <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center text-[12px] font-bold shrink-0", color)}>
-                            {client.full_name.charAt(0).toUpperCase()}
-                          </div>
-                          <p className="text-[13px] font-semibold text-gray-900 truncate max-w-[160px]">{client.full_name}</p>
-                        </div>
+                        <p className="text-[13px] font-semibold text-gray-900 truncate max-w-[180px]">{client.full_name}</p>
                       </td>
 
                       {/* Policies with mini bar */}
@@ -268,12 +252,7 @@ export function ClientsTable({ clients: initialClients, agents }: Props) {
 
                       {/* Agent */}
                       <td className="py-3.5 pr-4">
-                        <div className="flex items-center gap-2">
-                          <div className={cn("w-6 h-6 rounded-md flex items-center justify-center text-[10px] font-bold shrink-0", agentClr)}>
-                            {client.agent_name.charAt(0).toUpperCase()}
-                          </div>
-                          <span className="text-[13px] text-gray-600 truncate max-w-[140px]">{client.agent_name}</span>
-                        </div>
+                        <span className="text-[13px] text-gray-600 truncate max-w-[160px]">{client.agent_name}</span>
                       </td>
 
                       {/* Action */}

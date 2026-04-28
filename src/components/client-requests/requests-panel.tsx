@@ -323,7 +323,7 @@ function RequestDetailSheet({
               <Row
                 label="Atas permintaan"
                 value={`${RELATION_LABELS[detail.requested_by_relation]}${
-                  detail.requested_by_name ? ` — ${detail.requested_by_name}` : ""
+                  detail.requested_by_name ? ` oleh ${detail.requested_by_name}` : ""
                 }`}
               />
               {Object.entries(detail.payload ?? {}).map(([k, v]) => (
@@ -346,7 +346,7 @@ function RequestDetailSheet({
                 {mode === "hospital" && (
                   <>
                     <Input
-                      placeholder="Alasan / catatan (opsional — wajib saat tolak)"
+                      placeholder="Alasan atau catatan. Wajib saat menolak."
                       value={reason}
                       onChange={(e) => setReason(e.target.value)}
                     />
@@ -501,7 +501,7 @@ function statusVerb(from: ClientRequestStatus | null, to: ClientRequestStatus): 
   if (to === "approved") return "Disetujui";
   if (to === "rejected") return "Ditolak";
   if (to === "cancelled") return "Dibatalkan";
-  return `${STATUS_LABELS[from]} → ${STATUS_LABELS[to]}`;
+  return `${STATUS_LABELS[from]} lalu ${STATUS_LABELS[to]}`;
 }
 
 // Unused-import guard (pending clock icon reserved for future use)

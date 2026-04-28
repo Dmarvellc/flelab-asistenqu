@@ -126,7 +126,7 @@ function ServiceRow({ svc }: { svc: ServiceCheck }) {
         </span>
 
         {/* Latency */}
-        <span className={`hidden sm:block text-xs font-mono font-bold tabular-nums w-14 text-right ${latencyClass(svc.latencyMs, svc.status)}`}>
+        <span className={`hidden sm:block text-xs font-bold tabular-nums w-14 text-right ${latencyClass(svc.latencyMs, svc.status)}`}>
           {fmtLatency(svc.latencyMs, svc.status)}
         </span>
 

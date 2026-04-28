@@ -4,8 +4,8 @@ import { useEffect, useState, useMemo, useRef } from "react";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
 import {
-  Search, X, Check, ArrowRight, ArrowRightLeft,
-  CheckCircle2, XCircle, Loader2, Download, Trash2,
+  Search, X, Check, ArrowRightLeft,
+  CheckCircle2, XCircle, Loader2, Download,
   ChevronUp, ChevronDown, ChevronsUpDown,
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
@@ -22,15 +22,6 @@ interface TransferRequest {
   request_reason: string;
   requested_at: string;
 }
-
-/* ─── Shared utils ──────────────────────────────────────────────── */
-const AVATAR_COLORS = [
-  "bg-violet-100 text-violet-700", "bg-blue-100 text-blue-700",
-  "bg-emerald-100 text-emerald-700", "bg-amber-100 text-amber-700",
-  "bg-rose-100 text-rose-700", "bg-cyan-100 text-cyan-700",
-  "bg-pink-100 text-pink-700", "bg-indigo-100 text-indigo-700",
-];
-const avatarColor = (s: string) => AVATAR_COLORS[(s.charCodeAt(0) || 0) % AVATAR_COLORS.length];
 
 function relDate(iso: string) {
   const diff = Date.now() - new Date(iso).getTime();
@@ -279,7 +270,6 @@ export function TransferRequestsTable() {
             ) : (
               rows.map((req, idx) => {
                 const isSel    = selected.has(req.request_id);
-                const color    = avatarColor(req.agent_name);
                 const isProcss = processingId === req.request_id;
                 return (
                   <tr key={req.request_id}
@@ -293,23 +283,17 @@ export function TransferRequestsTable() {
 
                     {/* Agent */}
                     <td className="py-3.5 pr-4">
-                      <div className="flex items-center gap-2.5">
-                        <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center text-[12px] font-bold shrink-0", color)}>
-                          {req.agent_name.charAt(0).toUpperCase()}
-                        </div>
-                        <p className="text-[13px] font-semibold text-gray-900 truncate max-w-[130px]">{req.agent_name}</p>
-                      </div>
+                      <p className="text-[13px] font-semibold text-gray-900 truncate max-w-[150px]">{req.agent_name}</p>
                     </td>
 
-                    {/* Route: From → To */}
+                    {/* Route */}
                     <td className="py-3.5 pr-4">
-                      <div className="flex items-center gap-1.5 text-[12px]">
+                      <div className="flex flex-col text-[12px] leading-tight">
                         <span className="text-gray-400 truncate max-w-[90px]" title={req.from_agency_name || "—"}>
-                          {req.from_agency_name || <span className="italic">—</span>}
+                          Dari {req.from_agency_name || "belum ada"}
                         </span>
-                        <ArrowRight className="w-3 h-3 text-gray-300 shrink-0" />
                         <span className="font-semibold text-gray-700 truncate max-w-[90px]" title={req.to_agency_name}>
-                          {req.to_agency_name}
+                          Ke {req.to_agency_name}
                         </span>
                       </div>
                     </td>

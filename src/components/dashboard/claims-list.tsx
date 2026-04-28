@@ -89,7 +89,7 @@ export function ClaimsList({ role, claims: propClaims }: ClaimsListProps) {
             <div className="flex flex-col gap-1.5 flex-1 min-w-0">
               <div className="flex items-center gap-3 flex-wrap">
                 <span className="font-semibold text-gray-900 text-[15px]">{claim.client_name}</span>
-                <span className="text-xs text-gray-400 font-mono tracking-wide">#{claim.claim_number || `${claim.claim_id.slice(0, 8)}`}</span>
+                <span className="text-xs text-gray-400">{claim.claim_number || `${claim.claim_id.slice(0, 8)}`}</span>
 
                 {/* Minimalist Status */}
                 <div className="flex items-center gap-1.5 text-xs font-medium">

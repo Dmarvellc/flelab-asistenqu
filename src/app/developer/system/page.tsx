@@ -310,7 +310,7 @@ export default function SystemHealthPage() {
                                                 <td className="px-6 py-3">
                                                     <div className="flex items-center gap-2">
                                                         <span className="w-1.5 h-1.5 rounded-full bg-blue-400 shrink-0" />
-                                                        <span className="font-mono text-xs font-semibold text-gray-700">{t.table_name}</span>
+                                                        <span className="text-xs font-semibold text-gray-700">{t.table_name}</span>
                                                     </div>
                                                 </td>
                                                 <td className="px-6 py-3 text-right">
@@ -319,7 +319,7 @@ export default function SystemHealthPage() {
                                                     </span>
                                                 </td>
                                                 <td className="px-6 py-3 text-right">
-                                                    <span className="text-xs text-gray-500 font-mono">{t.total_size}</span>
+                                                    <span className="text-xs text-gray-500">{t.total_size}</span>
                                                 </td>
                                                 <td className="px-6 py-3 w-48">
                                                     <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
@@ -361,9 +361,6 @@ export default function SystemHealthPage() {
                             (data?.topAgents ?? []).map((agent, i) => (
                                 <div key={agent.email} className="flex items-center gap-4 px-6 py-3 border-t border-gray-50 first:border-t-0 hover:bg-gray-50/50 transition-colors">
                                     <span className="text-xs font-black text-gray-300 w-5 tabular-nums">{i + 1}</span>
-                                    <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center shrink-0 text-xs font-bold text-blue-600">
-                                        {(agent.full_name ?? agent.email)[0].toUpperCase()}
-                                    </div>
                                     <div className="flex-1 min-w-0">
                                         <p className="text-sm font-semibold text-gray-800 truncate">{agent.full_name ?? agent.email}</p>
                                         <p className="text-xs text-gray-400 truncate">{agent.full_name ? agent.email : "—"}</p>
@@ -397,9 +394,6 @@ export default function SystemHealthPage() {
                             (data?.agencyStats ?? []).map((agency, i) => (
                                 <div key={agency.agency_id} className="flex items-center gap-4 px-6 py-3 border-t border-gray-50 first:border-t-0 hover:bg-gray-50/50 transition-colors">
                                     <span className="text-xs font-black text-gray-300 w-5 tabular-nums">{i + 1}</span>
-                                    <div className="w-8 h-8 rounded-full bg-violet-50 flex items-center justify-center shrink-0 text-xs font-bold text-violet-600">
-                                        {agency.name[0].toUpperCase()}
-                                    </div>
                                     <div className="flex-1 min-w-0">
                                         <p className="text-sm font-semibold text-gray-800 truncate">{agency.name}</p>
                                         <p className="text-xs text-gray-400">{agency.claim_count} claims</p>

@@ -27,19 +27,6 @@ const STATUS_CFG: Record<string, { dot: string; label: string; text: string; bg:
 };
 const FALLBACK_STATUS = { dot: "bg-gray-300", label: "—", text: "text-gray-500", bg: "bg-gray-50", ring: "ring-gray-100" };
 
-/* ─── Avatar colour based on name initial ───────────────────────── */
-const AVATAR_COLORS = [
-  "bg-violet-100 text-violet-700",
-  "bg-blue-100 text-blue-700",
-  "bg-emerald-100 text-emerald-700",
-  "bg-amber-100 text-amber-700",
-  "bg-rose-100 text-rose-700",
-  "bg-cyan-100 text-cyan-700",
-  "bg-pink-100 text-pink-700",
-  "bg-indigo-100 text-indigo-700",
-];
-const avatarColor = (name: string) => AVATAR_COLORS[(name.charCodeAt(0) || 0) % AVATAR_COLORS.length];
-
 /* ─── Helpers ───────────────────────────────────────────────────── */
 function fmtIDR(n: number) {
   if (n >= 1_000_000) return `Rp ${(n / 1_000_000).toFixed(1).replace(/\.0$/, "")} jt`;
@@ -314,7 +301,7 @@ export function ClaimsDataTable({ claims: raw, limit, showViewAll = true, role =
                     <button
                       onClick={() => cycleSort(h.col!)}
                       className={cn(
-                        "group/th flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider transition-colors",
+                        "group/th flex items-center gap-1.5 text-[11px] font-semibold transition-colors",
                         sort.key === h.col ? "text-gray-800" : "text-gray-400 hover:text-gray-600",
                         h.right && "ml-auto"
                       )}
@@ -323,7 +310,7 @@ export function ClaimsDataTable({ claims: raw, limit, showViewAll = true, role =
                       <SortIcon col={h.col} />
                     </button>
                   ) : (
-                    <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
+                    <span className="text-[11px] font-semibold text-gray-400">
                       {h.label}
                     </span>
                   )}
@@ -362,7 +349,6 @@ export function ClaimsDataTable({ claims: raw, limit, showViewAll = true, role =
               rows.map((claim, idx) => {
                 const cfg  = STATUS_CFG[claim.status] || FALLBACK_STATUS;
                 const isSel = selected.has(claim.claim_id);
-                const color = avatarColor(claim.client_name);
                 return (
                   <tr
                     key={claim.claim_id}
@@ -383,14 +369,9 @@ export function ClaimsDataTable({ claims: raw, limit, showViewAll = true, role =
 
                     {/* Client */}
                     <td className="py-3.5 pr-4">
-                      <div className="flex items-center gap-2.5">
-                        <div className={cn("w-7 h-7 rounded-lg flex items-center justify-center text-[11px] font-bold shrink-0", color)}>
-                          {claim.client_name.charAt(0).toUpperCase()}
-                        </div>
-                        <div className="min-w-0">
-                          <p className="text-[13px] font-semibold text-gray-900 truncate max-w-[130px] leading-tight">{claim.client_name}</p>
-                          <p className="text-[10px] text-gray-400 font-mono tracking-wide mt-0.5">{claim.policy_number}</p>
-                        </div>
+                      <div className="min-w-0">
+                        <p className="text-[13px] font-semibold text-gray-900 truncate max-w-[150px] leading-tight">{claim.client_name}</p>
+                        <p className="text-[10px] text-gray-400 tracking-wide mt-0.5">{claim.policy_number}</p>
                       </div>
                     </td>
 

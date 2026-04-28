@@ -119,7 +119,7 @@ export function RemindersWidget() {
                                         </div>
                                         <span className="shrink-0 flex items-center gap-1.5">
                                             <span className={`h-1.5 w-1.5 rounded-full ${SEV_DOT[it.severity]}`} />
-                                            <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
+                                            <span className="text-[10px] font-semibold text-gray-400">
                                                 {it.severity === "OVERDUE"
                                                     ? `${Math.abs(it.days_until)}h lewat`
                                                     : it.days_until === 0

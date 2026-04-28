@@ -140,7 +140,7 @@ export function ClaimTimeline({
                     <h3 className="text-base font-bold text-gray-900 flex items-center gap-2">
                         <History className="w-4 h-4 text-gray-500" /> Riwayat Klaim
                     </h3>
-                    <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
+                    <span className="text-[11px] font-semibold text-gray-400">
                         {events.length} aktivitas
                     </span>
                 </div>
@@ -165,13 +165,13 @@ export function ClaimTimeline({
                                     <div className="flex items-center gap-2 flex-wrap">
                                         <p className="text-sm font-semibold text-gray-900">{meta.label}</p>
                                         {e.from_status && e.to_status && (
-                                            <span className="inline-flex items-center gap-1 text-[10px] font-mono px-1.5 py-0.5 rounded bg-gray-50 border border-gray-100 text-gray-600">
+                                            <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-gray-50 border border-gray-100 text-gray-600">
                                                 {e.from_status} <ArrowRight className="w-3 h-3" /> {e.to_status}
                                             </span>
                                         )}
                                         {!e.from_status && e.to_status && (
-                                            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-gray-50 border border-gray-100 text-gray-600">
-                                                → {e.to_status}
+                                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-50 border border-gray-100 text-gray-600">
+                                                Status baru {e.to_status}
                                             </span>
                                         )}
                                     </div>
@@ -186,7 +186,7 @@ export function ClaimTimeline({
                                             <span className="font-medium text-gray-500">{e.actor_name}</span>
                                         )}
                                         {e.actor_role && (
-                                            <span className="px-1.5 py-0.5 rounded bg-gray-50 border border-gray-100 font-semibold uppercase tracking-wider text-[9px] text-gray-500">
+                                            <span className="px-1.5 py-0.5 rounded bg-gray-50 border border-gray-100 font-semibold text-[9px] text-gray-500">
                                                 {roleLabel(e.actor_role)}
                                             </span>
                                         )}
@@ -222,7 +222,7 @@ function ExtraData({ data }: { data: Record<string, unknown> }) {
                 <div className="rounded-lg bg-gray-50 border border-gray-100 p-2 space-y-0.5">
                     {entries.map(([k, v]) => (
                         <div key={k} className="flex gap-2">
-                            <span className="text-gray-400 font-mono shrink-0">{k}:</span>
+                            <span className="text-gray-400 shrink-0">{k}:</span>
                             <span className="text-gray-700 truncate">
                                 {typeof v === "object" ? JSON.stringify(v) : String(v)}
                             </span>

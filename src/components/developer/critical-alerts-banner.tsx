@@ -149,7 +149,7 @@ export function CriticalAlertsBanner() {
                     </span>
                   )}
                   {a.requestPath && (
-                    <span className="text-[10px] text-gray-400 font-mono truncate">
+                    <span className="text-[10px] text-gray-400 truncate">
                       {a.requestPath}
                     </span>
                   )}

@@ -2,9 +2,6 @@
 
 import React, { useEffect, useState, useCallback } from "react";
 import {
-  LineChart, Line, ResponsiveContainer
-} from "recharts";
-import {
   MoreHorizontal, Link2,
 } from "lucide-react";
 import { CriticalAlertsBanner } from "@/components/developer/critical-alerts-banner";
@@ -192,11 +189,7 @@ export function DeveloperClientView({ initialData }: { initialData?: Analytics |
           </div>
           <p className="text-xs text-gray-400 mb-4">Pengguna baru — 14 hari terakhir</p>
           <div className="flex-1 w-full -mx-2 mt-2">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={(data?.sparklines?.users ?? []).map(v => ({ v }))}>
-                <Line type="stepAfter" dataKey="v" stroke="#f472b6" strokeWidth={3} dot={false} isAnimationActive={false} />
-              </LineChart>
-            </ResponsiveContainer>
+            <Sparkline values={data?.sparklines?.users ?? []} />
           </div>
           {wowDiff !== null && (
             <p className="text-xs text-gray-400 mt-3">
@@ -334,5 +327,45 @@ function MiniBar({ label, color, pct, striped }: { label: string; color: string;
         />
       </div>
     </div>
+  );
+}
+
+function Sparkline({ values }: { values: number[] }) {
+  if (values.length === 0) {
+    return <div className="h-full w-full rounded-2xl bg-gray-50" />;
+  }
+
+  const width = 320;
+  const height = 120;
+  const padding = 10;
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const range = Math.max(max - min, 1);
+
+  const points = values.map((value, index) => {
+    const x = values.length === 1
+      ? width / 2
+      : padding + (index / (values.length - 1)) * (width - padding * 2);
+    const y = height - padding - ((value - min) / range) * (height - padding * 2);
+    return { x, y };
+  });
+
+  const path = points
+    .map((point, index) => `${index === 0 ? "M" : "L"} ${point.x.toFixed(2)} ${point.y.toFixed(2)}`)
+    .join(" ");
+
+  const areaPath = `${path} L ${points[points.length - 1].x.toFixed(2)} ${height - padding} L ${points[0].x.toFixed(2)} ${height - padding} Z`;
+
+  return (
+    <svg viewBox={`0 0 ${width} ${height}`} className="h-full w-full overflow-visible" preserveAspectRatio="none">
+      <defs>
+        <linearGradient id="registration-sparkline-fill" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0%" stopColor="#f9a8d4" stopOpacity="0.35" />
+          <stop offset="100%" stopColor="#f9a8d4" stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <path d={areaPath} fill="url(#registration-sparkline-fill)" />
+      <path d={path} fill="none" stroke="#f472b6" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
+    </svg>
   );
 }

@@ -2,9 +2,9 @@
 
 import { useState, useEffect, useCallback, useRef } from "react"
 import {
-  FlaskConical, Plus, Trash2, Copy, Check, Clock, RefreshCw,
+  Box, Plus, Trash2, Copy, Check, Clock, RefreshCw,
   Shield, AlertTriangle, CheckCircle2, XCircle, ChevronDown,
-  ChevronUp, Eye, EyeOff, Terminal, Zap, Users, Building2,
+  ChevronUp, Eye, EyeOff, MonitorPlay, Zap, Users, Building2,
   Stethoscope, UserCheck, Timer, Info, Loader2
 } from "lucide-react"
 
@@ -43,7 +43,7 @@ const ROLE_META: Record<string, { label: string; icon: React.ElementType; color:
     label: "Admin Agency",
     icon: Building2,
     color: "bg-blue-50 text-blue-700 border-blue-200",
-    loginPath: "/agent/login",
+    loginPath: "/admin-agency/login",
   },
   hospital_admin: {
     label: "Hospital Admin",
@@ -121,18 +121,24 @@ function AccountRow({ acc, sessionStatus }: { acc: SandboxAccount; sessionStatus
           {meta.label}
         </span>
         {isAlive && (
-          <a
-            href={`${meta.loginPath}?hint=${encodeURIComponent(acc.email)}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-[10px] text-blue-500 hover:underline font-medium"
-          >
-            Login →
-          </a>
+          <div className="flex items-center gap-2">
+            <a
+              href={`${meta.loginPath}?hint=${encodeURIComponent(acc.email)}&force=true`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[10px] text-blue-500 hover:underline font-medium"
+              title="Akan me-logout sesi Anda saat ini"
+            >
+              Login &rarr;
+            </a>
+            <span className="text-[9px] text-gray-400" title="Gunakan Incognito agar sesi developer tidak ter-logout">
+              (Gunakan Incognito)
+            </span>
+          </div>
         )}
       </div>
 
-      <div className="space-y-1.5 font-mono text-[11px]">
+      <div className="space-y-1.5 text-[11px]">
         {/* Email */}
         <div className="flex items-center gap-2 bg-gray-50 rounded-lg px-2.5 py-1.5">
           <span className="text-gray-400 w-14 shrink-0">Email</span>
@@ -142,7 +148,7 @@ function AccountRow({ acc, sessionStatus }: { acc: SandboxAccount; sessionStatus
         {/* Password */}
         <div className="flex items-center gap-2 bg-gray-50 rounded-lg px-2.5 py-1.5">
           <span className="text-gray-400 w-14 shrink-0">Password</span>
-          <span className="text-gray-800 flex-1 font-mono">{showPass ? acc.password : "••••••••••"}</span>
+          <span className="text-gray-800 flex-1">{showPass ? acc.password : "••••••••••"}</span>
           <button onClick={() => setShowPass(p => !p)} className="p-1 rounded-md hover:bg-gray-200 transition-colors">
             {showPass ? <EyeOff className="h-3 w-3 text-gray-400" /> : <Eye className="h-3 w-3 text-gray-400" />}
           </button>
@@ -210,7 +216,7 @@ function SessionCard({
             <div className={`mt-0.5 h-8 w-8 rounded-xl flex items-center justify-center shrink-0 ${
               session.status === "ACTIVE" ? "bg-emerald-50" : "bg-gray-100"
             }`}>
-              <FlaskConical className={`h-4 w-4 ${session.status === "ACTIVE" ? "text-emerald-600" : "text-gray-400"}`} />
+              <Box className={`h-4 w-4 ${session.status === "ACTIVE" ? "text-emerald-600" : "text-gray-400"}`} />
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
@@ -308,12 +314,12 @@ function SessionCard({
           {Object.keys(session.metadata).length > 0 && (
             <div className="mt-4 flex gap-2 flex-wrap">
               {session.metadata.agency_id && (
-                <span className="inline-flex items-center gap-1.5 text-[10px] font-mono text-blue-600 bg-blue-50 border border-blue-200 px-2.5 py-1 rounded-lg">
+                <span className="inline-flex items-center gap-1.5 text-[10px] text-blue-600 bg-blue-50 border border-blue-200 px-2.5 py-1 rounded-lg">
                   <Building2 className="h-3 w-3" /> agency_id: {session.metadata.agency_id.slice(0, 8)}…
                 </span>
               )}
               {session.metadata.hospital_id && (
-                <span className="inline-flex items-center gap-1.5 text-[10px] font-mono text-violet-600 bg-violet-50 border border-violet-200 px-2.5 py-1 rounded-lg">
+                <span className="inline-flex items-center gap-1.5 text-[10px] text-violet-600 bg-violet-50 border border-violet-200 px-2.5 py-1 rounded-lg">
                   <Stethoscope className="h-3 w-3" /> hospital_id: {session.metadata.hospital_id.slice(0, 8)}…
                 </span>
               )}
@@ -375,10 +381,10 @@ function CreateModal({ onClose, onCreate }: {
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200">
         {/* Header */}
-        <div className="bg-gradient-to-br from-gray-900 to-gray-800 p-5">
+        <div className="bg-gray-900 p-5">
           <div className="flex items-center gap-3">
             <div className="h-9 w-9 bg-white/10 rounded-xl flex items-center justify-center">
-              <FlaskConical className="h-5 w-5 text-white" />
+              <Box className="h-5 w-5 text-white" />
             </div>
             <div>
               <h2 className="text-base font-bold text-white">Buat Sandbox Session</h2>
@@ -463,7 +469,7 @@ function CreateModal({ onClose, onCreate }: {
           <div className="flex items-start gap-2 bg-blue-50 border border-blue-100 rounded-xl px-3 py-2.5">
             <Info className="h-3.5 w-3.5 text-blue-500 shrink-0 mt-0.5" />
             <span className="text-[11px] text-blue-600">
-              Semua data sandbox akan dihapus bersih saat di-destroy atau otomatis setelah {ttl} jam.
+              Semua data sandbox akan dihapus bersih saat dihapus manual atau otomatis setelah {ttl} jam.
             </span>
           </div>
         </div>
@@ -539,19 +545,10 @@ export default function SandboxPage() {
     <div className="flex flex-col gap-6 animate-in fade-in duration-500">
 
       {/* ── Hero ── */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-gray-900 via-gray-800 to-slate-900 p-6 sm:p-8">
-        <div className="absolute inset-0 opacity-20"
-          style={{ backgroundImage: "radial-gradient(circle at 10% 50%, #10b981 0%, transparent 40%), radial-gradient(circle at 90% 20%, #6366f1 0%, transparent 35%)" }} />
+      <div className="relative overflow-hidden rounded-2xl bg-gray-900 p-6 sm:p-8">
         <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <div className="flex items-center gap-2 mb-2">
-              <FlaskConical className="h-5 w-5 text-emerald-400" />
-              <span className="text-xs font-semibold tracking-widest uppercase text-emerald-400">Developer Tools</span>
-            </div>
             <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">Sandbox Testing</h1>
-            <p className="text-sm text-white/60 mt-1 max-w-lg">
-              Buat akun testing sementara — agen, admin agency, hospital admin — lalu destroy bersih setelah selesai. Seperti AWS sandbox.
-            </p>
           </div>
           <button
             onClick={() => setShowModal(true)}
@@ -587,8 +584,8 @@ export default function SandboxPage() {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {[
           { step: "1", icon: Zap, title: "Buat Session", desc: "Pilih role yang dibutuhkan, atur durasi, klik Create. Akun langsung aktif." },
-          { step: "2", icon: Terminal, title: "Gunakan untuk Testing", desc: "Login dengan kredensial yang dibuat. Semua akun sudah ACTIVE dan siap dipakai." },
-          { step: "3", icon: Trash2, title: "Destroy Setelah Selesai", desc: "Klik Destroy — semua user, agency, hospital, dan data terkait dihapus bersih dari DB." },
+          { step: "2", icon: MonitorPlay, title: "Gunakan untuk Testing", desc: "Login dengan kredensial yang dibuat. Semua akun sudah ACTIVE dan siap dipakai." },
+          { step: "3", icon: Trash2, title: "Destroy Setelah Selesai", desc: "Klik Destroy untuk menghapus semua user, agency, hospital, dan data terkait dari DB." },
         ].map(item => {
           const Icon = item.icon
           return (
@@ -641,7 +638,7 @@ export default function SandboxPage() {
       ) : filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 bg-white border border-gray-100 rounded-2xl text-center">
           <div className="h-14 w-14 rounded-2xl bg-gray-50 flex items-center justify-center mb-4">
-            <FlaskConical className="h-7 w-7 text-gray-300" />
+            <Box className="h-7 w-7 text-gray-300" />
           </div>
           <p className="font-semibold text-gray-700 mb-1">
             {filter === "ALL" ? "Belum ada sandbox session" : `Tidak ada session ${filter.toLowerCase()}`}

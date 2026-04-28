@@ -35,22 +35,6 @@ interface HospitalImpact {
     doctors: number;
 }
 
-const AVATAR_COLORS = [
-    { bg: "bg-teal-100", text: "text-teal-700" },
-    { bg: "bg-blue-100", text: "text-blue-700" },
-    { bg: "bg-violet-100", text: "text-violet-700" },
-    { bg: "bg-emerald-100", text: "text-emerald-700" },
-    { bg: "bg-amber-100", text: "text-amber-700" },
-    { bg: "bg-rose-100", text: "text-rose-700" },
-    { bg: "bg-cyan-100", text: "text-cyan-700" },
-    { bg: "bg-indigo-100", text: "text-indigo-700" },
-];
-
-function avatarColor(name: string) {
-    const code = [...name].reduce((s, c) => s + c.charCodeAt(0), 0);
-    return AVATAR_COLORS[code % AVATAR_COLORS.length];
-}
-
 function fmtDate(iso: string) {
     return new Date(iso).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" });
 }
@@ -377,12 +361,9 @@ export default function HospitalsPage() {
                                                 <div className="w-[15px] h-[15px] rounded-[3px] bg-gray-100 animate-pulse" />
                                             </td>
                                             <td className="px-5 py-4">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="w-9 h-9 rounded-xl bg-gray-100 animate-pulse shrink-0" />
-                                                    <div className="space-y-1.5">
-                                                        <div className="h-3.5 w-40 bg-gray-100 rounded animate-pulse" />
-                                                        <div className="h-2.5 w-24 bg-gray-100 rounded animate-pulse" />
-                                                    </div>
+                                                <div className="space-y-1.5">
+                                                    <div className="h-3.5 w-40 bg-gray-100 rounded animate-pulse" />
+                                                    <div className="h-2.5 w-24 bg-gray-100 rounded animate-pulse" />
                                                 </div>
                                             </td>
                                             <td className="px-5 py-4 text-right"><div className="h-3.5 w-8 bg-gray-100 rounded animate-pulse ml-auto" /></td>
@@ -399,7 +380,6 @@ export default function HospitalsPage() {
                                     </tr>
                                 ) : (
                                     hospitals.map(hospital => {
-                                        const av = avatarColor(hospital.name);
                                         const isSelected = selected.has(hospital.hospital_id);
                                         return (
                                             <tr
@@ -426,16 +406,11 @@ export default function HospitalsPage() {
                                                     </button>
                                                 </td>
                                                 <td className="px-5 py-4">
-                                                    <div className="flex items-center gap-3">
-                                                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 text-sm font-black ${av.bg} ${av.text}`}>
-                                                            {hospital.name[0]?.toUpperCase() || "H"}
-                                                        </div>
-                                                        <div>
-                                                            <p className="font-semibold text-gray-900">{hospital.name}</p>
-                                                            {hospital.address && (
-                                                                <p className="text-xs text-gray-400 truncate max-w-[240px]">{hospital.address}</p>
-                                                            )}
-                                                        </div>
+                                                    <div>
+                                                        <p className="font-semibold text-gray-900">{hospital.name}</p>
+                                                        {hospital.address && (
+                                                            <p className="text-xs text-gray-400 truncate max-w-[260px]">{hospital.address}</p>
+                                                        )}
                                                     </div>
                                                 </td>
                                                 <td className="px-5 py-4 text-right">
@@ -513,7 +488,7 @@ export default function HospitalsPage() {
                                 <div className="min-w-0">
                                     <h3 className="text-base sm:text-lg font-bold text-gray-900 truncate">{openTarget.name}</h3>
                                     <p className="text-xs text-gray-500 truncate">{openTarget.address || "Alamat tidak tersedia"}</p>
-                                    <p className="mt-0.5 text-[10px] font-mono text-gray-400 truncate">{openTarget.hospital_id}</p>
+                                    <p className="mt-0.5 text-[10px] text-gray-400 truncate">{openTarget.hospital_id}</p>
                                 </div>
                             </div>
                             <button onClick={closeDetail} disabled={deleteBusy} className="text-gray-400 hover:text-gray-600 p-1 -m-1 shrink-0">
@@ -567,13 +542,8 @@ export default function HospitalsPage() {
                                         ) : (
                                             <div className="rounded-2xl border border-gray-100 overflow-hidden">
                                                 <ul className="divide-y divide-gray-100">
-                                                    {detailAdmins.map((a) => {
-                                                        const av = avatarColor(a.full_name || a.email);
-                                                        return (
+                                                    {detailAdmins.map((a) => (
                                                             <li key={a.user_role_id} className="flex items-center gap-3 px-4 py-3">
-                                                                <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 text-sm font-black ${av.bg} ${av.text}`}>
-                                                                    {(a.full_name || a.email)[0]?.toUpperCase()}
-                                                                </div>
                                                                 <div className="min-w-0 flex-1">
                                                                     <p className="text-sm font-semibold text-gray-900 truncate">
                                                                         {a.full_name || "(Nama belum diisi)"}
@@ -602,8 +572,7 @@ export default function HospitalsPage() {
                                                                     </span>
                                                                 </div>
                                                             </li>
-                                                        );
-                                                    })}
+                                                    ))}
                                                 </ul>
                                             </div>
                                         )}
@@ -622,7 +591,7 @@ export default function HospitalsPage() {
                                                 </div>
                                                 <div className="space-y-1.5">
                                                     <label className="text-[10px] font-bold uppercase tracking-wider text-red-700">
-                                                        Ketik <span className="font-mono bg-white/80 px-1.5 py-0.5 rounded border border-red-200">{confirmPhrase}</span> untuk konfirmasi
+                                                        Ketik <span className="bg-white/80 px-1.5 py-0.5 rounded border border-red-200">{confirmPhrase}</span> untuk konfirmasi
                                                     </label>
                                                     <input
                                                         value={confirmText}

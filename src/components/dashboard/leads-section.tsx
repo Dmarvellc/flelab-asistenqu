@@ -35,24 +35,19 @@ export function LeadsSection({ policies }: LeadsSectionProps) {
                         key={policy.contract_id}
                         className="group flex items-center justify-between px-5 py-4 hover:bg-gray-50/50 transition-colors"
                     >
-                        <div className="flex items-start gap-3 min-w-0 flex-1">
-                            <div className="h-9 w-9 rounded-xl bg-gray-100 flex items-center justify-center shrink-0 text-gray-600 font-bold text-sm group-hover:bg-gray-900 group-hover:text-white transition-all duration-200">
-                                {policy.client_name?.charAt(0)?.toUpperCase() || '?'}
-                            </div>
-                            <div className="min-w-0">
-                                <p className="text-sm font-semibold text-gray-900 truncate">{policy.client_name}</p>
-                                <div className="flex items-center gap-3 mt-0.5 text-xs text-gray-400 flex-wrap">
+                        <div className="min-w-0 flex-1">
+                            <p className="text-sm font-semibold text-gray-900 truncate">{policy.client_name}</p>
+                            <div className="flex items-center gap-3 mt-0.5 text-xs text-gray-400 flex-wrap">
+                                <span className="flex items-center gap-1">
+                                    <FileText className="h-3 w-3" />
+                                    {policy.contract_product} · {policy.contract_number}
+                                </span>
+                                {policy.client_address && (
                                     <span className="flex items-center gap-1">
-                                        <FileText className="h-3 w-3" />
-                                        {policy.contract_product} · {policy.contract_number}
+                                        <MapPin className="h-3 w-3" />
+                                        {policy.client_address}
                                     </span>
-                                    {policy.client_address && (
-                                        <span className="flex items-center gap-1">
-                                            <MapPin className="h-3 w-3" />
-                                            {policy.client_address}
-                                        </span>
-                                    )}
-                                </div>
+                                )}
                             </div>
                         </div>
                         <Button

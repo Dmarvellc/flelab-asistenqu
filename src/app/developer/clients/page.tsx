@@ -18,20 +18,6 @@ interface Client {
     total_claims: number;
 }
 
-const AVATAR_COLORS = [
-    { bg: "bg-blue-100", text: "text-blue-700" },
-    { bg: "bg-violet-100", text: "text-violet-700" },
-    { bg: "bg-emerald-100", text: "text-emerald-700" },
-    { bg: "bg-amber-100", text: "text-amber-700" },
-    { bg: "bg-rose-100", text: "text-rose-700" },
-    { bg: "bg-teal-100", text: "text-teal-700" },
-];
-
-function avatarColor(name: string) {
-    const code = [...name].reduce((s, c) => s + c.charCodeAt(0), 0);
-    return AVATAR_COLORS[code % AVATAR_COLORS.length];
-}
-
 function fmtDate(iso: string) {
     return new Date(iso).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" });
 }
@@ -215,10 +201,7 @@ export default function DeveloperClientsPage() {
                                 Array.from({ length: 10 }).map((_, i) => (
                                     <tr key={i} className="border-b border-gray-50">
                                         <td className="px-5 py-4">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-8 h-8 rounded-full bg-gray-100 animate-pulse shrink-0" />
-                                                <div className="h-3.5 w-36 bg-gray-100 rounded animate-pulse" />
-                                            </div>
+                                            <div className="h-3.5 w-36 bg-gray-100 rounded animate-pulse" />
                                         </td>
                                         {[1,2,3,4,5].map(j => (
                                             <td key={j} className="px-5 py-4">
@@ -234,21 +217,14 @@ export default function DeveloperClientsPage() {
                                     </td>
                                 </tr>
                             ) : (
-                                clients.map(c => {
-                                    const av = avatarColor(c.full_name);
-                                    return (
+                                clients.map(c => (
                                         <tr key={c.client_id} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors group/row">
                                             <td className="px-5 py-4">
-                                                <div className="flex items-center gap-3">
-                                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-xs font-bold ${av.bg} ${av.text}`}>
-                                                        {c.full_name[0]?.toUpperCase()}
-                                                    </div>
-                                                    <div className="min-w-0">
-                                                        <p className="text-sm font-semibold text-gray-900 truncate max-w-[200px]">{c.full_name}</p>
-                                                        <div className="flex items-center gap-1 mt-0.5">
-                                                            <p className="text-[10px] text-gray-400 font-mono truncate max-w-[120px]">{c.client_id}</p>
-                                                            <CopyButton text={c.client_id} />
-                                                        </div>
+                                                <div className="min-w-0">
+                                                    <p className="text-sm font-semibold text-gray-900 truncate max-w-[220px]">{c.full_name}</p>
+                                                    <div className="flex items-center gap-1 mt-0.5">
+                                                        <p className="text-[10px] text-gray-400 truncate max-w-[140px]">{c.client_id}</p>
+                                                        <CopyButton text={c.client_id} />
                                                     </div>
                                                 </div>
                                             </td>
@@ -271,8 +247,7 @@ export default function DeveloperClientsPage() {
                                                 </div>
                                             </td>
                                         </tr>
-                                    );
-                                })
+                                ))
                             )}
                         </tbody>
                     </table>

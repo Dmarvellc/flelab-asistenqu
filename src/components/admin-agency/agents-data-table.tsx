@@ -11,15 +11,6 @@ import {
 import { cn } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
 
-/* ─── Shared utils ──────────────────────────────────────────────── */
-const AVATAR_COLORS = [
-  "bg-violet-100 text-violet-700", "bg-blue-100 text-blue-700",
-  "bg-emerald-100 text-emerald-700", "bg-amber-100 text-amber-700",
-  "bg-rose-100 text-rose-700", "bg-cyan-100 text-cyan-700",
-  "bg-pink-100 text-pink-700", "bg-indigo-100 text-indigo-700",
-];
-const avatarColor = (s: string) => AVATAR_COLORS[(s.charCodeAt(0) || 0) % AVATAR_COLORS.length];
-
 function relDate(iso: string) {
   if (!iso) return "—";
   const d = Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000);
@@ -264,7 +255,6 @@ export function AgentsDataTable({ agents: raw }: Props) {
               rows.map((agent, idx) => {
                 const cfg   = STATUS_CFG[agent.status] || FALLBACK_S;
                 const isSel = selected.has(agent.user_id);
-                const color = avatarColor(agent.full_name);
                 return (
                   <tr key={agent.user_id}
                     className={cn("group/row border-b border-gray-50 last:border-0 transition-colors duration-100",
@@ -277,16 +267,11 @@ export function AgentsDataTable({ agents: raw }: Props) {
 
                     {/* Name + email */}
                     <td className="py-3.5 pr-4">
-                      <div className="flex items-center gap-2.5">
-                        <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center text-[12px] font-bold shrink-0", color)}>
-                          {agent.full_name.charAt(0).toUpperCase()}
-                        </div>
-                        <div className="min-w-0">
-                          <p className="text-[13px] font-semibold text-gray-900 truncate max-w-[150px] leading-tight">{agent.full_name}</p>
-                          <p className="text-[11px] text-gray-400 flex items-center gap-1 mt-0.5 truncate max-w-[150px]">
-                            <Mail className="w-2.5 h-2.5 shrink-0" />{agent.email}
-                          </p>
-                        </div>
+                      <div className="min-w-0">
+                        <p className="text-[13px] font-semibold text-gray-900 truncate max-w-[170px] leading-tight">{agent.full_name}</p>
+                        <p className="text-[11px] text-gray-400 flex items-center gap-1 mt-0.5 truncate max-w-[170px]">
+                          <Mail className="w-2.5 h-2.5 shrink-0" />{agent.email}
+                        </p>
                       </div>
                     </td>
 

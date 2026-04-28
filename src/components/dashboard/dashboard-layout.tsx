@@ -4,7 +4,6 @@ import * as React from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { Menu } from "lucide-react"
 
@@ -111,14 +110,14 @@ interface DashboardHeaderProps {
 export function DashboardHeader({ children, mobileSidebar, actions }: DashboardHeaderProps) {
   return (
     <header className="sm:hidden sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-gray-200/60 bg-white/98 backdrop-blur-sm px-5 shadow-[0_2px_12px_rgba(0,0,0,0.04)]">
-      {/* Left — hamburger */}
+      {/* Mobile menu trigger */}
       <Sheet>
         <SheetTrigger asChild>
           <button
             className="flex items-center justify-center h-9 w-9 rounded-lg text-gray-500 hover:text-gray-900 hover:bg-gray-100 active:scale-95 transition-all shrink-0"
           >
             <Menu className="h-5 w-5" strokeWidth={2} />
-            <span className="sr-only">Toggle Menu</span>
+            <span className="sr-only">Buka menu</span>
           </button>
         </SheetTrigger>
         <SheetContent side="left" className="p-0 w-[280px] bg-white border-r border-gray-100 shadow-2xl">
@@ -126,12 +125,12 @@ export function DashboardHeader({ children, mobileSidebar, actions }: DashboardH
         </SheetContent>
       </Sheet>
 
-      {/* Center — logo / branding */}
+      {/* Logo and branding */}
       <div className="flex-1 flex items-center justify-center min-w-0">
         {children}
       </div>
 
-      {/* Right — actions or spacer (matches hamburger width for centering) */}
+      {/* Actions */}
       <div className="flex items-center justify-end w-9 shrink-0">
         {actions}
       </div>
@@ -141,7 +140,7 @@ export function DashboardHeader({ children, mobileSidebar, actions }: DashboardH
 
 interface NavItemProps {
   href: string
-  icon: React.ElementType
+  icon?: React.ElementType
   children: React.ReactNode
   active?: boolean
   isCollapsed?: boolean
@@ -156,7 +155,7 @@ export function NavItem({ href, icon: Icon, children, active, isCollapsed, badge
     <Link
       href={href}
       className={cn(
-        "group relative flex items-center gap-3 sm:gap-4 rounded-xl px-3 sm:px-4 py-3 sm:py-3.5 text-sm sm:text-[15px] font-medium transition-all duration-300 ease-out",
+        "group relative flex items-center rounded-xl px-3 sm:px-4 py-3 sm:py-3.5 text-sm sm:text-[15px] font-medium transition-all duration-300 ease-out",
         isActive
           ? "bg-gray-900 text-white shadow-md shadow-gray-900/10"
           : "text-gray-500 hover:bg-gray-50 hover:text-gray-900",
@@ -169,8 +168,9 @@ export function NavItem({ href, icon: Icon, children, active, isCollapsed, badge
         <span className="absolute -left-4 sm:-left-6 top-1/2 -translate-y-1/2 w-[3px] sm:w-[4px] h-7 sm:h-8 bg-gray-900 rounded-r-full" />
       )}
 
-      {/* Icon - Always show */}
-      <Icon className={cn("h-5 w-5 shrink-0 transition-all duration-300", isActive ? "text-white" : "text-gray-400 group-hover:text-gray-700 group-hover:scale-110")} />
+      {isCollapsed && Icon && (
+        <Icon className={cn("h-5 w-5 shrink-0 transition-all duration-300", isActive ? "text-white" : "text-gray-400 group-hover:text-gray-700 group-hover:scale-110")} />
+      )}
 
       {/* Text label — only when not collapsed */}
       {!isCollapsed && (

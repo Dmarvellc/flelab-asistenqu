@@ -129,7 +129,7 @@ const statusStyle = (s?: string) => {
 function Stat({ label, value, accent }: { label: string; value: React.ReactNode; accent?: string }) {
     return (
         <div className="space-y-1">
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{label}</p>
+            <p className="text-[10px] font-bold text-gray-400">{label}</p>
             <p className={cn("text-sm font-semibold text-gray-900", accent)}>{value}</p>
         </div>
     );
@@ -232,7 +232,7 @@ export default function ClientDetailPage() {
                     </Button>
                     <div>
                         <div className="flex flex-wrap items-center gap-2 mb-1">
-                            <span className={cn("text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full border", statusStyle(client.status))}>
+                            <span className={cn("text-[10px] font-bold px-2.5 py-1 rounded-full border", statusStyle(client.status))}>
                                 {client.status === "ACTIVE" ? "Aktif" : client.status}
                             </span>
                             <span className="text-xs text-gray-400 font-medium">
@@ -268,23 +268,23 @@ export default function ClientDetailPage() {
                         <div className="space-y-3">
                             <div className="flex items-start gap-3">
                                 <Phone className="w-3.5 h-3.5 text-gray-400 mt-1 shrink-0" />
-                                <div><p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold">Telepon</p><p className="text-sm text-gray-900 font-medium">{client.phone_number || "—"}</p></div>
+                                <div><p className="text-[10px] text-gray-400 font-bold">Telepon</p><p className="text-sm text-gray-900 font-medium">{client.phone_number || "—"}</p></div>
                             </div>
                             {client.email && (
                                 <div className="flex items-start gap-3">
                                     <Mail className="w-3.5 h-3.5 text-gray-400 mt-1 shrink-0" />
-                                    <div><p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold">Email</p><p className="text-sm text-gray-900 font-medium break-all">{client.email}</p></div>
+                                    <div><p className="text-[10px] text-gray-400 font-bold">Email</p><p className="text-sm text-gray-900 font-medium break-all">{client.email}</p></div>
                                 </div>
                             )}
                             {client.occupation && (
                                 <div className="flex items-start gap-3">
                                     <Briefcase className="w-3.5 h-3.5 text-gray-400 mt-1 shrink-0" />
-                                    <div><p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold">Pekerjaan</p><p className="text-sm text-gray-900 font-medium">{client.occupation}</p></div>
+                                    <div><p className="text-[10px] text-gray-400 font-bold">Pekerjaan</p><p className="text-sm text-gray-900 font-medium">{client.occupation}</p></div>
                                 </div>
                             )}
                             <div className="flex items-start gap-3">
                                 <MapPin className="w-3.5 h-3.5 text-gray-400 mt-1 shrink-0" />
-                                <div><p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold">Domisili</p><p className="text-sm text-gray-900 leading-relaxed">{client.address || "—"}</p></div>
+                                <div><p className="text-[10px] text-gray-400 font-bold">Domisili</p><p className="text-sm text-gray-900 leading-relaxed">{client.address || "—"}</p></div>
                             </div>
                         </div>
                     </div>
@@ -351,18 +351,18 @@ function PolicyCard({ contract }: { contract: Contract }) {
     return (
         <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
             {/* Header */}
-            <div className="p-6 border-b border-gray-100 bg-gradient-to-br from-gray-50/50 to-white">
+            <div className="p-6 border-b border-gray-100 bg-gray-50/50">
                 <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-4">
                     <div className="min-w-0">
                         <div className="flex items-center gap-2 flex-wrap mb-2">
                             <h4 className="text-xl font-bold text-gray-900 tracking-tight">{contract.contract_product}</h4>
-                            <span className={cn("inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider border", statusStyle(contract.policy_status))}>
+                            <span className={cn("inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold border", statusStyle(contract.policy_status))}>
                                 {contract.policy_status || contract.status}
                             </span>
                             <DueCountdown contract={contract} />
                         </div>
                         <p className="text-[13px] text-gray-500">
-                            <span className="font-mono">{contract.contract_number}</span>
+                            <span className="">{contract.contract_number}</span>
                             {contract.insurance_company_name && <> • {contract.insurance_company_name}</>}
                         </p>
                     </div>
@@ -441,7 +441,7 @@ function PolicyCard({ contract }: { contract: Contract }) {
                     </div>
                     {contract.riders && contract.riders.length > 0 && (
                         <div className="mt-4 pt-4 border-t border-gray-100">
-                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 flex items-center gap-1.5"><Star className="w-3 h-3" /> Rider Tambahan</p>
+                            <p className="text-[10px] font-bold text-gray-400 mb-2 flex items-center gap-1.5"><Star className="w-3 h-3" /> Rider Tambahan</p>
                             <div className="space-y-1.5">
                                 {contract.riders.map(r => (
                                     <div key={r.rider_id} className="flex items-center justify-between text-sm px-3 py-2 rounded-lg bg-gray-50 border border-gray-100">
@@ -461,11 +461,11 @@ function PolicyCard({ contract }: { contract: Contract }) {
                         <Stat label={contract.payment_method === "AUTODEBET_KK" ? "Penerbit KK" : "Bank"} value={contract.bank_name || "—"} />
                         <Stat
                             label={contract.payment_method === "AUTODEBET_KK" ? "4 Digit Terakhir" : "No. Rekening"}
-                            value={contract.account_number ? <span className="font-mono">{"••••" + contract.account_number.slice(-4)}</span> : "—"}
+                            value={contract.account_number ? <span className="">{"••••" + contract.account_number.slice(-4)}</span> : "—"}
                         />
                         <Stat label="Pemilik" value={contract.account_holder_name || "—"} />
                         {contract.card_network && <Stat label="Jaringan Kartu" value={contract.card_network} />}
-                        {contract.card_expiry && <Stat label="Exp Kartu" value={<span className="font-mono">{contract.card_expiry}</span>} />}
+                        {contract.card_expiry && <Stat label="Exp Kartu" value={<span className="">{contract.card_expiry}</span>} />}
                         {contract.autodebet_start_date && <Stat label="Autodebet Mulai" value={date(contract.autodebet_start_date)} />}
                         {contract.autodebet_end_date && (
                             <Stat
@@ -473,9 +473,9 @@ function PolicyCard({ contract }: { contract: Contract }) {
                                 value={<span className={daysBetween(contract.autodebet_end_date) < 30 ? "text-amber-600" : ""}>{date(contract.autodebet_end_date)}</span>}
                             />
                         )}
-                        {contract.autodebet_mandate_ref && <Stat label="Ref. Mandat" value={<span className="font-mono text-xs">{contract.autodebet_mandate_ref}</span>} />}
+                        {contract.autodebet_mandate_ref && <Stat label="Ref. Mandat" value={<span className="text-xs">{contract.autodebet_mandate_ref}</span>} />}
                         {contract.billing_cycle_day && <Stat label="Tgl. Tagih" value={`Tgl. ${contract.billing_cycle_day}`} />}
-                        {contract.virtual_account_number && <Stat label="No. VA" value={<span className="font-mono">{contract.virtual_account_number}</span>} />}
+                        {contract.virtual_account_number && <Stat label="No. VA" value={<span className="">{contract.virtual_account_number}</span>} />}
                     </div>
                 </Section>
 
@@ -491,7 +491,7 @@ function PolicyCard({ contract }: { contract: Contract }) {
                                     </div>
                                     <div className="text-right">
                                         <p className="text-sm font-bold text-gray-900">{parseFloat(b.percentage || "0")}%</p>
-                                        {b.nik && <p className="text-[10px] text-gray-400 font-mono">{b.nik}</p>}
+                                        {b.nik && <p className="text-[10px] text-gray-400">{b.nik}</p>}
                                     </div>
                                 </div>
                             ))}
@@ -518,7 +518,7 @@ function PolicyCard({ contract }: { contract: Contract }) {
 function Section({ title, icon: Icon, children }: { title: string; icon: React.ElementType; children: React.ReactNode }) {
     return (
         <div>
-            <h5 className="text-[11px] font-bold text-gray-500 uppercase tracking-widest mb-3 flex items-center gap-1.5">
+            <h5 className="text-[11px] font-bold text-gray-500 mb-3 flex items-center gap-1.5">
                 <Icon className="w-3.5 h-3.5" /> {title}
             </h5>
             {children}

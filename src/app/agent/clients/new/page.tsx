@@ -557,7 +557,7 @@ export default function NewClientPage() {
                                                     /* eslint-disable-next-line @next/next/no-img-element */
                                                     <img src={filePreview} alt={file.name} className="max-h-64 rounded-xl border shadow-md object-contain" />
                                                 ) : (
-                                                    <div className="w-48 h-56 rounded-xl border-2 border-border bg-gradient-to-br from-red-50 to-rose-100 flex flex-col items-center justify-center gap-2 shadow-sm">
+                                                    <div className="w-48 h-56 rounded-xl border-2 border-border bg-rose-50 flex flex-col items-center justify-center gap-2 shadow-sm">
                                                         <FileText className="w-14 h-14 text-rose-400" />
                                                         <span className="text-[10px] font-bold tracking-wider text-rose-700 uppercase">PDF</span>
                                                     </div>
@@ -1069,7 +1069,7 @@ export default function NewClientPage() {
                                                 <div className="space-y-1.5">
                                                     <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">No. Referensi Mandat</Label>
                                                     <div className="relative"><Hash className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
-                                                        <Input value={formData.autodebetMandateRef} onChange={e => update("autodebetMandateRef", e.target.value)} placeholder="MND-XXXX-XXXX" className="h-10 rounded-lg bg-background pl-9 font-mono" />
+                                                        <Input value={formData.autodebetMandateRef} onChange={e => update("autodebetMandateRef", e.target.value)} placeholder="MND-XXXX-XXXX" className="h-10 rounded-lg bg-background pl-9" />
                                                     </div>
                                                 </div>
                                                 <div className="space-y-1.5">
@@ -1109,7 +1109,7 @@ export default function NewClientPage() {
                                                     <div className="space-y-1.5">
                                                         <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">4 Digit Terakhir Kartu *</Label>
                                                         <div className="relative"><CreditCard className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
-                                                            <Input value={formData.accountNumber} onChange={e => update("accountNumber", e.target.value.replace(/\D/g,"").slice(0,4))} placeholder="XXXX" maxLength={4} className={cn("h-10 rounded-lg bg-background pl-9 tracking-[0.4em] font-mono", fieldErrors.accountNumber && "border-red-500")} />
+                                                            <Input value={formData.accountNumber} onChange={e => update("accountNumber", e.target.value.replace(/\D/g,"").slice(0,4))} placeholder="XXXX" maxLength={4} className={cn("h-10 rounded-lg bg-background pl-9 tracking-[0.4em]", fieldErrors.accountNumber && "border-red-500")} />
                                                         </div>
                                                         <ErrMsg show={fieldErrors.accountNumber} msg="4 digit terakhir wajib diisi." />
                                                     </div>
@@ -1121,7 +1121,7 @@ export default function NewClientPage() {
                                                                 onChange={e => handleCardExpiry(e.target.value)}
                                                                 placeholder="MM/YY"
                                                                 maxLength={5}
-                                                                className={cn("h-10 rounded-lg bg-background pl-9 tracking-widest font-mono", fieldErrors.cardExpiry && "border-red-500")}
+                                                                className={cn("h-10 rounded-lg bg-background pl-9 tracking-widest", fieldErrors.cardExpiry && "border-red-500")}
                                                             />
                                                         </div>
                                                         <p className="text-[10px] text-muted-foreground">Masa berlaku fisik kartu kredit</p>
@@ -1153,7 +1153,7 @@ export default function NewClientPage() {
                                                     <div className="space-y-1.5">
                                                         <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">No. Referensi Otorisasi</Label>
                                                         <div className="relative"><Hash className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
-                                                            <Input value={formData.autodebetMandateRef} onChange={e => update("autodebetMandateRef", e.target.value)} placeholder="AUT-XXXX-XXXX" className="h-10 rounded-lg bg-background pl-9 font-mono" />
+                                                            <Input value={formData.autodebetMandateRef} onChange={e => update("autodebetMandateRef", e.target.value)} placeholder="AUT-XXXX-XXXX" className="h-10 rounded-lg bg-background pl-9" />
                                                         </div>
                                                     </div>
                                                     <div className="space-y-1.5">
@@ -1489,10 +1489,10 @@ export default function NewClientPage() {
                                                 <h4 className="font-semibold text-xs text-muted-foreground uppercase tracking-wider border-b pb-2">Pembayaran</h4>
                                                 <div><span className="text-[11px] text-muted-foreground block">Metode</span><span className="font-medium text-sm">{payMethodLabel[formData.paymentMethod] || "—"}</span></div>
                                                 {formData.bankName && <div><span className="text-[11px] text-muted-foreground block">{formData.paymentMethod === "AUTODEBET_KK" ? "Penerbit KK" : "Bank"}</span><span className="font-medium text-sm">{formData.bankName}</span></div>}
-                                                {formData.accountNumber && <div><span className="text-[11px] text-muted-foreground block">{formData.paymentMethod === "AUTODEBET_KK" ? "4 Digit Terakhir" : "No. Rekening"}</span><span className="font-medium text-sm font-mono">{"••••" + formData.accountNumber.slice(-4)}</span></div>}
-                                                {formData.cardExpiry && <div><span className="text-[11px] text-muted-foreground block">Exp Kartu</span><span className="font-medium text-sm font-mono">{formData.cardExpiry}</span></div>}
+                                                {formData.accountNumber && <div><span className="text-[11px] text-muted-foreground block">{formData.paymentMethod === "AUTODEBET_KK" ? "4 Digit Terakhir" : "No. Rekening"}</span><span className="font-medium text-sm">{"••••" + formData.accountNumber.slice(-4)}</span></div>}
+                                                {formData.cardExpiry && <div><span className="text-[11px] text-muted-foreground block">Exp Kartu</span><span className="font-medium text-sm">{formData.cardExpiry}</span></div>}
                                                 {formData.autodebetEndDate && <div><span className="text-[11px] text-muted-foreground block">Exp Autodebet</span><span className="font-medium text-sm">{new Date(formData.autodebetEndDate).toLocaleDateString("id-ID")}</span></div>}
-                                                {formData.autodebetMandateRef && <div><span className="text-[11px] text-muted-foreground block">Ref. Mandat</span><span className="font-medium text-sm font-mono">{formData.autodebetMandateRef}</span></div>}
+                                                {formData.autodebetMandateRef && <div><span className="text-[11px] text-muted-foreground block">Ref. Mandat</span><span className="font-medium text-sm">{formData.autodebetMandateRef}</span></div>}
                                                 <div>
                                                     <span className="text-[11px] text-muted-foreground block mb-1">Ahli Waris</span>
                                                     {beneficiaries.filter(b => b.name).map((b, i) => <p key={i} className="text-sm font-medium">{b.name} ({b.relationship}) {b.percentage ? `— ${b.percentage}%` : ""}</p>)}

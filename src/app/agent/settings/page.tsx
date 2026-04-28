@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, AlertCircle, RefreshCw, Edit2, Save, X, Camera, User, Mail, Phone, MapPin, Calendar, Shield, Building2, ArrowRight } from "lucide-react";
+import { Loader2, AlertCircle, RefreshCw, Edit2, Save, X, User, Mail, Phone, MapPin, Calendar, Shield, Building2, ArrowRight } from "lucide-react";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,6 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
-import Image from "next/image";
 import { cn } from "@/lib/utils";
 
 interface UserProfile {
@@ -52,7 +51,7 @@ function FieldRow({
         <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-6 py-4 border-b border-gray-50 last:border-0">
             <div className="flex items-center gap-2 sm:w-48 shrink-0">
                 <Icon className="h-4 w-4 text-gray-400" />
-                <span className="text-xs font-medium uppercase tracking-wider text-gray-400">{label}</span>
+                <span className="text-xs font-medium text-gray-400">{label}</span>
             </div>
             <div className="flex-1 min-w-0">
                 {isEditing && editElement ? (
@@ -60,7 +59,7 @@ function FieldRow({
                 ) : (
                     <p className={cn(
                         "text-sm text-gray-900",
-                        mono && "font-mono tracking-wide",
+                        mono && "tracking-wide",
                         !value && "text-gray-400 italic"
                     )}>
                         {value || "Belum diisi"}
@@ -257,19 +256,6 @@ export default function AgentSettingsPage() {
         profile.gender === "FEMALE" || profile.gender === "PEREMPUAN" ? "Perempuan" :
             profile.gender || null;
 
-    const getImagePath = (path: string | null) => {
-        if (!path) return null;
-        if (path.startsWith("public/")) return "/" + path.substring(7);
-        return path;
-    };
-
-    const ktpUrl = getImagePath(profile.ktp_image_path);
-    const selfieUrl = getImagePath(profile.selfie_image_path);
-
-    const initials = profile.full_name
-        ? profile.full_name.split(' ').slice(0, 2).map(n => n[0]).join('').toUpperCase()
-        : profile.email[0].toUpperCase();
-
     const sections = [
         { key: 'personal', label: 'Profil', icon: User },
         { key: 'agency', label: 'Agensi', icon: Building2 },
@@ -291,11 +277,6 @@ export default function AgentSettingsPage() {
 
             {/* Profile Header Card */}
             <div className="bg-white rounded-3xl border border-gray-100 p-8 shadow-sm flex flex-col sm:flex-row items-start sm:items-center gap-6 hover:shadow-lg transition-all duration-300">
-                {/* Avatar */}
-                <div className="h-24 w-24 rounded-3xl bg-gray-900 flex items-center justify-center text-white text-3xl font-bold shrink-0">
-                    {initials}
-                </div>
-
                 <div className="flex-1 min-w-0 flex flex-col gap-1">
                     <h2 className="text-2xl font-bold text-gray-900">
                         {profile.full_name || "Nama belum diisi"}
@@ -416,7 +397,7 @@ export default function AgentSettingsPage() {
                                     value={editForm.nik}
                                     onChange={(e) => setEditForm({ ...editForm, nik: e.target.value })}
                                     placeholder="16 Digit NIK"
-                                    className="rounded-xl border-gray-200 text-sm font-mono focus:border-gray-400 max-w-sm"
+                                    className="rounded-xl border-gray-200 text-sm focus:border-gray-400 max-w-sm"
                                 />
                             }
                         />
@@ -483,7 +464,7 @@ export default function AgentSettingsPage() {
                                 <Building2 className="h-5 w-5 text-white" />
                             </div>
                             <div className="flex-1 min-w-0">
-                                <p className="text-xs text-gray-400 uppercase tracking-wider mb-0.5">Agensi Saat Ini</p>
+                                <p className="text-xs text-gray-400 mb-0.5">Agensi Saat Ini</p>
                                 <p className="font-semibold text-gray-900 text-lg">
                                     {profile.agency_name || "Belum ada agensi"}
                                 </p>
@@ -523,7 +504,7 @@ export default function AgentSettingsPage() {
                                 </div>
 
                                 <div className="space-y-1.5">
-                                    <Label className="text-xs font-medium uppercase tracking-wider text-gray-400">
+                                    <Label className="text-xs font-medium text-gray-400">
                                         Agensi Tujuan
                                     </Label>
                                     <Select
@@ -544,7 +525,7 @@ export default function AgentSettingsPage() {
                                 </div>
 
                                 <div className="space-y-1.5">
-                                    <Label className="text-xs font-medium uppercase tracking-wider text-gray-400">
+                                    <Label className="text-xs font-medium text-gray-400">
                                         Alasan Pindah
                                     </Label>
                                     <Textarea

@@ -14,11 +14,13 @@ const nextConfig: NextConfig = {
     removeConsole: isProd ? { exclude: ["error", "warn"] } : false,
   },
 
-  // ── Bundle / package optimization ────────────────────────────
+  turbopack: {
+    root: process.cwd(),
+  },
+
   experimental: {
     optimizePackageImports: [
       "lucide-react",
-      "recharts",
       "date-fns",
       "framer-motion",
       "radix-ui",

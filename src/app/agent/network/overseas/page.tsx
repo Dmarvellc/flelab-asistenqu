@@ -519,9 +519,7 @@ export default function OverseasProviderPage() {
     <div className="flex flex-col gap-5 animate-in fade-in duration-500">
 
       {/* ── Hero ── */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 via-slate-800 to-gray-900 p-6 sm:p-10">
-        <div className="absolute inset-0 opacity-10"
-          style={{ backgroundImage: "radial-gradient(circle at 20% 50%, #3b82f6 0%, transparent 50%), radial-gradient(circle at 80% 20%, #8b5cf6 0%, transparent 40%)" }} />
+      <div className="relative overflow-hidden rounded-2xl bg-slate-900 p-6 sm:p-10">
         <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2 mb-2">

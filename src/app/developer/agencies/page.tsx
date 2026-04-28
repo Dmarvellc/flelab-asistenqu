@@ -22,23 +22,6 @@ interface Agency {
     approved_claims: number;
 }
 
-/* ─── Helpers ────────────────────────────────────────────────────── */
-const AVATAR_COLORS = [
-    { bg: "bg-violet-100", text: "text-violet-700" },
-    { bg: "bg-blue-100", text: "text-blue-700" },
-    { bg: "bg-emerald-100", text: "text-emerald-700" },
-    { bg: "bg-amber-100", text: "text-amber-700" },
-    { bg: "bg-rose-100", text: "text-rose-700" },
-    { bg: "bg-teal-100", text: "text-teal-700" },
-    { bg: "bg-cyan-100", text: "text-cyan-700" },
-    { bg: "bg-indigo-100", text: "text-indigo-700" },
-];
-
-function avatarColor(name: string) {
-    const code = [...name].reduce((s, c) => s + c.charCodeAt(0), 0);
-    return AVATAR_COLORS[code % AVATAR_COLORS.length];
-}
-
 function fmtDate(iso: string) {
     return new Date(iso).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" });
 }
@@ -337,12 +320,9 @@ export default function AgenciesPage() {
                                         <tr key={i} className="border-b border-gray-50">
                                             <td className="w-10 pl-5 py-4"><div className="w-[15px] h-[15px] rounded-[3px] bg-gray-100 animate-pulse" /></td>
                                             <td className="px-5 py-4">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="w-9 h-9 rounded-xl bg-gray-100 animate-pulse shrink-0" />
-                                                    <div className="space-y-1.5">
-                                                        <div className="h-3.5 w-40 bg-gray-100 rounded animate-pulse" />
-                                                        <div className="h-2.5 w-24 bg-gray-100 rounded animate-pulse" />
-                                                    </div>
+                                                <div className="space-y-1.5">
+                                                    <div className="h-3.5 w-40 bg-gray-100 rounded animate-pulse" />
+                                                    <div className="h-2.5 w-24 bg-gray-100 rounded animate-pulse" />
                                                 </div>
                                             </td>
                                             <td className="px-5 py-4 text-right"><div className="h-3.5 w-8 bg-gray-100 rounded animate-pulse ml-auto" /></td>
@@ -360,7 +340,6 @@ export default function AgenciesPage() {
                                     </tr>
                                 ) : (
                                     agencies.map(agency => {
-                                        const av = avatarColor(agency.name);
                                         const rate = approvalRate(Number(agency.approved_claims), Number(agency.total_claims));
                                         const isSelected = selected.has(agency.agency_id);
                                         return (
@@ -377,14 +356,9 @@ export default function AgenciesPage() {
                                                     </button>
                                                 </td>
                                                 <td className="px-5 py-4">
-                                                    <div className="flex items-center gap-3">
-                                                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 text-sm font-black ${av.bg} ${av.text}`}>
-                                                            {agency.name[0].toUpperCase()}
-                                                        </div>
-                                                        <div>
-                                                            <p className="font-semibold text-gray-900">{agency.name}</p>
-                                                            {agency.address && <p className="text-xs text-gray-400 truncate max-w-[200px]">{agency.address}</p>}
-                                                        </div>
+                                                    <div>
+                                                        <p className="font-semibold text-gray-900">{agency.name}</p>
+                                                        {agency.address && <p className="text-xs text-gray-400 truncate max-w-[220px]">{agency.address}</p>}
                                                     </div>
                                                 </td>
                                                 <td className="px-5 py-4 text-right">
@@ -531,7 +505,7 @@ export default function AgenciesPage() {
                                     <p className="text-xs text-emerald-700">Kirim link ke <span className="font-semibold">{inviteResult.email}</span>. Berlaku sampai {new Date(inviteResult.expiresAt).toLocaleString("id-ID", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}.</p>
                                 </div>
                                 <div className="flex items-stretch gap-2">
-                                    <div className="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-xs text-gray-700 font-mono break-all">{inviteResult.inviteUrl}</div>
+                                    <div className="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-xs text-gray-700 break-all">{inviteResult.inviteUrl}</div>
                                     <button onClick={async () => { await navigator.clipboard.writeText(inviteResult.inviteUrl); setCopied(true); setTimeout(() => setCopied(false), 2000); }} className="flex items-center gap-1.5 px-4 rounded-xl text-sm font-semibold bg-gray-900 text-white hover:bg-gray-800 shrink-0">
                                         {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                                         {copied ? "Tersalin" : "Salin"}
@@ -583,7 +557,7 @@ export default function AgenciesPage() {
                                     <p className="text-xs text-emerald-700">Kirim link ke <span className="font-semibold">{rowInviteResult.email}</span>. Berlaku sampai {new Date(rowInviteResult.expiresAt).toLocaleString("id-ID", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}.</p>
                                 </div>
                                 <div className="flex items-stretch gap-2">
-                                    <div className="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-xs text-gray-700 font-mono break-all">{rowInviteResult.inviteUrl}</div>
+                                    <div className="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-xs text-gray-700 break-all">{rowInviteResult.inviteUrl}</div>
                                     <button onClick={async () => { await navigator.clipboard.writeText(rowInviteResult!.inviteUrl); setRowInviteCopied(true); setTimeout(() => setRowInviteCopied(false), 2000); }} className="flex items-center gap-1.5 px-4 rounded-xl text-sm font-semibold bg-gray-900 text-white hover:bg-gray-800 shrink-0">
                                         {rowInviteCopied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                                         {rowInviteCopied ? "Tersalin" : "Salin"}

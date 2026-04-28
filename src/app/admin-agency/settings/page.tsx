@@ -49,7 +49,7 @@ function FieldRow({
         <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-6 py-4 border-b border-gray-50 last:border-0">
             <div className="flex items-center gap-2 sm:w-48 shrink-0">
                 <Icon className="h-4 w-4 text-gray-400" />
-                <span className="text-xs font-medium uppercase tracking-wider text-gray-400">{label}</span>
+                <span className="text-xs font-medium text-gray-400">{label}</span>
             </div>
             <div className="flex-1 min-w-0">
                 {isEditing && editElement ? (
@@ -57,7 +57,7 @@ function FieldRow({
                 ) : (
                     <p className={cn(
                         "text-sm text-gray-900",
-                        mono && "font-mono tracking-wide",
+                        mono && "tracking-wide",
                         !value && "text-gray-400 italic"
                     )}>
                         {value || "Belum diisi"}
@@ -487,22 +487,22 @@ export default function AdminAgencySettingsPage() {
                             <div className="flex flex-col gap-6">
                                 {/* Agency Slug / Path */}
                                 <div className="flex flex-col gap-2">
-                                    <label className="text-xs font-medium text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
+                                    <label className="text-xs font-medium text-gray-500 flex items-center gap-1.5">
                                         <Link2 className="h-3.5 w-3.5" /> Custom Path (URL)
                                     </label>
                                     {showBrandingEdit ? (
                                         <div className="flex items-center gap-2">
-                                            <span className="text-sm text-gray-400 font-mono">asistenqu.com/</span>
+                                            <span className="text-sm text-gray-400">asistenqu.com/</span>
                                             <Input
                                                 value={branding.slug}
                                                 onChange={e => setBranding({ ...branding, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "") })}
                                                 placeholder="nama-agensi"
-                                                className="rounded-xl max-w-xs font-mono text-sm"
+                                                className="rounded-xl max-w-xs text-sm"
                                             />
-                                            <span className="text-sm text-gray-400 font-mono">/agent</span>
+                                            <span className="text-sm text-gray-400">/agent</span>
                                         </div>
                                     ) : (
-                                        <p className="text-sm text-gray-900 font-mono bg-gray-50 border border-gray-100 px-4 py-2.5 rounded-xl w-fit">
+                                        <p className="text-sm text-gray-900 bg-gray-50 border border-gray-100 px-4 py-2.5 rounded-xl w-fit">
                                             asistenqu.com/<span className="font-bold text-blue-600">{branding.slug || "—"}</span>/agent
                                         </p>
                                     )}
@@ -510,7 +510,7 @@ export default function AdminAgencySettingsPage() {
 
                                 {/* Logo URL */}
                                 <div className="flex flex-col gap-2">
-                                    <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Logo URL</label>
+                                    <label className="text-xs font-medium text-gray-500">Logo URL</label>
                                     {showBrandingEdit ? (
                                         <Input
                                             value={branding.logoUrl}
@@ -531,7 +531,7 @@ export default function AdminAgencySettingsPage() {
 
                                 {/* Colors */}
                                 <div>
-                                    <label className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-3 block">Warna Dashboard</label>
+                                    <label className="text-xs font-medium text-gray-500 mb-3 block">Warna Dashboard</label>
                                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                                         {[
                                             { key: "primaryColor", label: "Primary", desc: "Warna utama (header, tombol)" },
@@ -563,7 +563,7 @@ export default function AdminAgencySettingsPage() {
                                                         <Input
                                                             value={branding[key as keyof typeof branding]}
                                                             onChange={e => setBranding({ ...branding, [key]: e.target.value })}
-                                                            className="rounded-lg text-xs font-mono h-8 max-w-[100px]"
+                                                            className="rounded-lg text-xs h-8 max-w-[100px]"
                                                         />
                                                     </div>
                                                 )}
@@ -575,7 +575,7 @@ export default function AdminAgencySettingsPage() {
                                 {/* Preview */}
                                 {showBrandingEdit && (
                                     <div className="mt-4 p-4 border border-gray-200 rounded-2xl bg-gray-50/50">
-                                        <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                                        <p className="text-xs font-medium text-gray-500 mb-3 flex items-center gap-1.5">
                                             <Eye className="h-3.5 w-3.5" /> Preview Sidebar
                                         </p>
                                         <div

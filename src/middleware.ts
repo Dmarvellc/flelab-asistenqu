@@ -49,6 +49,8 @@ export async function middleware(request: NextRequest) {
   const isRegisterPage = path.endsWith("/register");
   const isPublicPage = isLoginPage || isRegisterPage;
 
+  const forceLogin = request.nextUrl.searchParams.get("force") === "true";
+
   const sessionId = request.cookies.get(AUTH_SESSION_COOKIE)?.value;
   const hasSession = Boolean(sessionId);
 
@@ -61,6 +63,10 @@ export async function middleware(request: NextRequest) {
   const expectedPortal = isDynamicAgentRoute ? "agent" : ROUTE_TO_PORTAL[routePrefix];
 
   if (isPublicPage) {
+    if (forceLogin) {
+      return NextResponse.next();
+    }
+
     if (hasSession && sessionId) {
       const sessionPortal = request.cookies.get("session_portal")?.value;
 

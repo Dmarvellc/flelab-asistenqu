@@ -175,7 +175,7 @@ function SolutionsSection() {
                   <div className={`w-12 h-12 ${p.iconBg} rounded-none flex items-center justify-center mb-8`}>
                     {p.icon}
                   </div>
-                  <p className={`${p.labelColor} text-xs font-bold uppercase tracking-widest mb-2`}>{p.label}</p>
+                  <p className={`${p.labelColor} text-xs font-bold mb-2`}>{p.label}</p>
                   <h3 className="text-lg sm:text-[22px] font-black text-white leading-snug mb-2 sm:mb-3">{p.title}</h3>
                   <p className="text-white/50 text-sm leading-relaxed flex-1 mb-5 sm:mb-8">{p.desc}</p>
                   <span className={`inline-flex items-center gap-2 ${p.ctaColor} font-semibold text-sm group-hover:gap-3 transition-all duration-200 mt-auto`}>
@@ -223,7 +223,7 @@ function AISection() {
                 <span className="text-blue-400">dari siapapun.</span>
               </h2>
               <p className="text-white/30 text-base leading-[1.8] max-w-md">
-                Bukan chatbot generik — AsistenQu AI mengakses langsung data
+                Bukan chatbot generik. AsistenQu AI mengakses langsung data
                 nasabah, polis, dan klaim Anda untuk memberikan jawaban yang
                 bisa langsung ditindaklanjuti.
               </p>
@@ -237,7 +237,7 @@ function AISection() {
                   key={item}
                   className="bg-white/[0.02] hover:bg-white/[0.05] p-5 rounded-none flex items-center gap-5 group transition-colors duration-300"
                 >
-                  <span className="text-white/15 text-[10px] font-mono w-6 shrink-0">0{i + 1}</span>
+                  <span className="text-white/15 text-[10px] w-6 shrink-0">0{i + 1}</span>
                   <span className="text-white/50 text-sm font-medium group-hover:text-white/80 transition-colors duration-300">
                     {item}
                   </span>
@@ -293,7 +293,7 @@ function FeaturesSection() {
     {
       icon: <Brain className="h-5 w-5" />,
       title: "AI yang Kontekstual",
-      desc: "Asisten AI dengan akses langsung ke data Anda — bukan jawaban generik.",
+      desc: "Asisten AI dengan akses langsung ke data Anda, bukan jawaban generik.",
     },
     {
       icon: <Clock className="h-5 w-5" />,
@@ -359,7 +359,7 @@ function HowItWorksSection() {
     {
       number: "03",
       title: "Operasional Berjalan",
-      desc: "Agen kelola nasabah & klaim, agensi pantau performa, rumah sakit proses klaim — semua terhubung.",
+      desc: "Agen kelola nasabah dan klaim, agensi pantau performa, rumah sakit proses klaim. Semua terhubung.",
       delay: 300,
     },
   ];

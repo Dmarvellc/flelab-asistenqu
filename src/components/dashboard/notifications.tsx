@@ -173,7 +173,7 @@ export function Notifications(_props?: { role?: string }) {
                       {n.body && (
                         <p className="text-xs text-gray-500 line-clamp-2 mt-0.5">{n.body}</p>
                       )}
-                      <p className="text-[10px] text-gray-400 mt-1 uppercase tracking-wide">
+                      <p className="text-[10px] text-gray-400 mt-1">
                         {timeAgo(n.created_at)} lalu
                       </p>
                     </div>

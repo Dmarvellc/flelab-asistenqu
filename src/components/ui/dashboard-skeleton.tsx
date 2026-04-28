@@ -21,10 +21,6 @@ function Card({ children, className = "" }: { children?: React.ReactNode; classN
   );
 }
 
-function Avatar() {
-  return <div className="h-8 w-8 rounded-full bg-gray-100 animate-pulse shrink-0" />;
-}
-
 function Badge() {
   return <div className="h-5 w-16 rounded-full bg-gray-100 animate-pulse" />;
 }
@@ -145,10 +141,7 @@ export function AgentsPageSkeleton() {
         <div className="divide-y divide-gray-50">
           {Array.from({ length: 8 }).map((_, i) => (
             <div key={i} className="grid grid-cols-6 gap-4 items-center px-6 py-4">
-              <div className="flex items-center gap-3">
-                <Avatar />
-                <Bar w="80%" h="0.625rem" />
-              </div>
+              <Bar w="80%" h="0.625rem" />
               <div className="flex flex-col gap-1.5">
                 <Bar h="0.5rem" />
                 <Bar w="70%" h="0.5rem" />
@@ -225,12 +218,9 @@ export function ClientsPageSkeleton() {
         <div className="divide-y divide-gray-50">
           {Array.from({ length: 8 }).map((_, i) => (
             <div key={i} className="grid grid-cols-5 gap-4 items-center px-6 py-4">
-              <div className="flex items-center gap-3">
-                <Avatar />
-                <div className="flex flex-col gap-1.5 flex-1">
-                  <Bar h="0.625rem" />
-                  <Bar w="70%" h="0.5rem" />
-                </div>
+              <div className="flex flex-col gap-1.5">
+                <Bar h="0.625rem" />
+                <Bar w="70%" h="0.5rem" />
               </div>
               <Bar h="0.5rem" />
               <Bar h="0.5rem" />
@@ -267,12 +257,9 @@ export function TransfersPageSkeleton() {
         <div className="divide-y divide-gray-50">
           {Array.from({ length: 6 }).map((_, i) => (
             <div key={i} className="grid grid-cols-5 gap-4 items-center px-6 py-4">
-              <div className="flex items-center gap-3">
-                <Avatar />
-                <div className="flex flex-col gap-1.5 flex-1">
-                  <Bar h="0.625rem" />
-                  <Bar w="60%" h="0.5rem" />
-                </div>
+              <div className="flex flex-col gap-1.5">
+                <Bar h="0.625rem" />
+                <Bar w="60%" h="0.5rem" />
               </div>
               <Bar h="0.5rem" />
               <Bar h="0.5rem" />
@@ -321,7 +308,6 @@ export function PerformancePageSkeleton() {
           {Array.from({ length: 8 }).map((_, i) => (
             <div key={i} className="flex items-center gap-4 px-6 py-4">
               <Bar w="1.5rem" h="0.625rem" className="shrink-0" />
-              <Avatar />
               <div className="flex-1 flex flex-col gap-1.5">
                 <Bar w="60%" h="0.625rem" />
                 <Bar w="40%" h="0.5rem" />

@@ -84,7 +84,7 @@ function FieldRow({ label, icon: Icon, value }: { label: string; icon: React.Ele
         <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-6 py-4 border-b border-gray-50 last:border-0">
             <div className="flex items-center gap-2 sm:w-48 shrink-0">
                 <Icon className="h-4 w-4 text-gray-400" />
-                <span className="text-xs font-medium uppercase tracking-wider text-gray-400">{label}</span>
+                <span className="text-xs font-medium text-gray-400">{label}</span>
             </div>
             <div className="flex-1 min-w-0">
                 <p className={cn("text-sm text-gray-900", !value && "text-gray-400 italic")}>
@@ -381,11 +381,11 @@ export default function ClaimDetailPage() {
                     </Link>
                     <div>
                         <div className="flex flex-wrap items-center gap-2 mb-1">
-                            <span className={cn("text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full border", getStatusStyle(claim.status))}>
+                            <span className={cn("text-[10px] font-bold px-2.5 py-1 rounded-full border", getStatusStyle(claim.status))}>
                                 {getStatusLabel(claim.status)}
                             </span>
                             {claim.log_number && (
-                                <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-purple-700 bg-purple-50 border border-purple-200 px-2.5 py-1 rounded-full">
+                                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-purple-700 bg-purple-50 border border-purple-200 px-2.5 py-1 rounded-full">
                                     <Shield className="h-3 w-3" />
                                     LOG: {claim.log_number}
                                 </span>
@@ -513,7 +513,7 @@ export default function ClaimDetailPage() {
                                 <AlertCircle className="w-4 h-4 text-amber-600" />
                                 <div>
                                     <h3 className="font-semibold text-amber-900 text-sm">Kebutuhan Data</h3>
-                                    <p className="text-[10px] text-amber-700/70 mt-0.5 uppercase tracking-widest font-bold">Wajib diisi</p>
+                                    <p className="text-[10px] text-amber-700/70 mt-0.5 font-bold">Wajib diisi</p>
                                 </div>
                             </div>
                             <div className="p-6">
@@ -610,7 +610,7 @@ export default function ClaimDetailPage() {
                                                         <p className="text-sm font-medium text-gray-900 truncate group-hover:text-black transition-colors">
                                                             {doc.file_url.split('/').pop()}
                                                         </p>
-                                                        <p className="text-[10px] text-gray-400 mt-0.5 uppercase tracking-wider font-semibold">
+                                                        <p className="text-[10px] text-gray-400 mt-0.5 font-semibold">
                                                             {new Date(doc.created_at).toLocaleDateString("id-ID", { day: 'numeric', month: 'short', year: 'numeric' })}
                                                         </p>
                                                     </div>
@@ -644,7 +644,7 @@ export default function ClaimDetailPage() {
                     </div>
                     <div className="p-6 space-y-5 bg-gray-50/30">
                         <div className="space-y-2">
-                            <Label className="text-xs font-semibold uppercase tracking-wider text-gray-500">Tanggal Kejadian</Label>
+                            <Label className="text-xs font-semibold text-gray-500">Tanggal Kejadian</Label>
                             <Input
                                 type="date"
                                 className="rounded-xl border-gray-200 h-11"
@@ -653,17 +653,17 @@ export default function ClaimDetailPage() {
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label className="text-xs font-semibold uppercase tracking-wider text-gray-500">Perkiraan Biaya (Rp)</Label>
+                            <Label className="text-xs font-semibold text-gray-500">Perkiraan Biaya (Rp)</Label>
                             <Input
                                 type="number"
-                                className="rounded-xl border-gray-200 font-mono h-11"
+                                className="rounded-xl border-gray-200 h-11"
                                 value={editForm.total_amount}
                                 onChange={(e) => setEditForm({ ...editForm, total_amount: e.target.value })}
                                 placeholder="0"
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label className="text-xs font-semibold uppercase tracking-wider text-gray-500">Catatan</Label>
+                            <Label className="text-xs font-semibold text-gray-500">Catatan</Label>
                             <Textarea
                                 className="rounded-xl border-gray-200 min-h-[100px] resize-none"
                                 value={editForm.notes}

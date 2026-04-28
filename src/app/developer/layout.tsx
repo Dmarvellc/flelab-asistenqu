@@ -20,7 +20,7 @@ import {
   Server,
   Building2,
   UserCheck,
-  FlaskConical,
+  Box,
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -79,54 +79,54 @@ export default function DeveloperLayout({
       <SidebarContent>
         {/* ── Overview ── */}
         <div className="px-2 pb-1 pt-1">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 px-2">Overview</p>
+          <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 px-2">Ringkasan</p>
         </div>
         <NavItem
           href="/developer"
           icon={LayoutDashboard}
           active={pathname === "/developer"}
         >
-          Dashboard
+          Dasbor
         </NavItem>
         <NavItem
           href="/developer/analytics"
           icon={BarChart2}
           active={pathname === "/developer/analytics"}
         >
-          Analytics
+          Analitik
         </NavItem>
         <NavItem
           href="/developer/system"
           icon={Server}
           active={pathname === "/developer/system"}
         >
-          System Health
+          Kesehatan Sistem
         </NavItem>
 
         {/* ── Management ── */}
         <div className="px-2 pb-1 pt-4">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 px-2">Management</p>
+          <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 px-2">Pengelolaan</p>
         </div>
         <NavItem
           href="/developer/users"
           icon={Users}
           active={pathname === "/developer/users"}
         >
-          Users
+          Pengguna
         </NavItem>
         <NavItem
           href="/developer/agencies"
           icon={Briefcase}
           active={pathname === "/developer/agencies"}
         >
-          Agencies
+          Agensi
         </NavItem>
         <NavItem
           href="/developer/hospitals"
           icon={Building2}
           active={pathname === "/developer/hospitals"}
         >
-          Hospitals
+          Rumah Sakit
         </NavItem>
         <NavItem
           href="/developer/clients"
@@ -136,13 +136,13 @@ export default function DeveloperLayout({
           Klien
         </NavItem>
 
-        {/* ── Developer Tools ── */}
+        {/* ── Tools ── */}
         <div className="px-2 pb-1 pt-4">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 px-2">Dev Tools</p>
+          <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 px-2">Alat</p>
         </div>
         <NavItem
           href="/developer/sandbox"
-          icon={FlaskConical}
+          icon={Box}
           active={pathname === "/developer/sandbox"}
         >
           Sandbox
@@ -155,7 +155,7 @@ export default function DeveloperLayout({
           onClick={handleLogout}
         >
           <LogOut className="h-5 w-5 shrink-0 text-red-500 group-hover:text-red-600 group-hover:-translate-x-0.5 transition-transform" />
-          <span>Sign Out</span>
+          <span>Keluar</span>
         </button>
       </SidebarFooter>
     </DashboardSidebar>

@@ -183,7 +183,7 @@ export default function AgentRequestsPage({ initialRequests }: { initialRequests
                                             <div className="flex items-center justify-between lg:justify-start gap-4 flex-wrap w-full">
                                                 <div className="flex flex-col">
                                                     <h3 className="font-bold text-gray-900 text-lg">{req.person_name}</h3>
-                                                    <span className="font-mono text-[13px] font-semibold text-gray-400 uppercase tracking-widest mt-0.5">
+                                                    <span className="text-[13px] font-semibold text-gray-400 mt-0.5">
                                                         {req.person_nik}
                                                     </span>
                                                 </div>

@@ -341,7 +341,7 @@ export default function HospitalClaimDetailPage() {
                                 </div>
                                 <div>
                                     <p className="text-sm font-medium text-muted-foreground">Nomor Polis</p>
-                                    <p className="text-base font-mono">{claim.policy_number || "-"}</p>
+                                    <p className="text-base">{claim.policy_number || "-"}</p>
                                 </div>
                                 <div>
                                     <p className="text-sm font-medium text-muted-foreground">NIK / ID</p>

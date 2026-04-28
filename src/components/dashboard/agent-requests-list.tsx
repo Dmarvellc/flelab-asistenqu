@@ -131,17 +131,10 @@ export function AgentRequestsList() {
                 <div className="divide-y divide-gray-50">
                     {pendingRequests.map((req) => (
                         <div key={req.request_id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-5 gap-4 hover:bg-gray-50/50 transition-colors">
-                            <div className="flex items-start gap-3 flex-1 min-w-0">
-                                <div className={cn(
-                                    "h-9 w-9 rounded-xl flex items-center justify-center shrink-0 text-white font-bold text-sm mt-0.5",
-                                    req.status === 'PENDING' ? "bg-black" : "bg-gray-700"
-                                )}>
-                                    {req.person_name?.charAt(0)?.toUpperCase() || '?'}
-                                </div>
-                                <div className="min-w-0">
+                            <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-2 flex-wrap mb-1">
                                         <span className="font-semibold text-gray-900 text-sm">{req.person_name}</span>
-                                        <span className="font-mono text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded">
+                                        <span className="text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded">
                                             {req.person_nik}
                                         </span>
                                         <span className={cn(
@@ -157,7 +150,6 @@ export function AgentRequestsList() {
                                     <p className="text-[10px] text-gray-400 mt-0.5">
                                         {req.hospital_email} · {new Date(req.created_at).toLocaleDateString("id-ID", { day: 'numeric', month: 'short' })}
                                     </p>
-                                </div>
                             </div>
 
                             <div className="flex items-center gap-2 shrink-0">
@@ -222,7 +214,7 @@ export function AgentRequestsList() {
                     </DialogHeader>
 
                     <div className="py-2">
-                        <Label className="text-xs font-medium uppercase tracking-wider text-gray-400 mb-2 block">
+                        <Label className="text-xs font-medium text-gray-400 mb-2 block">
                             File (PDF, Doc, Gambar - Max 10MB)
                         </Label>
                         <div

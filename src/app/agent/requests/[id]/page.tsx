@@ -160,7 +160,7 @@ export default function AgentRequestDetailPage() {
                                 </div>
                                 <div>
                                     <p className="text-sm font-medium text-muted-foreground">NIK</p>
-                                    <p className="font-mono">{request.person_nik}</p>
+                                    <p className="">{request.person_nik}</p>
                                 </div>
                                 <div>
                                     <p className="text-sm font-medium text-muted-foreground">Tanggal Lahir</p>

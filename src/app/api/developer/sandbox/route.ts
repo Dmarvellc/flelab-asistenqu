@@ -144,10 +144,10 @@ export async function POST(request: Request) {
           UPDATE public.app_user SET agency_id = $1 WHERE user_id = $2
         `, [agencyId, userId])
 
-        // agency_member row
+        // agency_member uses `role` for agency-scoped permissions.
         await client.query(`
-          INSERT INTO public.agency_member (agency_id, user_id, agency_role, joined_at)
-          VALUES ($1, $2, 'master_admin', now())
+          INSERT INTO public.agency_member (agency_id, user_id, role, status, joined_at)
+          VALUES ($1, $2, 'master_admin', 'ACTIVE', now())
           ON CONFLICT DO NOTHING
         `, [agencyId, userId])
 

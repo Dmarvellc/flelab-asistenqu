@@ -131,7 +131,7 @@ export default function ReferralPage({ initialData }: { initialData: ReferralDat
 
                     <div className="flex flex-col sm:flex-row items-center gap-4">
                         <div className="flex-1 w-full bg-gray-50 border border-gray-200 rounded-2xl px-6 py-5 flex items-center justify-center sm:justify-start">
-                            <span className={cn("font-mono font-bold tracking-[0.2em] uppercase", data?.referral_code ? "text-4xl text-gray-900" : "text-xl text-gray-400")}>
+                            <span className={cn("font-bold tracking-[0.2em] uppercase", data?.referral_code ? "text-4xl text-gray-900" : "text-xl text-gray-400")}>
                                 {data?.referral_code ?? "BELUM DIBUAT"}
                             </span>
                         </div>

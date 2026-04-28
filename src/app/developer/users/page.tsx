@@ -20,23 +20,6 @@ type User = {
     created_at: string;
 };
 
-/* ─── Helpers ────────────────────────────────────────────────────── */
-const AVATAR_COLORS = [
-    { bg: "bg-blue-100", text: "text-blue-700" },
-    { bg: "bg-violet-100", text: "text-violet-700" },
-    { bg: "bg-emerald-100", text: "text-emerald-700" },
-    { bg: "bg-amber-100", text: "text-amber-700" },
-    { bg: "bg-rose-100", text: "text-rose-700" },
-    { bg: "bg-teal-100", text: "text-teal-700" },
-    { bg: "bg-cyan-100", text: "text-cyan-700" },
-    { bg: "bg-indigo-100", text: "text-indigo-700" },
-];
-
-function avatarColor(email: string) {
-    const code = [...email].reduce((s, c) => s + c.charCodeAt(0), 0);
-    return AVATAR_COLORS[code % AVATAR_COLORS.length];
-}
-
 const ROLE_COLORS: Record<string, { bg: string; text: string }> = {
     agent: { bg: "bg-blue-50", text: "text-blue-700" },
     admin_agency: { bg: "bg-violet-50", text: "text-violet-700" },
@@ -489,12 +472,9 @@ export default function UsersPage() {
                                     <tr key={i} className="border-b border-gray-50">
                                         <td className="w-10 pl-5 py-4"><div className="w-[15px] h-[15px] rounded-[3px] bg-gray-100 animate-pulse" /></td>
                                         <td className="px-5 py-4">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-8 h-8 rounded-full bg-gray-100 animate-pulse shrink-0" />
-                                                <div className="space-y-1.5">
-                                                    <div className="h-3.5 w-44 bg-gray-100 rounded animate-pulse" />
-                                                    <div className="h-2.5 w-28 bg-gray-100 rounded animate-pulse" />
-                                                </div>
+                                            <div className="space-y-1.5">
+                                                <div className="h-3.5 w-44 bg-gray-100 rounded animate-pulse" />
+                                                <div className="h-2.5 w-28 bg-gray-100 rounded animate-pulse" />
                                             </div>
                                         </td>
                                         <td className="px-5 py-4"><div className="h-5 w-20 bg-gray-100 rounded-lg animate-pulse" /></td>
@@ -511,7 +491,6 @@ export default function UsersPage() {
                                 </tr>
                             ) : (
                                 users.map(user => {
-                                    const av = avatarColor(user.email);
                                     const isSelected = selected.has(user.user_id);
                                     const roleCfg = ROLE_COLORS[user.role] ?? { bg: "bg-gray-100", text: "text-gray-600" };
                                     const statusCfg = STATUS_CFG[user.status as keyof typeof STATUS_CFG] ?? STATUS_CFG.SUSPENDED;
@@ -529,16 +508,11 @@ export default function UsersPage() {
                                                 </button>
                                             </td>
                                             <td className="px-5 py-4">
-                                                <div className="flex items-center gap-3">
-                                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-xs font-bold ${av.bg} ${av.text}`}>
-                                                        {user.email[0].toUpperCase()}
-                                                    </div>
-                                                    <div className="min-w-0">
-                                                        <p className="text-sm font-semibold text-gray-900 truncate max-w-[220px]">{user.email}</p>
-                                                        <div className="flex items-center gap-1 mt-0.5">
-                                                            <p className="text-[10px] text-gray-400 font-mono truncate max-w-[140px]">{user.user_id}</p>
-                                                            <CopyButton text={user.user_id} />
-                                                        </div>
+                                                <div className="min-w-0">
+                                                    <p className="text-sm font-semibold text-gray-900 truncate max-w-[240px]">{user.email}</p>
+                                                    <div className="flex items-center gap-1 mt-0.5">
+                                                        <p className="text-[10px] text-gray-400 truncate max-w-[160px]">{user.user_id}</p>
+                                                        <CopyButton text={user.user_id} />
                                                     </div>
                                                 </div>
                                             </td>

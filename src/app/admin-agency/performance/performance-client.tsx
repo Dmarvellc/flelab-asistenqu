@@ -149,14 +149,9 @@ export default function AdminAgentPerformanceClient({ initialAgents }: { initial
                                         </div>
 
                                         {/* Agent Name */}
-                                        <div className="col-span-3 flex items-center gap-2.5 min-w-0">
-                                            <div className="h-8 w-8 rounded-full bg-black text-white flex items-center justify-center text-xs font-bold shrink-0">
-                                                {agent.agent_name.charAt(0).toUpperCase()}
-                                            </div>
-                                            <div className="min-w-0">
-                                                <p className="text-sm font-medium text-gray-900 truncate">{agent.agent_name}</p>
-                                                <p className="text-xs text-gray-400 truncate">{agent.email}</p>
-                                            </div>
+                                        <div className="col-span-3 min-w-0">
+                                            <p className="text-sm font-medium text-gray-900 truncate">{agent.agent_name}</p>
+                                            <p className="text-xs text-gray-400 truncate">{agent.email}</p>
                                         </div>
 
                                         {/* Points */}
@@ -243,7 +238,7 @@ export default function AdminAgentPerformanceClient({ initialAgents }: { initial
                                                     <p className="text-xs text-gray-400">Kode Referral</p>
                                                     {agent.referral_code ? (
                                                         <button
-                                                            className="flex items-center gap-1.5 text-sm font-mono font-bold text-gray-900 hover:text-gray-600"
+                                                            className="flex items-center gap-1.5 text-sm font-bold text-gray-900 hover:text-gray-600"
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
                                                                 navigator.clipboard.writeText(agent.referral_code!);

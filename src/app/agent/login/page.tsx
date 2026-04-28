@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,6 +12,7 @@ import { WrongPortalAlert, type WrongPortalInfo } from "@/components/auth/wrong-
 
 export default function AgentLoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { t, lang, setLang } = useTranslation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -19,6 +20,11 @@ export default function AgentLoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [wrongPortal, setWrongPortal] = useState<WrongPortalInfo | null>(null);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const hint = searchParams?.get("hint");
+    if (hint) setEmail(hint);
+  }, [searchParams]);
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();

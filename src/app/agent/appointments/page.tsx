@@ -366,7 +366,7 @@ export default function AppointmentsPage() {
                         {upcoming.length > 0 && (
                             <div>
                                 <div className="px-8 py-4 bg-gray-50/50">
-                                    <p className="text-[13px] font-bold text-gray-500 uppercase tracking-widest">Mendatang ({upcoming.length})</p>
+                                    <p className="text-[13px] font-bold text-gray-500">Mendatang ({upcoming.length})</p>
                                 </div>
                                 {upcoming.map((apt, i) => (
                                     <AppointmentRow
@@ -383,7 +383,7 @@ export default function AppointmentsPage() {
                         {past.length > 0 && (
                             <div>
                                 <div className="px-8 py-4 bg-gray-50/50 border-t border-gray-50">
-                                    <p className="text-[13px] font-bold text-gray-500 uppercase tracking-widest">Riwayat ({past.length})</p>
+                                    <p className="text-[13px] font-bold text-gray-500">Riwayat ({past.length})</p>
                                 </div>
                                 {past.map((apt, i) => (
                                     <AppointmentRow
@@ -413,7 +413,7 @@ export default function AppointmentsPage() {
                     </DialogHeader>
                     <div className="space-y-4 py-2">
                         <div className="space-y-1.5">
-                            <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Nasabah *</Label>
+                            <Label className="text-xs font-semibold text-muted-foreground">Nasabah *</Label>
                             <Select value={form.client_id} onValueChange={v => setForm({ ...form, client_id: v })}>
                                 <SelectTrigger className="rounded-xl">
                                     <SelectValue placeholder="Pilih nasabah..." />
@@ -426,7 +426,7 @@ export default function AppointmentsPage() {
                             </Select>
                         </div>
                         <div className="space-y-1.5">
-                            <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Rumah Sakit</Label>
+                            <Label className="text-xs font-semibold text-muted-foreground">Rumah Sakit</Label>
                             <Select value={form.hospital_id} onValueChange={v => setForm({ ...form, hospital_id: v })}>
                                 <SelectTrigger className="rounded-xl">
                                     <SelectValue placeholder="Pilih rumah sakit..." />
@@ -440,16 +440,16 @@ export default function AppointmentsPage() {
                         </div>
                         <div className="grid grid-cols-2 gap-3">
                             <div className="space-y-1.5">
-                                <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Tanggal *</Label>
+                                <Label className="text-xs font-semibold text-muted-foreground">Tanggal *</Label>
                                 <Input type="date" value={form.appointment_date} onChange={e => setForm({ ...form, appointment_date: e.target.value })} className="rounded-xl" />
                             </div>
                             <div className="space-y-1.5">
-                                <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Waktu</Label>
+                                <Label className="text-xs font-semibold text-muted-foreground">Waktu</Label>
                                 <Input type="time" value={form.appointment_time} onChange={e => setForm({ ...form, appointment_time: e.target.value })} className="rounded-xl" />
                             </div>
                         </div>
                         <div className="space-y-1.5">
-                            <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Jenis Jadwal</Label>
+                            <Label className="text-xs font-semibold text-muted-foreground">Jenis Jadwal</Label>
                             <Select value={form.appointment_type} onValueChange={v => setForm({ ...form, appointment_type: v })}>
                                 <SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger>
                                 <SelectContent>
@@ -460,7 +460,7 @@ export default function AppointmentsPage() {
                             </Select>
                         </div>
                         <div className="space-y-1.5">
-                            <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Catatan</Label>
+                            <Label className="text-xs font-semibold text-muted-foreground">Catatan</Label>
                             <Textarea placeholder="Catatan tambahan..." value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} className="rounded-xl resize-none" rows={3} />
                         </div>
                     </div>
@@ -489,7 +489,7 @@ export default function AppointmentsPage() {
                     </div>
                     <div className="space-y-4 py-2">
                         <div className="space-y-1.5">
-                            <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Nasabah *</Label>
+                            <Label className="text-xs font-semibold text-muted-foreground">Nasabah *</Label>
                             <Select value={logForm.client_id} onValueChange={v => setLogForm({ ...logForm, client_id: v })}>
                                 <SelectTrigger className="rounded-xl">
                                     <SelectValue placeholder="Pilih nasabah..." />
@@ -502,7 +502,7 @@ export default function AppointmentsPage() {
                             </Select>
                         </div>
                         <div className="space-y-1.5">
-                            <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Rumah Sakit *</Label>
+                            <Label className="text-xs font-semibold text-muted-foreground">Rumah Sakit *</Label>
                             <Select value={logForm.hospital_id} onValueChange={v => setLogForm({ ...logForm, hospital_id: v })}>
                                 <SelectTrigger className="rounded-xl">
                                     <SelectValue placeholder="Pilih rumah sakit..." />
@@ -516,16 +516,16 @@ export default function AppointmentsPage() {
                         </div>
                         <div className="grid grid-cols-2 gap-3">
                             <div className="space-y-1.5">
-                                <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Tanggal Kunjungan *</Label>
+                                <Label className="text-xs font-semibold text-muted-foreground">Tanggal Kunjungan *</Label>
                                 <Input type="date" value={logForm.appointment_date} onChange={e => setLogForm({ ...logForm, appointment_date: e.target.value })} className="rounded-xl" />
                             </div>
                             <div className="space-y-1.5">
-                                <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Perkiraan Waktu</Label>
+                                <Label className="text-xs font-semibold text-muted-foreground">Perkiraan Waktu</Label>
                                 <Input type="time" value={logForm.appointment_time} onChange={e => setLogForm({ ...logForm, appointment_time: e.target.value })} className="rounded-xl" />
                             </div>
                         </div>
                         <div className="space-y-1.5">
-                            <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Keluhan / Kondisi Pasien *</Label>
+                            <Label className="text-xs font-semibold text-muted-foreground">Keluhan / Kondisi Pasien *</Label>
                             <Textarea
                                 placeholder="Contoh: Demam tinggi 3 hari, nyeri dada, sesak napas. Kemungkinan perlu rawat inap..."
                                 value={logForm.notes}
@@ -601,7 +601,7 @@ function AppointmentRow({
                         <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">VISIT LOG</span>
                     )}
                     {apt.claim_number && (
-                        <span className="text-xs text-gray-400 font-mono">{apt.claim_number}</span>
+                        <span className="text-xs text-gray-400">{apt.claim_number}</span>
                     )}
                 </div>
                 <div className="flex flex-wrap items-center gap-3 mt-1">

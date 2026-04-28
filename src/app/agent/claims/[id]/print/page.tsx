@@ -359,7 +359,7 @@ export default function ClaimPrintPage() {
                 /* ── Page stripe ── */
                 .top-stripe {
                     position: absolute; top: 0; left: 0; right: 0; height: 5px;
-                    background: linear-gradient(90deg, #1a1a1a 0%, #555 50%, #1a1a1a 100%);
+                    background: #1a1a1a;
                     border-radius: 0;
                 }
 

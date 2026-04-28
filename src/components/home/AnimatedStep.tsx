@@ -36,7 +36,7 @@ export function AnimatedStep({
       }`}
     >
       <p
-        className="text-[108px] font-black leading-none mb-6 select-none tracking-tighter bg-gradient-to-br from-blue-600 via-blue-500 to-indigo-400 bg-clip-text text-transparent"
+        className="text-[108px] font-black leading-none mb-6 select-none tracking-tighter text-blue-600"
       >
         {number}
       </p>

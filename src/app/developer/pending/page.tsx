@@ -48,22 +48,6 @@ function relDate(iso: string) {
     return `${Math.floor(h / 24)}h lalu`;
 }
 
-const AVATAR_COLORS = [
-    { bg: "bg-blue-100", text: "text-blue-700" },
-    { bg: "bg-violet-100", text: "text-violet-700" },
-    { bg: "bg-emerald-100", text: "text-emerald-700" },
-    { bg: "bg-amber-100", text: "text-amber-700" },
-    { bg: "bg-rose-100", text: "text-rose-700" },
-    { bg: "bg-teal-100", text: "text-teal-700" },
-    { bg: "bg-cyan-100", text: "text-cyan-700" },
-    { bg: "bg-indigo-100", text: "text-indigo-700" },
-];
-
-function avatarColor(email: string) {
-    const code = [...email].reduce((s, c) => s + c.charCodeAt(0), 0);
-    return AVATAR_COLORS[code % AVATAR_COLORS.length];
-}
-
 type SortCol = "email" | "full_name" | "created_at";
 
 export default function PendingApprovalsPage() {
@@ -200,7 +184,7 @@ export default function PendingApprovalsPage() {
                     <p className="font-semibold text-amber-900">Halaman ini akan dipensiunkan.</p>
                     <p className="text-amber-800 mt-0.5">
                         Approval per-agen sekarang ditangani admin agency lewat invitation flow di{" "}
-                        <span className="font-mono text-xs bg-amber-100 px-1.5 py-0.5 rounded">/admin-agency/team</span>.
+                        <span className="text-xs bg-amber-100 px-1.5 py-0.5 rounded">/admin-agency/team</span>.
                         Halaman ini hanya untuk membersihkan akun-akun lama yang masih berstatus PENDING.
                     </p>
                 </div>
@@ -264,10 +248,7 @@ export default function PendingApprovalsPage() {
                                 Array.from({ length: 6 }).map((_, i) => (
                                     <tr key={i} className="border-b border-gray-50">
                                         <td className="px-5 py-4">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-8 h-8 rounded-full bg-gray-100 animate-pulse shrink-0" />
-                                                <div className="h-3.5 w-44 bg-gray-100 rounded animate-pulse" />
-                                            </div>
+                                            <div className="h-3.5 w-44 bg-gray-100 rounded animate-pulse" />
                                         </td>
                                         <td className="px-5 py-4"><div className="h-3.5 w-32 bg-gray-100 rounded animate-pulse" /></td>
                                         <td className="px-5 py-4"><div className="h-5 w-16 bg-gray-100 rounded-lg animate-pulse" /></td>
@@ -283,20 +264,13 @@ export default function PendingApprovalsPage() {
                                 </tr>
                             ) : (
                                 displayed.map(user => {
-                                    const av = avatarColor(user.email);
-                                    const initials = (user.full_name ?? user.email)[0].toUpperCase();
                                     return (
                                         <tr
                                             key={user.user_id}
                                             className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors group/row"
                                         >
                                             <td className="px-5 py-4">
-                                                <div className="flex items-center gap-3">
-                                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-xs font-bold ${av.bg} ${av.text}`}>
-                                                        {initials}
-                                                    </div>
-                                                    <p className="text-sm font-medium text-gray-900 truncate max-w-[200px]">{user.email}</p>
-                                                </div>
+                                                <p className="text-sm font-medium text-gray-900 truncate max-w-[220px]">{user.email}</p>
                                             </td>
                                             <td className="px-5 py-4">
                                                 <div className="flex items-center gap-2">

@@ -304,7 +304,7 @@ export default function TeamManagementPage() {
                 {inviteResult.expiresAt && formatDate(inviteResult.expiresAt)}.
               </p>
               <div className="flex items-stretch gap-2">
-                <div className="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-xs text-gray-700 font-mono break-all">
+                <div className="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-xs text-gray-700 break-all">
                   {inviteResult.inviteUrl}
                 </div>
                 <Button
@@ -380,7 +380,7 @@ export default function TeamManagementPage() {
               </div>
               <p className="text-[11px] text-gray-500 mt-3 flex items-start gap-1.5">
                 <Link2 className="h-3 w-3 mt-0.5 shrink-0" />
-                Kami akan membuat link undangan. Penerima mengklik link untuk set password sendiri — Anda tidak perlu menentukan password di sini.
+                Kami akan membuat link undangan. Penerima mengklik link untuk mengatur password sendiri. Anda tidak perlu menentukan password di sini.
               </p>
               <div className="flex justify-end gap-3 mt-6">
                 <Button variant="outline" onClick={() => setShowInvite(false)} className="rounded-xl">Batal</Button>
@@ -432,7 +432,7 @@ export default function TeamManagementPage() {
               {joinRequests.length} calon agen menunggu persetujuan
             </p>
             <p className="text-[11px] text-gray-500 mt-0.5">
-              Permintaan bergabung agen ditangani di halaman Agen →
+              Permintaan bergabung agen ditangani di halaman Agen.
             </p>
           </div>
         </Link>
@@ -506,11 +506,6 @@ export default function TeamManagementPage() {
 
               return (
                 <div key={m.member_id} className="flex items-center gap-3 sm:gap-4 px-5 sm:px-6 py-4 hover:bg-gray-50/50 transition-colors">
-                  {/* Avatar */}
-                  <div className="h-10 w-10 rounded-xl bg-gray-100 flex items-center justify-center shrink-0 text-sm font-bold text-gray-600">
-                    {(m.full_name || m.email).charAt(0).toUpperCase()}
-                  </div>
-
                   {/* Info */}
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-gray-900 truncate">{m.full_name || m.email}</p>

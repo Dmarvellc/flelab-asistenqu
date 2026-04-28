@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react"
 import Link from "next/link"
 import {
   Search, Building2, MapPin, Star, Shield, Globe2, Stethoscope, ChevronRight,
-  X, Heart, Brain, Bone, Microscope, Eye, Baby, Activity, Droplets, FlaskConical,
+  X, Heart, Brain, Bone, Microscope, Eye, Baby, Activity, Droplets,
   Award, Users, Zap, Clock, Hospital, Video
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -96,8 +96,8 @@ const SPECIALIZATIONS = [
   { key: "Pediatri", label: "Anak", icon: Baby },
   { key: "Gastroenterologi", label: "Pencernaan", icon: Activity },
   { key: "Urologi", label: "Urologi", icon: Droplets },
-  { key: "Dermatologi", label: "Kulit", icon: FlaskConical },
-  { key: "Penyakit Infeksi", label: "Infeksi", icon: FlaskConical },
+  { key: "Dermatologi", label: "Kulit", icon: Activity },
+  { key: "Penyakit Infeksi", label: "Infeksi", icon: Activity },
 ]
 
 const COUNTRIES = [
@@ -385,8 +385,7 @@ export default function NetworkMarketplacePage() {
     <div className="flex flex-col gap-6 sm:gap-8 animate-in fade-in duration-500">
 
       {/* ── Hero Header ── */}
-      <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-5 sm:p-10">
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wMyI+PHBhdGggZD0iTTM2IDM0djItSDJ2LTJoMzR6bTAtMzBWMkgyVjRoMzR6TTIgMzBoMnYySDJ2LTJ6Ii8+PC9nPjwvZz48L3N2Zz4=')] opacity-50" />
+      <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl bg-gray-900 p-5 sm:p-10">
         <div className="relative z-10 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
           <div>
             <h1 className="text-xl sm:text-4xl font-bold text-white tracking-tight">

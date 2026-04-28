@@ -242,7 +242,7 @@ export default function HospitalAppointmentsPage() {
                         {upcoming.length > 0 && (
                             <div>
                                 <div className="px-8 py-4 bg-gray-50/50">
-                                    <p className="text-[13px] font-bold text-gray-500 uppercase tracking-widest">Mendatang & Menunggu ({upcoming.length})</p>
+                                    <p className="text-[13px] font-bold text-gray-500">Mendatang & Menunggu ({upcoming.length})</p>
                                 </div>
                                 {upcoming.map((apt, i) => (
                                     <AppointmentRow
@@ -258,7 +258,7 @@ export default function HospitalAppointmentsPage() {
                         {past.length > 0 && (
                             <div>
                                 <div className="px-8 py-4 bg-gray-50/50 border-t border-gray-50">
-                                    <p className="text-[13px] font-bold text-gray-500 uppercase tracking-widest">Riwayat ({past.length})</p>
+                                    <p className="text-[13px] font-bold text-gray-500">Riwayat ({past.length})</p>
                                 </div>
                                 {past.map((apt, i) => (
                                     <AppointmentRow key={apt.appointment_id} apt={apt} index={i} isPast />
@@ -381,7 +381,7 @@ function AppointmentRow({
                         <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">VISIT LOG</span>
                     )}
                     {apt.claim_number && (
-                        <span className="text-xs text-gray-400 font-mono">{apt.claim_number}</span>
+                        <span className="text-xs text-gray-400">{apt.claim_number}</span>
                     )}
                     {apt.claim_id && !apt.claim_number && (
                         <span className="text-xs text-green-600 font-medium">Sudah dikonversi ke klaim</span>
