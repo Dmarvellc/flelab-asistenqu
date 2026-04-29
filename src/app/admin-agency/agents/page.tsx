@@ -34,8 +34,7 @@ export default async function AgencyAgentsPage() {
     const agents: AgencyAgent[] = await getAgencyAgents(agencyId);
 
     return (
-        <div className="flex flex-col gap-6 animate-in fade-in duration-500 w-full">
-            {/* Header */}
+        <div className="flex flex-col gap-8 animate-in fade-in duration-500 w-full">
             <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 pb-6 border-b border-gray-100">
                 <div className="min-w-0">
                     <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900">

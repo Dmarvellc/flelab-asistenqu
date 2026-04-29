@@ -37,24 +37,22 @@ export default async function AdminClientsPage() {
     ]);
 
     return (
-        <div className="flex flex-col gap-8 animate-in fade-in duration-500 max-w-7xl">
-            {/* Header */}
-            <div>
-                <h1 className="text-xl sm:text-3xl font-bold tracking-tight text-gray-900">Manajemen Klien</h1>
-                <p className="mt-1 text-sm text-gray-500">
-                    Kelola dan distribusikan kembali klien dan polis ke agen-agen di bawah agensi Anda.
-                </p>
+        <div className="flex flex-col gap-8 animate-in fade-in duration-500 w-full">
+            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 pb-6 border-b border-gray-100">
+                <div className="min-w-0">
+                    <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900">Manajemen Klien</h1>
+                    <p className="mt-1.5 text-sm text-gray-500">
+                        Kelola dan distribusikan kembali klien dan polis ke agen-agen di bawah agensi Anda.
+                    </p>
+                </div>
             </div>
-
-            {/* Table Card */}
             <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
                 <div className="px-6 py-5 border-b border-gray-50 bg-gray-50/30 flex items-center justify-between">
                     <div>
-                        <h2 className="text-lg font-bold text-gray-900">Direktori Klien</h2>
+                        <h2 className="text-base font-bold text-gray-900">Direktori Klien</h2>
                         <p className="text-xs font-medium text-gray-500 mt-0.5">Total {clients.length} klien didampingi oleh agen agensi ini.</p>
                     </div>
                 </div>
-
                 <div className="overflow-x-auto">
                     <ClientsTable clients={clients} agents={agents} />
                 </div>

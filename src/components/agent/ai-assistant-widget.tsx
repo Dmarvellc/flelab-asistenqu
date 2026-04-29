@@ -12,6 +12,11 @@ const PREDEFINED_PROMPTS = [
     "Ucapan ultah untuk klien"
 ];
 
+const fabPosition =
+    "fixed z-40 bottom-[max(1rem,env(safe-area-inset-bottom,0px))] right-3 sm:bottom-6 sm:right-6";
+const panelPosition =
+    "fixed z-40 bottom-[max(1rem,env(safe-area-inset-bottom,0px))] right-3 left-3 sm:left-auto sm:bottom-8 sm:right-8";
+
 export function AIAssistantWidget() {
     const [isOpen, setIsOpen] = useState(false);
     const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -45,8 +50,11 @@ export function AIAssistantWidget() {
                 onClick={() => setIsOpen(true)}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
+                type="button"
+                aria-label="Buka AI Asisten"
                 className={cn(
-                    "fixed bottom-6 right-6 z-50 flex h-14 w-auto items-center gap-3 space-x-2 rounded-full px-5",
+                    fabPosition,
+                    "flex h-12 w-12 sm:h-14 sm:w-auto items-center justify-center sm:justify-start gap-0 sm:gap-3 rounded-full sm:px-5 shadow-lg",
                     "bg-black text-white shadow-[0_8px_30px_rgb(0,0,0,0.2)] border border-gray-800 transition-shadow hover:shadow-[0_8px_30px_rgb(0,0,0,0.4)]",
                     isOpen && "hidden"
                 )}
@@ -54,7 +62,7 @@ export function AIAssistantWidget() {
                 <div className="relative flex items-center justify-center">
                     <Bot className="h-6 w-6 text-white" />
                 </div>
-                <span className="font-semibold text-[15px] hidden sm:block">AI Asisten</span>
+                <span className="font-semibold text-[15px] hidden sm:inline">AI Asisten</span>
             </motion.button>
 
             {/* Chat Window */}
@@ -65,7 +73,10 @@ export function AIAssistantWidget() {
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 20, scale: 0.95 }}
                         transition={{ duration: 0.2, ease: "easeOut" }}
-                        className="fixed bottom-6 right-6 sm:bottom-8 sm:right-8 z-50 w-full max-w-[360px] overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-2xl flex flex-col h-[600px] max-h-[85vh]"
+                        className={cn(
+                            panelPosition,
+                            "w-full sm:max-w-[360px] overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-2xl flex flex-col h-[600px] max-h-[min(85vh,calc(100dvh-5rem))]",
+                        )}
                     >
                         {/* Header */}
                         <div className="relative flex items-center justify-between bg-black px-5 py-4 text-white">

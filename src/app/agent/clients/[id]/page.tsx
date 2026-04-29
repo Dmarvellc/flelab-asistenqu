@@ -223,14 +223,14 @@ export default function ClientDetailPage() {
     }
 
     return (
-        <div className="flex flex-col gap-6 animate-in fade-in duration-500 max-w-6xl mx-auto pb-16">
+        <div className="flex flex-col gap-8 animate-in fade-in duration-500 w-full max-w-6xl mx-auto pb-16">
             {/* ── Header ──────────────────────────── */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 pb-6 border-b border-gray-100">
-                <div className="flex items-center gap-4">
-                    <Button variant="ghost" size="icon" onClick={() => router.back()} className="rounded-full bg-gray-50 hover:bg-gray-100 h-10 w-10 shrink-0">
-                        <ArrowLeft className="h-4 w-4 text-gray-600" />
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-gray-100">
+                <div className="flex items-center gap-4 min-w-0">
+                    <Button variant="outline" size="icon" onClick={() => router.back()} className="rounded-xl shrink-0 h-10 w-10">
+                        <ArrowLeft className="h-4 w-4" />
                     </Button>
-                    <div>
+                    <div className="min-w-0">
                         <div className="flex flex-wrap items-center gap-2 mb-1">
                             <span className={cn("text-[10px] font-bold px-2.5 py-1 rounded-full border", statusStyle(client.status))}>
                                 {client.status === "ACTIVE" ? "Aktif" : client.status}
@@ -240,7 +240,7 @@ export default function ClientDetailPage() {
                             </span>
                             <span className="text-xs text-gray-500 font-semibold">{contracts.length} polis terdaftar</span>
                         </div>
-                        <h2 className="text-xl sm:text-3xl font-bold tracking-tight text-gray-900 mt-1">{client.full_name}</h2>
+                        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900">{client.full_name}</h1>
                     </div>
                 </div>
                 <Button onClick={() => router.push("/agent/clients/new")} className="gap-2 rounded-xl bg-gray-900 hover:bg-black text-white">

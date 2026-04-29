@@ -110,24 +110,23 @@ export default async function AdminAgencyDashboardPage() {
   ];
 
   return (
-    <div className="flex flex-col gap-10">
+    <div className="flex flex-col gap-8 animate-in fade-in duration-500 w-full">
 
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 pb-6 border-b border-gray-100">
-        <div className="flex flex-col gap-2">
-          <h1 className="text-2xl sm:text-4xl font-bold tracking-tight text-gray-900 mt-2">{agencyName}</h1>
-          <p className="mt-1 text-base text-gray-500">Pantau performa agensi, perkembangan agen, dan klaim secara keseluruhan.</p>
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 pb-6 border-b border-gray-100">
+        <div className="min-w-0">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900">{agencyName}</h1>
+          <p className="mt-1.5 text-sm text-gray-500">Pantau performa agensi, perkembangan agen, dan klaim secara keseluruhan.</p>
         </div>
-
-        <div className="flex flex-wrap items-center gap-3 mt-4 sm:mt-0">
+        <div className="flex flex-wrap items-center gap-2 shrink-0">
           <Link href="/admin-agency/agents">
-            <button className="bg-gray-900 hover:bg-black text-white text-[14px] font-semibold h-11 px-5 rounded-xl transition-all shadow-sm hover:shadow-md inline-flex items-center gap-2">
+            <button className="bg-gray-900 hover:bg-black text-white text-sm font-semibold h-10 px-4 rounded-xl transition-all shadow-sm hover:shadow-md inline-flex items-center gap-2">
               <Users className="h-4 w-4" />
               Undang Agen
             </button>
           </Link>
           <Link href="/admin-agency/team">
-            <button className="bg-white hover:bg-gray-50 border border-gray-200 text-gray-900 text-[14px] font-semibold h-11 px-5 rounded-xl transition-all inline-flex items-center gap-2">
+            <button className="bg-white hover:bg-gray-50 border border-gray-200 text-gray-900 text-sm font-semibold h-10 px-4 rounded-xl transition-all inline-flex items-center gap-2">
               <UserCog className="h-4 w-4" />
               Staff Internal
             </button>

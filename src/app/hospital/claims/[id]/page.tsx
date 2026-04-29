@@ -307,17 +307,17 @@ export default function HospitalClaimDetailPage() {
     const canApprove = approvalBlockers.length === 0;
 
     return (
-        <div className="space-y-6">
-            <div className="flex items-center gap-4">
+        <div className="flex flex-col gap-8 animate-in fade-in duration-500 w-full">
+            <div className="flex items-center gap-4 pb-6 border-b border-gray-100">
                 <Link href="/hospital/claims">
-                    <Button variant="ghost" size="icon">
+                    <Button variant="outline" size="icon" className="rounded-xl shrink-0">
                         <ArrowLeft className="h-4 w-4" />
                     </Button>
                 </Link>
-                <div>
-                    <h2 className="text-2xl font-bold tracking-tight">Detail Klaim Masuk</h2>
+                <div className="min-w-0 flex-1">
+                    <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900">Detail Klaim Masuk</h1>
                     <div className="flex items-center gap-2 mt-1">
-                        <p className="text-muted-foreground text-sm">ID: {claim.claim_id}</p>
+                        <p className="text-sm text-gray-500">ID: {claim.claim_id}</p>
                         {getStatusBadge(claim.status)}
                     </div>
                 </div>

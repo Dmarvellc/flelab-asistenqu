@@ -91,32 +91,32 @@ export default function AgentClaimsPage({ initialClaims, agencyTemplateUrl }: { 
     const filters = ['DRAFT', 'SUBMITTED', 'APPROVED', 'REJECTED', 'PAID'];
 
     return (
-        <div className="flex flex-col gap-10 animate-in fade-in duration-500">
+        <div className="flex flex-col gap-8 animate-in fade-in duration-500 w-full">
             {/* Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 pb-6 border-b border-gray-100">
-                <div className="flex flex-col gap-2">
-                    <p className="text-[15px] font-semibold text-gray-500 flex items-center gap-2">
-                        <FileText className="h-4 w-4" />
+            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 pb-6 border-b border-gray-100">
+                <div className="min-w-0">
+                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider flex items-center gap-1.5 mb-1">
+                        <FileText className="h-3.5 w-3.5" />
                         {claims.length} Total Klaim
                     </p>
-                    <h1 className="text-2xl sm:text-4xl font-bold tracking-tight text-gray-900 mt-2">Daftar Klaim</h1>
-                    <p className="mt-1 text-base text-gray-500">Kelola dan pantau pengajuan klaim asuransi klien Anda di satu tempat terpadu.</p>
+                    <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900">Daftar Klaim</h1>
+                    <p className="mt-1.5 text-sm text-gray-500">Kelola dan pantau pengajuan klaim asuransi klien Anda di satu tempat terpadu.</p>
                 </div>
-                <div className="flex flex-col sm:flex-row gap-3 mt-4 sm:mt-0">
+                <div className="flex flex-wrap gap-2 shrink-0">
                     {agencyTemplateUrl ? (
-                        <a href={agencyTemplateUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center bg-white border border-gray-200 hover:bg-gray-50 text-gray-900 text-[15px] font-semibold h-12 px-5 rounded-2xl transition-all shadow-sm hover:shadow-md gap-2">
-                            <DownloadCloud className="h-5 w-5 text-gray-500" />
-                            Unduh Form Klaim
+                        <a href={agencyTemplateUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center bg-white border border-gray-200 hover:bg-gray-50 text-gray-900 text-sm font-semibold h-10 px-4 rounded-xl transition-all shadow-sm hover:shadow-md gap-2">
+                            <DownloadCloud className="h-4 w-4 text-gray-500" />
+                            Unduh Form
                         </a>
                     ) : (
-                        <button disabled className="bg-gray-50 border border-gray-100 text-gray-400 text-[15px] font-semibold h-12 px-5 rounded-2xl flex items-center gap-2 cursor-not-allowed cursor-help" title="Belum diupload oleh Admin Agency">
-                            <DownloadCloud className="h-5 w-5 opacity-50" />
-                            Unduh Form Klaim
+                        <button disabled className="bg-gray-50 border border-gray-100 text-gray-400 text-sm font-semibold h-10 px-4 rounded-xl flex items-center gap-2 cursor-not-allowed" title="Belum diupload oleh Admin Agency">
+                            <DownloadCloud className="h-4 w-4 opacity-50" />
+                            Unduh Form
                         </button>
                     )}
                     <Link href="/agent/claims/new">
-                        <button className="w-full sm:w-auto bg-gray-900 hover:bg-black text-white text-[15px] font-semibold h-12 px-6 rounded-2xl transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5 flex items-center justify-center gap-2">
-                            <Plus className="h-5 w-5" />
+                        <button className="bg-gray-900 hover:bg-black text-white text-sm font-semibold h-10 px-4 rounded-xl transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5 flex items-center gap-2">
+                            <Plus className="h-4 w-4" />
                             Buat Klaim Baru
                         </button>
                     </Link>

@@ -8,6 +8,9 @@ import {
 import { TeamPageSkeleton } from "@/components/ui/dashboard-skeleton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
+} from "@/components/ui/dialog";
 import Link from "next/link";
 import { toast } from "@/hooks/use-toast";
 import { useBusy } from "@/components/ui/busy-overlay-provider";
@@ -254,16 +257,16 @@ export default function TeamManagementPage() {
   const staffPending = pending.filter((i) => i.agency_role !== "agent");
 
   return (
-    <div className="flex flex-col gap-6 sm:gap-8 animate-in fade-in duration-500 w-full">
+    <div className="flex flex-col gap-8 animate-in fade-in duration-500 w-full">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 pb-6 border-b border-gray-100">
         <div className="min-w-0">
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900">
-            Master Admin, Admin &amp; Manager
+            Staff Internal
           </h1>
           <p className="text-sm text-gray-500 mt-1.5 max-w-xl">
-            Kelola operator internal agensi Anda. Untuk mengundang <span className="font-semibold text-gray-700">agen baru</span>,
-            buka halaman{" "}
+            Kelola Master Admin, Admin, dan Manager agensi Anda. Untuk mengundang{" "}
+            <span className="font-semibold text-gray-700">agen baru</span>, buka halaman{" "}
             <Link
               href="/admin-agency/agents"
               className="text-gray-900 underline decoration-dotted underline-offset-2 font-semibold hover:text-violet-700"
@@ -274,37 +277,35 @@ export default function TeamManagementPage() {
         </div>
         <Button
           onClick={() => { setShowInvite(true); setInviteResult(null); }}
-          className="bg-gray-900 hover:bg-gray-800 text-white gap-2 h-11 px-5 rounded-xl text-sm font-semibold shadow-sm shrink-0"
+          className="bg-gray-900 hover:bg-gray-800 text-white gap-2 h-10 px-4 rounded-xl text-sm font-semibold shadow-sm shrink-0"
         >
           <UserPlus className="h-4 w-4" />
           Undang Staff
         </Button>
       </div>
 
-      {/* Invite Modal / Panel */}
-      {showInvite && (
-        <div className="bg-white rounded-2xl border border-gray-200 p-5 sm:p-6 shadow-lg animate-in fade-in slide-in-from-top-2 duration-200">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-bold text-gray-900">
+      {/* Invite Dialog */}
+      <Dialog open={showInvite} onOpenChange={(open) => { setShowInvite(open); if (!open) setInviteResult(null); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>
               {inviteResult?.mode === "invited" ? "Undangan Siap Dikirim" : "Undang Anggota Baru"}
-            </h3>
-            <button
-              onClick={() => { setShowInvite(false); setInviteResult(null); }}
-              className="text-gray-400 hover:text-gray-600"
-            >
-              <X className="h-5 w-5" />
-            </button>
-          </div>
+            </DialogTitle>
+            <DialogDescription>
+              {inviteResult?.mode === "invited"
+                ? "Salin dan kirim link berikut ke anggota via WhatsApp atau email."
+                : "Masukkan data anggota. Mereka akan menerima link untuk mengatur password sendiri."}
+            </DialogDescription>
+          </DialogHeader>
 
           {inviteResult?.mode === "invited" && inviteResult.inviteUrl ? (
             <div className="space-y-4">
               <p className="text-sm text-gray-600">
-                Kirim link berikut ke <span className="font-semibold text-gray-900">{inviteResult.email}</span>{" "}
-                via WhatsApp / email. Link berlaku sampai{" "}
-                {inviteResult.expiresAt && formatDate(inviteResult.expiresAt)}.
+                Link untuk <span className="font-semibold text-gray-900">{inviteResult.email}</span>.
+                Berlaku sampai {inviteResult.expiresAt && formatDate(inviteResult.expiresAt)}.
               </p>
               <div className="flex items-stretch gap-2">
-                <div className="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-xs text-gray-700 break-all">
+                <div className="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-xs text-gray-700 break-all font-mono select-all">
                   {inviteResult.inviteUrl}
                 </div>
                 <Button
@@ -315,40 +316,35 @@ export default function TeamManagementPage() {
                   Salin
                 </Button>
               </div>
-              <p className="text-[11px] text-amber-700 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2">
-                Link ini hanya muncul sekali. Pastikan Anda salin sebelum menutup panel ini.
+              <p className="text-[11px] text-amber-700 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2 flex items-start gap-1.5">
+                <Link2 className="h-3 w-3 mt-0.5 shrink-0" />
+                Link ini hanya muncul sekali. Pastikan Anda salin sebelum menutup dialog ini.
               </p>
-              <div className="flex justify-end gap-2 pt-2">
-                <Button
-                  variant="outline"
-                  onClick={() => { setShowInvite(false); setInviteResult(null); }}
-                  className="rounded-xl"
-                >
+              <DialogFooter>
+                <Button variant="outline" onClick={() => { setShowInvite(false); setInviteResult(null); }} className="rounded-xl">
                   Selesai
                 </Button>
-                <Button
-                  onClick={() => setInviteResult(null)}
-                  className="bg-gray-900 hover:bg-gray-800 rounded-xl gap-1.5"
-                >
+                <Button onClick={() => setInviteResult(null)} className="bg-gray-900 hover:bg-gray-800 rounded-xl gap-1.5">
                   <Send className="h-4 w-4" />
                   Undang Lagi
                 </Button>
-              </div>
+              </DialogFooter>
             </div>
           ) : (
             <>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1 block">Email *</label>
+                <div className="sm:col-span-2">
+                  <label className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1.5 block">Email *</label>
                   <Input
                     value={inviteForm.email}
                     onChange={e => setInviteForm({ ...inviteForm, email: e.target.value })}
                     placeholder="nama@email.com"
                     className="rounded-xl"
+                    type="email"
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1 block">Nama Lengkap</label>
+                  <label className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1.5 block">Nama Lengkap</label>
                   <Input
                     value={inviteForm.fullName}
                     onChange={e => setInviteForm({ ...inviteForm, fullName: e.target.value })}
@@ -357,20 +353,20 @@ export default function TeamManagementPage() {
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1 block">No. HP (opsional)</label>
+                  <label className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1.5 block">No. HP (opsional)</label>
                   <Input
                     value={inviteForm.phone}
                     onChange={e => setInviteForm({ ...inviteForm, phone: e.target.value })}
-                    placeholder="+62812..."
+                    placeholder="+62812…"
                     className="rounded-xl"
                   />
                 </div>
-                <div>
-                  <label className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1 block">Role *</label>
+                <div className="sm:col-span-2">
+                  <label className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1.5 block">Peran *</label>
                   <select
                     value={inviteForm.role}
                     onChange={e => setInviteForm({ ...inviteForm, role: e.target.value })}
-                    className="w-full h-10 px-3 rounded-xl border border-gray-200 text-sm bg-white"
+                    className="w-full h-10 px-3 rounded-xl border border-gray-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-gray-300"
                   >
                     <option value="manager">Manager</option>
                     <option value="admin">Admin</option>
@@ -378,11 +374,7 @@ export default function TeamManagementPage() {
                   </select>
                 </div>
               </div>
-              <p className="text-[11px] text-gray-500 mt-3 flex items-start gap-1.5">
-                <Link2 className="h-3 w-3 mt-0.5 shrink-0" />
-                Kami akan membuat link undangan. Penerima mengklik link untuk mengatur password sendiri. Anda tidak perlu menentukan password di sini.
-              </p>
-              <div className="flex justify-end gap-3 mt-6">
+              <DialogFooter>
                 <Button variant="outline" onClick={() => setShowInvite(false)} className="rounded-xl">Batal</Button>
                 <Button
                   onClick={handleInvite}
@@ -392,11 +384,11 @@ export default function TeamManagementPage() {
                   {inviting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                   Buat Undangan
                 </Button>
-              </div>
+              </DialogFooter>
             </>
           )}
-        </div>
-      )}
+        </DialogContent>
+      </Dialog>
 
       {/* Stats — only staff roles */}
       <div className="grid grid-cols-3 gap-3">

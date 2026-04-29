@@ -59,22 +59,19 @@ export function AgentLayoutClient({ children, initialBadges, serverUserName }: {
             setIsChecking(false);
             return;
         }
-        const user = localStorage.getItem("user");
-        if (!user && !serverUserName) {
-            setIsAuthorized(false);
-            setIsChecking(false);
-            handleLogout();
-        } else {
-            try {
-                if (user) {
-                    const parsed = JSON.parse(user);
-                    setUserName(parsed.email || parsed.name || serverUserName || null);
-                }
-            } catch { }
-            setIsAuthorized(true);
-            setIsChecking(false);
-        }
-    }, [pathname, isPublicPage, handleLogout, serverUserName]);
+        // Auth is handled by middleware — trust the server session.
+        // localStorage is only used to enrich the display name.
+        try {
+            const raw = localStorage.getItem("user");
+            if (raw) {
+                const parsed = JSON.parse(raw);
+                const localName = parsed.email || parsed.name || null;
+                if (localName && !serverUserName) setUserName(localName);
+            }
+        } catch { }
+        setIsAuthorized(true);
+        setIsChecking(false);
+    }, [pathname, isPublicPage, serverUserName]);
 
     if (isChecking && !isPublicPage) {
         return (
@@ -195,7 +192,7 @@ export function AgentLayoutClient({ children, initialBadges, serverUserName }: {
 
     return (
         <>
-            <DashboardLayout sidebar={sidebar} isCollapsed={false} header={
+            <DashboardLayout fabInset sidebar={sidebar} isCollapsed={false} header={
                 <DashboardHeader mobileSidebar={sidebar} actions={<Notifications />}>
                     <Link href={basePath}>
                         <Image

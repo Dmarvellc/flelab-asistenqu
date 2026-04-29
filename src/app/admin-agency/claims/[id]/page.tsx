@@ -50,14 +50,17 @@ export default async function AdminClaimDetailPage({ params }: { params: Promise
     }
 
     return (
-        <div className="flex flex-col gap-6">
-            <div className="flex items-center gap-4">
-                <Button variant="outline" size="icon" asChild>
-                    <Link href="/admin-agency">
+        <div className="flex flex-col gap-8 animate-in fade-in duration-500 w-full">
+            <div className="flex items-center gap-4 pb-6 border-b border-gray-100">
+                <Button variant="outline" size="icon" asChild className="rounded-xl shrink-0">
+                    <Link href="/admin-agency/claims">
                         <ArrowLeft className="h-4 w-4" />
                     </Link>
                 </Button>
-                <span className="text-lg font-medium text-muted-foreground">Back to Dashboard</span>
+                <div className="min-w-0">
+                    <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900">Detail Klaim</h1>
+                    <p className="mt-0.5 text-sm text-gray-500">Informasi lengkap pengajuan klaim asuransi.</p>
+                </div>
             </div>
 
             <ClaimDetailView claim={claim} />

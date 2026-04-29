@@ -118,6 +118,39 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Enforce uniqueness: each agency may only have ONE master_admin at a time.
+    if (role === "master_admin") {
+      const { rows: existingMasters } = await dbPool.query(
+        `SELECT 1 FROM public.agency_member
+          WHERE agency_id = $1 AND role = 'master_admin' AND status = 'ACTIVE'
+          LIMIT 1`,
+        [session.agencyId],
+      );
+      if (existingMasters.length > 0) {
+        return NextResponse.json(
+          { error: "Agensi ini sudah memiliki Master Admin. Lepas atau ubah peran Master Admin saat ini sebelum menetapkan yang baru." },
+          { status: 409 },
+        );
+      }
+      // Also block if there is still a pending invitation for master_admin
+      const { rows: pendingMasterInvite } = await dbPool.query(
+        `SELECT 1 FROM public.agency_invitation
+          WHERE agency_id = $1
+            AND agency_role = 'master_admin'
+            AND accepted_at IS NULL
+            AND revoked_at IS NULL
+            AND expires_at > now()
+          LIMIT 1`,
+        [session.agencyId],
+      );
+      if (pendingMasterInvite.length > 0) {
+        return NextResponse.json(
+          { error: "Sudah ada undangan Master Admin yang masih aktif untuk agensi ini." },
+          { status: 409 },
+        );
+      }
+    }
+
     // Does this user already exist on the platform?
     const existing = await dbPool.query<{ user_id: string }>(
       `SELECT user_id FROM public.app_user WHERE lower(email) = $1`,

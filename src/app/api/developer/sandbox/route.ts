@@ -12,7 +12,7 @@ function randomSuffix() {
 function generateCredentials(role: string, suffix: string) {
   const slug = role.replace(/_/g, "").toLowerCase()
   return {
-    email: `sandbox.${slug}.${suffix}@dev.test`,
+    email: `sandbox.${slug}.${suffix.toLowerCase()}@dev.test`,
     password: `SandboxDev#${suffix}`,
   }
 }

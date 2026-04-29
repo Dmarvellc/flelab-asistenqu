@@ -31,23 +31,22 @@ export function DashboardClient({ metrics, claims, initialAgentName, insuranceNa
     ];
 
     return (
-        <div className="flex flex-col gap-10">
+        <div className="flex flex-col gap-8 animate-in fade-in duration-500 w-full">
 
             {/* Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 pb-6 border-b border-gray-100">
-                <div className="flex flex-col gap-2">
-                    <h1 className="text-2xl sm:text-4xl font-bold tracking-tight text-gray-900 mt-2">Ringkasan Dashboard</h1>
-                    <p className="mt-1 text-base text-gray-500">Pantau aktivitas, klaim, dan performa Anda secara ringkas hari ini.</p>
+            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 pb-6 border-b border-gray-100">
+                <div className="min-w-0">
+                    <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900">Ringkasan Dashboard</h1>
+                    <p className="mt-1.5 text-sm text-gray-500">Pantau aktivitas, klaim, dan performa Anda secara ringkas hari ini.</p>
                 </div>
-
-                <div className="flex flex-wrap items-center gap-4 mt-4 sm:mt-0">
+                <div className="flex flex-wrap items-center gap-2 shrink-0">
                     <Link href="/agent/claims/new">
-                        <button className="bg-white border border-gray-200 hover:bg-gray-50 text-gray-900 text-[14px] font-semibold h-11 px-6 rounded-xl transition-all shadow-sm">
+                        <button className="bg-white border border-gray-200 hover:bg-gray-50 text-gray-900 text-sm font-semibold h-10 px-4 rounded-xl transition-all shadow-sm inline-flex items-center gap-2">
                             {t.newClaim}
                         </button>
                     </Link>
                     <Link href="/agent/clients/new">
-                        <button className="bg-gray-900 hover:bg-black text-white text-[14px] font-semibold h-11 px-6 rounded-xl transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5">
+                        <button className="bg-gray-900 hover:bg-black text-white text-sm font-semibold h-10 px-4 rounded-xl transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5 inline-flex items-center gap-2">
                             {t.addClient}
                         </button>
                     </Link>

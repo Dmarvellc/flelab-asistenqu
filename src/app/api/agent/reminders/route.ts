@@ -1,9 +1,26 @@
 import { NextResponse } from "next/server";
+import type { PoolClient } from "pg";
 import { getSession } from "@/lib/auth";
 import { dbPool } from "@/lib/db";
 import { cached } from "@/lib/cache";
 
 export const dynamic = "force-dynamic";
+
+/** Isolated queries so one missing column / migration gap does not 500 the whole endpoint. */
+async function safeReminderQuery(
+  client: PoolClient,
+  section: string,
+  text: string,
+  params: unknown[]
+): Promise<Record<string, unknown>[]> {
+  try {
+    const { rows } = await client.query<Record<string, unknown>>(text, params);
+    return rows;
+  } catch (error) {
+    console.error(`[api/agent/reminders] ${section} query failed`, error);
+    return [];
+  }
+}
 
 export type ReminderType =
     | "BIRTHDAY"
@@ -59,7 +76,7 @@ export async function GET(req: Request) {
     const typeFilter = url.searchParams.get("type") as ReminderType | null;
 
     const agentId = session.userId;
-    const cacheKey = `v1:agent:reminders:${agentId}:h${horizon}:l${limit}:t${typeFilter ?? "ALL"}`;
+    const cacheKey = `v2:agent:reminders:${agentId}:h${horizon}:l${limit}:t${typeFilter ?? "ALL"}`;
     try {
         const payload = await cached<ReminderPayload>(
             cacheKey,
@@ -70,8 +87,10 @@ export async function GET(req: Request) {
                     const items: ReminderItem[] = [];
         /* ─── 1. BIRTHDAYS (year-agnostic month/day match) ──── */
                     if (!typeFilter || typeFilter === "BIRTHDAY") {
-                        const res = await client.query(
-                `
+                        const rows = await safeReminderQuery(
+                            client,
+                            "BIRTHDAY",
+                            `
                 WITH birthdays AS (
                     SELECT
                         c.client_id,
@@ -105,24 +124,24 @@ export async function GET(req: Request) {
                     END <= CURRENT_DATE + ($2 || ' days')::interval
                 ORDER BY next_birthday ASC
                 `,
-                [agentId, horizon]
-            );
+                            [agentId, horizon]
+                        );
 
-                        for (const r of res.rows) {
-                            const due = new Date(r.next_birthday);
+                        for (const r of rows) {
+                            const due = new Date(String(r.next_birthday));
                             const days = Math.floor((due.getTime() - Date.now()) / 86400000);
-                            const bdate = new Date(r.birth_date);
+                            const bdate = new Date(String(r.birth_date));
                             const age = due.getFullYear() - bdate.getFullYear();
                             items.push({
                                 type: "BIRTHDAY",
                                 severity: severityFor(days),
-                                client_id: r.client_id,
-                                client_name: r.full_name,
+                                client_id: String(r.client_id),
+                                client_name: String(r.full_name),
                                 title: days === 0 ? `Ulang tahun hari ini ${age > 0 ? `(${age} th)` : ""}` : `Ulang tahun ke-${age}`,
                                 subtitle: `Kirim ucapan pribadi ke ${r.full_name}`,
                                 due_date: due.toISOString().slice(0, 10),
                                 days_until: days,
-                                phone: r.phone_number,
+                                phone: r.phone_number != null ? String(r.phone_number) : null,
                                 href: `/agent/clients/${r.client_id}`,
                             });
                         }
@@ -130,8 +149,10 @@ export async function GET(req: Request) {
 
         /* ─── 2. PREMIUM DUE & LAPSE RISK (both from next_due_date) ───────── */
                     if (!typeFilter || typeFilter === "PREMIUM_DUE" || typeFilter === "LAPSE_RISK") {
-                        const res = await client.query(
-                `
+                        const rows = await safeReminderQuery(
+                            client,
+                            "PREMIUM_DUE",
+                            `
                 SELECT
                     c.client_id,
                     p.full_name,
@@ -154,22 +175,23 @@ export async function GET(req: Request) {
                   )
                 ORDER BY con.next_due_date ASC
                 `,
-                [agentId, horizon]
-            );
+                            [agentId, horizon]
+                        );
 
-                        for (const r of res.rows) {
+                        for (const r of rows) {
                             const days = Number(r.days_until);
                             const grace = Number(r.grace_period_days ?? 30);
-                            const isLapse = days < -grace || r.policy_status === "LAPSE";
+                            const policyStatus = r.policy_status != null ? String(r.policy_status) : "";
+                            const isLapse = days < -grace || policyStatus.toUpperCase() === "LAPSE";
                             const type: ReminderType = days < 0 ? "LAPSE_RISK" : "PREMIUM_DUE";
                             if (typeFilter && typeFilter !== type) continue;
 
                             items.push({
                                 type,
                                 severity: isLapse ? "OVERDUE" : severityFor(days, true),
-                                client_id: r.client_id,
-                                client_name: r.full_name,
-                                contract_id: r.contract_id,
+                                client_id: String(r.client_id),
+                                client_name: String(r.full_name),
+                                contract_id: r.contract_id != null ? String(r.contract_id) : null,
                                 title:
                                     days < 0
                                         ? isLapse
@@ -178,21 +200,23 @@ export async function GET(req: Request) {
                                         : days === 0
                                             ? "Jatuh tempo hari ini"
                                             : `Jatuh tempo dalam ${days} hari`,
-                                subtitle: r.contract_product ? `${r.contract_product}` : null,
-                                due_date: new Date(r.next_due_date).toISOString().slice(0, 10),
+                                subtitle: r.contract_product ? String(r.contract_product) : null,
+                                due_date: new Date(String(r.next_due_date)).toISOString().slice(0, 10),
                                 days_until: days,
-                                amount: r.premium_amount ? Number(r.premium_amount) : null,
-                                phone: r.phone_number,
+                                amount: r.premium_amount != null ? Number(r.premium_amount) : null,
+                                phone: r.phone_number != null ? String(r.phone_number) : null,
                                 href: `/agent/clients/${r.client_id}`,
-                                meta: { grace_period_days: grace, policy_status: r.policy_status },
+                                meta: { grace_period_days: grace, policy_status: policyStatus },
                             });
                         }
                     }
 
         /* ─── 3. AUTODEBET EXPIRING ────────────────────────── */
                     if (!typeFilter || typeFilter === "AUTODEBET_EXPIRING") {
-                        const res = await client.query(
-                `
+                        const rows = await safeReminderQuery(
+                            client,
+                            "AUTODEBET_EXPIRING",
+                            `
                 SELECT
                     c.client_id,
                     p.full_name,
@@ -214,10 +238,10 @@ export async function GET(req: Request) {
                   AND cd.autodebet_end_date >= CURRENT_DATE - INTERVAL '30 days'
                 ORDER BY cd.autodebet_end_date ASC
                 `,
-                [agentId, horizon]
-            );
+                            [agentId, horizon]
+                        );
 
-                        for (const r of res.rows) {
+                        for (const r of rows) {
                             const days = Number(r.days_until);
                             const method = String(r.payment_method ?? "");
                             const label = method.includes("KK") || method.includes("CARD")
@@ -228,17 +252,17 @@ export async function GET(req: Request) {
                             items.push({
                                 type: "AUTODEBET_EXPIRING",
                                 severity: severityFor(days, true),
-                                client_id: r.client_id,
-                                client_name: r.full_name,
-                                contract_id: r.contract_id,
+                                client_id: String(r.client_id),
+                                client_name: String(r.full_name),
+                                contract_id: r.contract_id != null ? String(r.contract_id) : null,
                                 title: days < 0
                                     ? `${label} sudah expired ${Math.abs(days)} hari lalu`
                                     : days === 0 ? `${label} expired hari ini`
                                         : `${label} expired dalam ${days} hari`,
-                                subtitle: r.contract_product,
-                                due_date: new Date(r.autodebet_end_date).toISOString().slice(0, 10),
+                                subtitle: r.contract_product != null ? String(r.contract_product) : null,
+                                due_date: new Date(String(r.autodebet_end_date)).toISOString().slice(0, 10),
                                 days_until: days,
-                                phone: r.phone_number,
+                                phone: r.phone_number != null ? String(r.phone_number) : null,
                                 href: `/agent/clients/${r.client_id}`,
                             });
                         }
@@ -246,8 +270,10 @@ export async function GET(req: Request) {
 
         /* ─── 4. POLICY EXPIRING (end_date) ────────────────── */
                     if (!typeFilter || typeFilter === "POLICY_EXPIRING") {
-                        const res = await client.query(
-                `
+                        const rows = await safeReminderQuery(
+                            client,
+                            "POLICY_EXPIRING",
+                            `
                 SELECT
                     c.client_id,
                     p.full_name,
@@ -265,22 +291,22 @@ export async function GET(req: Request) {
                   AND con.end_date <= CURRENT_DATE + ($2 || ' days')::interval
                 ORDER BY con.end_date ASC
                 `,
-                [agentId, Math.max(horizon, 60)]
-            );
+                            [agentId, Math.max(horizon, 60)]
+                        );
 
-                        for (const r of res.rows) {
+                        for (const r of rows) {
                             const days = Number(r.days_until);
                             items.push({
                                 type: "POLICY_EXPIRING",
                                 severity: severityFor(days),
-                                client_id: r.client_id,
-                                client_name: r.full_name,
-                                contract_id: r.contract_id,
+                                client_id: String(r.client_id),
+                                client_name: String(r.full_name),
+                                contract_id: r.contract_id != null ? String(r.contract_id) : null,
                                 title: `Polis berakhir dalam ${days} hari`,
                                 subtitle: r.contract_product ? `${r.contract_product} · peluang renewal` : "Peluang renewal",
-                                due_date: new Date(r.end_date).toISOString().slice(0, 10),
+                                due_date: new Date(String(r.end_date)).toISOString().slice(0, 10),
                                 days_until: days,
-                                phone: r.phone_number,
+                                phone: r.phone_number != null ? String(r.phone_number) : null,
                                 href: `/agent/clients/${r.client_id}`,
                             });
                         }
@@ -288,8 +314,10 @@ export async function GET(req: Request) {
 
         /* ─── 5. UPCOMING APPOINTMENTS ─────────────────────── */
                     if (!typeFilter || typeFilter === "APPOINTMENT") {
-                        const res = await client.query(
-                `
+                        const rows = await safeReminderQuery(
+                            client,
+                            "APPOINTMENT",
+                            `
                 SELECT
                     a.appointment_id,
                     a.appointment_date,
@@ -310,10 +338,10 @@ export async function GET(req: Request) {
                   AND COALESCE(a.status, 'SCHEDULED') IN ('SCHEDULED', 'CONFIRMED', 'PENDING')
                 ORDER BY a.appointment_date ASC, a.appointment_time ASC NULLS LAST
                 `,
-                [agentId, horizon]
-            ).catch(() => ({ rows: [] as Array<Record<string, unknown>> }));
+                            [agentId, horizon]
+                        );
 
-                        for (const row of res.rows as Array<Record<string, unknown>>) {
+                        for (const row of rows) {
                             const days = Number(row.days_until);
                             const date = new Date(row.appointment_date as string);
                             const time = row.appointment_time as string | null;

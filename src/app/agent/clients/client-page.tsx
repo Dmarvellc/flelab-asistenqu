@@ -111,22 +111,22 @@ export default function AgentClientsPage({ initialClients }: { initialClients: C
     const totalPremium = clients.reduce((s, c) => s + parseFloat(c.total_premium || "0"), 0);
 
     return (
-        <div className="flex flex-col gap-10 animate-in fade-in duration-500">
+        <div className="flex flex-col gap-8 animate-in fade-in duration-500 w-full">
             {/* Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 pb-6 border-b border-gray-100">
-                <div className="flex flex-col gap-2">
-                    <p className="text-[15px] font-semibold text-gray-500 flex items-center gap-2">
-                        <Users className="h-4 w-4" />
+            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 pb-6 border-b border-gray-100">
+                <div className="min-w-0">
+                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider flex items-center gap-1.5 mb-1">
+                        <Users className="h-3.5 w-3.5" />
                         {clients.length} {lang === 'en' ? 'Total Clients' : 'Total Klien'}
                     </p>
-                    <h1 className="text-2xl sm:text-4xl font-bold tracking-tight text-gray-900 mt-2">{t.clients}</h1>
-                    <p className="mt-1 text-base text-gray-500">
+                    <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900">{t.clients}</h1>
+                    <p className="mt-1.5 text-sm text-gray-500">
                         {lang === 'en' ? 'Manage your clients and their insurance policies in one integrated view.' : 'Kelola data nasabah dan polis asuransi mereka dalam satu tampilan terpadu.'}
                     </p>
                 </div>
                 <Link href="/agent/clients/new">
-                    <button className="bg-gray-900 hover:bg-black text-white text-[15px] font-semibold h-12 px-6 rounded-2xl transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5 flex items-center gap-2 w-full sm:w-auto justify-center">
-                        <Plus className="h-5 w-5" />
+                    <button className="bg-gray-900 hover:bg-black text-white text-sm font-semibold h-10 px-4 rounded-xl transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5 flex items-center gap-2">
+                        <Plus className="h-4 w-4" />
                         {t.addClient.replace('+ ', '')}
                     </button>
                 </Link>

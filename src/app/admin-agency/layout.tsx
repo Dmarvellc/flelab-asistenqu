@@ -3,7 +3,7 @@
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useCallback, useEffect } from "react";
 import { DashboardLayout, DashboardSidebar, DashboardHeader, SidebarHeader, SidebarContent, SidebarFooter, NavItem } from "@/components/dashboard/dashboard-layout"
-import { LayoutDashboard, Settings, LogOut, Users, UserCog, FileText, GitPullRequest, Trophy, Search, Stethoscope } from "lucide-react"
+import { LayoutDashboard, Settings, LogOut, Users, UserCog, FileText, GitPullRequest, Trophy, Search, Stethoscope, Network, ShieldCheck, TrendingUp, Building2, BarChart3 } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 import { CommandPalette } from "@/components/admin-agency/command-palette"
@@ -96,8 +96,11 @@ function AdminAgencyLayoutContent({ children }: { children: React.ReactNode }) {
           <NavItem href="/admin-agency/team" icon={UserCog} active={pathname.startsWith('/admin-agency/team')} isCollapsed={false}>
             Staff Internal
           </NavItem>
-          <NavItem href="/admin-agency/clients" icon={Users} active={pathname.startsWith('/admin-agency/clients')} isCollapsed={false}>
+          <NavItem href="/admin-agency/clients" icon={ShieldCheck} active={pathname.startsWith('/admin-agency/clients')} isCollapsed={false}>
             {t.clients}
+          </NavItem>
+          <NavItem href="/admin-agency/organization" icon={Network} active={pathname.startsWith('/admin-agency/organization')} isCollapsed={false}>
+            Organisasi
           </NavItem>
 
           {/* ── Operations ────────────────────────────────────── */}
@@ -108,10 +111,10 @@ function AdminAgencyLayoutContent({ children }: { children: React.ReactNode }) {
           <NavItem href="/admin-agency/transfers" icon={GitPullRequest} active={pathname.startsWith('/admin-agency/transfers')} isCollapsed={false}>
             {t.transferRequests}
           </NavItem>
-          <NavItem href="/admin-agency/performance" icon={Trophy} active={pathname.startsWith('/admin-agency/performance')} isCollapsed={false}>
+          <NavItem href="/admin-agency/performance" icon={BarChart3} active={pathname.startsWith('/admin-agency/performance')} isCollapsed={false}>
             {t.agencyPerformance}
           </NavItem>
-          <NavItem href="/admin-agency/network" icon={Stethoscope} active={pathname.startsWith('/admin-agency/network')} isCollapsed={false}>
+          <NavItem href="/admin-agency/network" icon={Building2} active={pathname.startsWith('/admin-agency/network')} isCollapsed={false}>
             Marketplace
           </NavItem>
           {/* ── System ───────────────────────────────────────── */}
@@ -136,7 +139,7 @@ function AdminAgencyLayoutContent({ children }: { children: React.ReactNode }) {
 
   return (
     <>
-      <DashboardLayout sidebar={sidebar} isCollapsed={false} header={
+      <DashboardLayout fabInset sidebar={sidebar} isCollapsed={false} header={
         <DashboardHeader mobileSidebar={sidebar} actions={<Notifications />}>
           <Link href="/admin-agency">
             <Image

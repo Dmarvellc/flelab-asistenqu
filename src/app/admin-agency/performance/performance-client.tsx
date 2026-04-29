@@ -55,17 +55,19 @@ export default function AdminAgentPerformanceClient({ initialAgents }: { initial
     const avgPoints = totalAgents > 0 ? Math.round(agents.reduce((s, a) => s + (a.total_points || 0), 0) / totalAgents) : 0;
 
     return (
-        <div className="flex flex-col gap-8 animate-in fade-in duration-500">
+        <div className="flex flex-col gap-8 animate-in fade-in duration-500 w-full">
             {/* Header */}
-            <div>
-                <div className="inline-flex items-center gap-2 bg-black text-white text-xs font-medium px-3 py-1 rounded-full mb-3 shadow-sm">
-                    <Trophy className="h-3 w-3" />
-                    <span>Performa Agen</span>
+            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 pb-6 border-b border-gray-100">
+                <div className="min-w-0">
+                    <div className="inline-flex items-center gap-2 bg-black text-white text-xs font-medium px-3 py-1 rounded-full mb-3 shadow-sm">
+                        <Trophy className="h-3 w-3" />
+                        <span>Performa Agen</span>
+                    </div>
+                    <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900">Performa Agen</h1>
+                    <p className="mt-1.5 text-sm text-gray-500">
+                        Pantau kinerja, poin, rank, dan produktivitas agen dalam agensi Anda.
+                    </p>
                 </div>
-                <h1 className="text-xl sm:text-3xl font-bold tracking-tight text-gray-900">Performa Agen</h1>
-                <p className="mt-1 text-sm text-gray-500">
-                    Pantau kinerja, poin, rank, dan produktivitas agen dalam agensi Anda.
-                </p>
             </div>
 
             {/* Summary Stats */}

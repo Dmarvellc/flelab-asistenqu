@@ -262,16 +262,16 @@ export default function AgentSettingsPage() {
     ] as const;
 
     return (
-        <div className="flex flex-col gap-10 animate-in fade-in duration-500 max-w-5xl">
+        <div className="flex flex-col gap-8 animate-in fade-in duration-500 w-full max-w-5xl">
             {/* Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 pb-6 border-b border-gray-100">
-                <div className="flex flex-col gap-2">
-                    <p className="text-[15px] font-semibold text-gray-500 flex items-center gap-2">
-                        <User className="h-4 w-4" />
-                        Profil & Akun
+            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 pb-6 border-b border-gray-100">
+                <div className="min-w-0">
+                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider flex items-center gap-1.5 mb-1">
+                        <User className="h-3.5 w-3.5" />
+                        Profil &amp; Akun
                     </p>
-                    <h1 className="text-2xl sm:text-4xl font-bold tracking-tight text-gray-900 mt-2">Pengaturan</h1>
-                    <p className="mt-1 text-base text-gray-500">Kelola informasi akun dan data diri Anda dalam satu tempat.</p>
+                    <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900">Pengaturan</h1>
+                    <p className="mt-1.5 text-sm text-gray-500">Kelola informasi akun dan data diri Anda dalam satu tempat.</p>
                 </div>
             </div>
 

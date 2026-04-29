@@ -144,16 +144,16 @@ export default function RemindersPage() {
     }, [filtered]);
 
     return (
-        <div className="space-y-6 animate-in fade-in duration-300">
+        <div className="flex flex-col gap-8 animate-in fade-in duration-500 w-full">
             {/* Header */}
-            <div className="flex items-start justify-between gap-3">
+            <div className="flex items-start justify-between gap-3 pb-6 border-b border-gray-100">
                 <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-2xl bg-gray-900 flex items-center justify-center shrink-0 shadow-md">
                         <Bell className="h-5 w-5 text-white" />
                     </div>
                     <div>
-                        <h1 className="text-xl sm:text-2xl font-black tracking-tight text-gray-900">Pengingat</h1>
-                        <p className="text-xs sm:text-sm text-gray-400">
+                        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900">Pengingat</h1>
+                        <p className="text-sm text-gray-500">
                             Ulang tahun, jatuh tempo, autodebet, dan renewal dari klien Anda
                         </p>
                     </div>

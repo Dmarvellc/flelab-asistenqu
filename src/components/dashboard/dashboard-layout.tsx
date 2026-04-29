@@ -12,6 +12,8 @@ interface DashboardLayoutProps {
   sidebar: React.ReactNode
   header?: React.ReactNode
   isCollapsed?: boolean
+  /** Reserve scroll space at bottom for fixed widgets (e.g. AI assistant FAB). */
+  fabInset?: boolean
 }
 
 export function DashboardLayout({
@@ -19,6 +21,7 @@ export function DashboardLayout({
   sidebar,
   header,
   isCollapsed = false,
+  fabInset = false,
 }: DashboardLayoutProps) {
   return (
     <div className="flex min-h-screen w-full bg-gray-50/50">
@@ -36,7 +39,12 @@ export function DashboardLayout({
         isCollapsed ? "sm:pl-[80px]" : "sm:pl-[260px]"
       )}>
         {header}
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 xl:p-10 w-full">
+        <main
+          className={cn(
+            "flex-1 p-4 sm:p-6 lg:p-8 xl:p-10 w-full min-h-0",
+            fabInset && "pb-24 sm:pb-28 lg:pb-32"
+          )}
+        >
           {children}
         </main>
       </div>
@@ -155,11 +163,11 @@ export function NavItem({ href, icon: Icon, children, active, isCollapsed, badge
     <Link
       href={href}
       className={cn(
-        "group relative flex items-center rounded-xl px-3 sm:px-4 py-3 sm:py-3.5 text-sm sm:text-[15px] font-medium transition-all duration-300 ease-out",
+        "group relative flex items-center gap-3 rounded-xl px-3 sm:px-4 py-3 sm:py-3.5 text-sm sm:text-[15px] font-medium transition-all duration-300 ease-out",
         isActive
           ? "bg-gray-900 text-white shadow-md shadow-gray-900/10"
           : "text-gray-500 hover:bg-gray-50 hover:text-gray-900",
-        isCollapsed && "justify-center px-0"
+        isCollapsed && "justify-center px-0 gap-0"
       )}
       title={isCollapsed && typeof children === 'string' ? children : undefined}
     >
@@ -168,8 +176,14 @@ export function NavItem({ href, icon: Icon, children, active, isCollapsed, badge
         <span className="absolute -left-4 sm:-left-6 top-1/2 -translate-y-1/2 w-[3px] sm:w-[4px] h-7 sm:h-8 bg-gray-900 rounded-r-full" />
       )}
 
-      {isCollapsed && Icon && (
-        <Icon className={cn("h-5 w-5 shrink-0 transition-all duration-300", isActive ? "text-white" : "text-gray-400 group-hover:text-gray-700 group-hover:scale-110")} />
+      {/* Icon — always visible */}
+      {Icon && (
+        <Icon className={cn(
+          "shrink-0 transition-all duration-300",
+          isCollapsed ? "h-5 w-5" : "h-[18px] w-[18px]",
+          isActive ? "text-white" : "text-gray-400 group-hover:text-gray-700",
+          !isCollapsed && "group-hover:scale-110"
+        )} />
       )}
 
       {/* Text label — only when not collapsed */}
