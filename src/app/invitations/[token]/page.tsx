@@ -129,7 +129,7 @@ export default function InvitationLandingPage() {
 
   if (loadErr || !preview) {
     return (
-      <div className="min-h-screen bg-[#111111] flex flex-col items-center justify-center p-6 text-center font-serif">
+      <div className="min-h-screen bg-[#111111] flex flex-col items-center justify-center p-6 text-center">
         <div className="space-y-4">
           <h2 className="text-2xl text-white font-medium">Link tidak valid</h2>
           <p className="text-[#888888]">{loadErr ?? "Undangan tidak ditemukan."}</p>
@@ -148,7 +148,7 @@ export default function InvitationLandingPage() {
       expired: "Undangan ini sudah kedaluwarsa. Minta admin mengirim ulang.",
     };
     return (
-      <div className="min-h-screen bg-[#111111] flex flex-col items-center justify-center p-6 text-center font-serif">
+      <div className="min-h-screen bg-[#111111] flex flex-col items-center justify-center p-6 text-center">
         <div className="space-y-4">
           <h2 className="text-2xl text-white font-medium">Tidak bisa diproses</h2>
           <p className="text-[#888888]">{msg[preview.status]}</p>
@@ -160,7 +160,7 @@ export default function InvitationLandingPage() {
   if (done) {
     const isStaff = preview?.agency_role && preview.agency_role !== "agent";
     return (
-      <div className="min-h-screen bg-[#111111] flex flex-col items-center justify-center p-6 text-center font-serif">
+      <div className="min-h-screen bg-[#111111] flex flex-col items-center justify-center p-6 text-center">
         <div className="space-y-4">
           <CheckCircle2 className="h-8 w-8 text-white mx-auto mb-2" />
           <h2 className="text-2xl text-white font-medium">Akun siap</h2>
@@ -175,7 +175,7 @@ export default function InvitationLandingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#FAFAFA] flex flex-col items-center p-6 sm:p-12 font-serif text-[#1C1C1C]">
+    <div className="min-h-screen bg-[#FAFAFA] flex flex-col items-center p-6 sm:p-12 text-[#1C1C1C]">
       {/* Top Center Logo */}
       <div className="w-full max-w-lg flex justify-center mb-16">
         <Logo height={32} />
