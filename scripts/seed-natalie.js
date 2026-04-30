@@ -149,6 +149,7 @@ async function main() {
 
     const userId = await ensureNatalie(c);
     const agencyId = await attachAgency(c, userId);
+    await ensureAuthUser(c, userId);
     await ensurePersonAndAgent(c, userId);
 
     if (FORCE_RESET) {
@@ -235,6 +236,50 @@ async function ensureNatalie(c) {
   );
   console.log("• Created new agent user", NATALIE_EMAIL);
   return userId;
+}
+
+// ── 1b. Ensure auth.users row (FK target for claim.created_by_user_id) ──
+// In newer Supabase setups several public.* tables FK to auth.users(id).
+// Registration flow no longer writes auth.users (see lib/auth-queries.ts),
+// so existing app_user-only accounts like Natalie need a backfilled row.
+async function ensureAuthUser(c, userId) {
+  const exists = await safeQuery(
+    c,
+    "SELECT 1 FROM auth.users WHERE id = $1",
+    [userId],
+  );
+  if (exists && exists.rows.length > 0) {
+    console.log("• auth.users row already present");
+    return;
+  }
+  // Try shapes from most-detailed to most-minimal. Different Supabase
+  // versions have different NOT NULL columns on auth.users.
+  const shapes = [
+    `INSERT INTO auth.users (
+       id, instance_id, aud, role, email, encrypted_password,
+       email_confirmed_at, raw_app_meta_data, raw_user_meta_data,
+       created_at, updated_at
+     ) VALUES (
+       $1, '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated',
+       $2, '', NOW(),
+       '{"provider":"email","providers":["email"]}'::jsonb, '{}'::jsonb,
+       NOW(), NOW()
+     ) ON CONFLICT (id) DO NOTHING`,
+    `INSERT INTO auth.users (id, email, created_at, updated_at)
+     VALUES ($1, $2, NOW(), NOW()) ON CONFLICT (id) DO NOTHING`,
+    `INSERT INTO auth.users (id, email)
+     VALUES ($1, $2) ON CONFLICT (id) DO NOTHING`,
+  ];
+  for (const sql of shapes) {
+    const ok = await safeQuery(c, sql, [userId, NATALIE_EMAIL.toLowerCase()]);
+    if (ok) {
+      console.log("• Backfilled auth.users row for Natalie");
+      return;
+    }
+  }
+  console.log(
+    "⚠ Could not write to auth.users — if claim FK fails, ask DBA to grant write access or relax the FK.",
+  );
 }
 
 // ── 2. Attach to demo agency ─────────────────────────────────────
