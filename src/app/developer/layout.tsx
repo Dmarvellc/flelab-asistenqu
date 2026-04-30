@@ -23,11 +23,9 @@ import {
   Box,
 } from "lucide-react";
 import Link from "next/link";
-import Image from "next/image";
+import { Logo } from "@/components/ui/logo";
 import { Notifications } from "@/components/dashboard/notifications";
 
-const LOGO_URL =
-  "https://jzupwygwzatugbrmqjau.supabase.co/storage/v1/object/sign/image/m_logotext.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV82NWE4NDk3Zi1iNTdiLTQ1ZDMtOWI3ZC0yNDAxNzU4Njg1NTAiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJpbWFnZS9tX2xvZ290ZXh0LnBuZyIsImlhdCI6MTc3MTkwMjgxNywiZXhwIjozMzI3NjM2NjgxN30.BDtpL6pQ6FhAGQF3V05PMC3gHkJ44R2O4vm3yfY2iyQ";
 
 export default function DeveloperLayout({
   children,
@@ -66,13 +64,7 @@ export default function DeveloperLayout({
     <DashboardSidebar>
       <SidebarHeader>
         <Link href="/developer">
-          <Image
-            src={LOGO_URL}
-            alt="AsistenQu Developer"
-            width={160}
-            height={32}
-            className="h-8 w-auto object-contain"
-          />
+          <Logo height={28} />
         </Link>
       </SidebarHeader>
 
@@ -167,13 +159,7 @@ export default function DeveloperLayout({
       header={
         <DashboardHeader mobileSidebar={sidebar} actions={<Notifications />}>
           <Link href="/developer">
-            <Image
-              src={LOGO_URL}
-              alt="AsistenQu Developer"
-              width={120}
-              height={24}
-              className="h-5 w-auto object-contain"
-            />
+            <Logo height={20} />
           </Link>
         </DashboardHeader>
       }

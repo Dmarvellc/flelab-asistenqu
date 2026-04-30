@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { AlertCircle, Eye, EyeOff, Loader2, ArrowRight, Globe } from "lucide-react";
 import { useTranslation } from "@/components/providers/i18n-provider";
 import { WrongPortalAlert, type WrongPortalInfo } from "@/components/auth/wrong-portal-alert";
+import { Logo } from "@/components/ui/logo";
 
 export default function AgentLoginPage() {
   const router = useRouter();
@@ -80,11 +81,7 @@ export default function AgentLoginPage() {
 
       {/* Top Logo */}
       <div className="absolute top-12 left-1/2 -translate-x-1/2 z-20">
-        <img
-          src="https://jzupwygwzatugbrmqjau.supabase.co/storage/v1/object/sign/image/m_logotext.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV82NWE4NDk3Zi1iNTdiLTQ1ZDMtOWI3ZC0yNDAxNzU4Njg1NTAiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJpbWFnZS9tX2xvZ290ZXh0LnBuZyIsImlhdCI6MTc3MTkwMjgxNywiZXhwIjozMzI3NjM2NjgxN30.BDtpL6pQ6FhAGQF3V05PMC3gHkJ44R2O4vm3yfY2iyQ"
-          alt="AsistenQu Logo"
-          className="h-10 w-auto object-contain"
-        />
+        <Logo height={40} />
       </div>
 
       {/* Language Toggle */}

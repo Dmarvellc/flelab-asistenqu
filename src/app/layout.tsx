@@ -7,7 +7,7 @@ import { BusyOverlayProvider } from "@/components/ui/busy-overlay-provider";
 const poppins = Poppins({
   variable: "--font-poppins",
   subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700", "800"],
+  weight: ["300", "400", "500", "600", "700", "800", "900"],
 });
 
 const instrumentSerif = Instrument_Serif({

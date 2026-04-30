@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import { Logo } from "@/components/ui/logo"
 
 export function Footer() {
   const navLinks = [
@@ -17,8 +18,8 @@ export function Footer() {
       <div className="max-w-7xl mx-auto px-6 py-8">
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 border-b border-white/8 pb-8 mb-6">
           {/* Brand */}
-          <Link href="/" className="text-xl font-extrabold tracking-tighter text-white hover:opacity-70 transition-opacity shrink-0">
-            AsistenQu
+          <Link href="/" className="hover:opacity-70 transition-opacity shrink-0">
+            <Logo height={32} light />
           </Link>
 
           {/* Nav links — horizontal */}

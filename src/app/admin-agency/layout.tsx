@@ -5,7 +5,7 @@ import { useState, useCallback, useEffect } from "react";
 import { DashboardLayout, DashboardSidebar, DashboardHeader, SidebarHeader, SidebarContent, SidebarFooter, NavItem } from "@/components/dashboard/dashboard-layout"
 import { LayoutDashboard, Settings, LogOut, Users, UserCog, FileText, GitPullRequest, Trophy, Search, Stethoscope, Network, ShieldCheck, TrendingUp, Building2, BarChart3 } from "lucide-react"
 import Link from "next/link"
-import Image from "next/image"
+import { Logo } from "@/components/ui/logo"
 import { CommandPalette } from "@/components/admin-agency/command-palette"
 import { I18nProvider, useTranslation } from "@/components/providers/i18n-provider";
 import { AIAgencyAssistantWidget } from "@/components/admin-agency/ai-assistant-widget";
@@ -65,13 +65,7 @@ function AdminAgencyLayoutContent({ children }: { children: React.ReactNode }) {
     <DashboardSidebar>
       <SidebarHeader>
         <Link href="/admin-agency">
-          <Image
-            src="https://jzupwygwzatugbrmqjau.supabase.co/storage/v1/object/sign/image/m_tagadmin.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV82NWE4NDk3Zi1iNTdiLTQ1ZDMtOWI3ZC0yNDAxNzU4Njg1NTAiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJpbWFnZS9tX3RhZ2FkbWluLnBuZyIsImlhdCI6MTc3MTg5NzQwMSwiZXhwIjozMzI3NjM2MTQwMX0.O2gM-49fTWQWkUKRyDs_5tsEUF-l_RKJb3xft9UWg64"
-            alt="AsistenQu Admin Agency"
-            width={200}
-            height={40}
-            className="h-8 w-auto object-contain"
-          />
+          <Logo height={28} />
         </Link>
       </SidebarHeader>
 
@@ -142,13 +136,7 @@ function AdminAgencyLayoutContent({ children }: { children: React.ReactNode }) {
       <DashboardLayout fabInset sidebar={sidebar} isCollapsed={false} header={
         <DashboardHeader mobileSidebar={sidebar} actions={<Notifications />}>
           <Link href="/admin-agency">
-            <Image
-              src="https://jzupwygwzatugbrmqjau.supabase.co/storage/v1/object/sign/image/m_tagadmin.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV82NWE4NDk3Zi1iNTdiLTQ1ZDMtOWI3ZC0yNDAxNzU4Njg1NTAiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJpbWFnZS9tX3RhZ2FkbWluLnBuZyIsImlhdCI6MTc3MTg5NzQwMSwiZXhwIjozMzI3NjM2MTQwMX0.O2gM-49fTWQWkUKRyDs_5tsEUF-l_RKJb3xft9UWg64"
-              alt="AsistenQu Admin"
-              width={120}
-              height={24}
-              className="h-5 w-auto object-contain"
-            />
+            <Logo height={20} />
           </Link>
         </DashboardHeader>
       }>

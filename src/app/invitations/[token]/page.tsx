@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import Image from "next/image";
+import { Logo } from "@/components/ui/logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,8 +13,6 @@ import {
   Lock,
 } from "lucide-react";
 
-const LOGO_URL =
-  "https://jzupwygwzatugbrmqjau.supabase.co/storage/v1/object/sign/image/m_logotext.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV82NWE4NDk3Zi1iNTdiLTQ1ZDMtOWI3ZC0yNDAxNzU4Njg1NTAiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJpbWFnZS9tX2xvZ290ZXh0LnBuZyIsImlhdCI6MTc3MTkwMjgxNywiZXhwIjozMzI3NjM2NjgxN30.BDtpL6pQ6FhAGQF3V05PMC3gHkJ44R2O4vm3yfY2iyQ";
 
 /**
  * Public landing for /invitations/<token>.
@@ -180,14 +178,7 @@ export default function InvitationLandingPage() {
     <div className="min-h-screen bg-[#FAFAFA] flex flex-col items-center p-6 sm:p-12 font-serif text-[#1C1C1C]">
       {/* Top Center Logo */}
       <div className="w-full max-w-lg flex justify-center mb-16">
-        <Image
-          src={LOGO_URL}
-          alt="AsistenQu"
-          width={180}
-          height={36}
-          className="h-7 w-auto object-contain"
-          priority
-        />
+        <Logo height={32} />
       </div>
 
       <div className="w-full max-w-lg space-y-12">

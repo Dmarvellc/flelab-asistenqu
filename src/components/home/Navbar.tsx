@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { useState, useEffect } from "react"
 import { Menu, X, Globe, ChevronDown } from "lucide-react"
+import { Logo } from "@/components/ui/logo"
 import { useLanguage } from "@/lib/language-context"
 import {
     DropdownMenu,
@@ -47,11 +48,8 @@ export function Navbar() {
         >
             <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
                 {/* Logo */}
-                <Link
-                    href="/"
-                    className="text-xl font-extrabold tracking-tighter text-gray-900 hover:text-blue-600 transition-colors duration-200"
-                >
-                    AsistenQu
+                <Link href="/" className="hover:opacity-75 transition-opacity duration-200">
+                    <Logo height={36} priority />
                 </Link>
 
                 {/* Desktop nav */}

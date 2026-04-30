@@ -7,9 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AlertCircle, Eye, EyeOff, Loader2, ArrowRight } from "lucide-react";
 import { WrongPortalAlert, type WrongPortalInfo } from "@/components/auth/wrong-portal-alert";
+import { Logo } from "@/components/ui/logo";
 
-const LOGO_URL =
-  "https://jzupwygwzatugbrmqjau.supabase.co/storage/v1/object/sign/image/m_logotext.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV82NWE4NDk3Zi1iNTdiLTQ1ZDMtOWI3ZC0yNDAxNzU4Njg1NTAiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJpbWFnZS9tX2xvZ290ZXh0LnBuZyIsImlhdCI6MTc3MTkwMjgxNywiZXhwIjozMzI3NjM2NjgxN30.BDtpL6pQ6FhAGQF3V05PMC3gHkJ44R2O4vm3yfY2iyQ";
 
 export default function DeveloperLoginPage() {
   const router = useRouter();
@@ -77,11 +76,7 @@ export default function DeveloperLoginPage() {
 
       {/* Top Logo */}
       <div className="absolute top-12 left-1/2 -translate-x-1/2 z-20">
-        <img
-          src={LOGO_URL}
-          alt="AsistenQu Logo"
-          className="h-10 w-auto object-contain"
-        />
+        <Logo height={40} />
       </div>
 
       <div className="w-full max-w-sm animate-in fade-in slide-in-from-bottom-4 duration-700 relative z-10 bg-white p-8 rounded-3xl shadow-2xl shadow-black/5 border border-white/20">

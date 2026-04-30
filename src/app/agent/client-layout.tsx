@@ -16,20 +16,18 @@ import { LayoutDashboard, Users, FileText, LogOut, Settings, ClipboardList, Stet
 import { Notifications } from "@/components/dashboard/notifications";
 import Link from "next/link"
 import Image from "next/image"
+import { Logo } from "@/components/ui/logo"
 import { I18nProvider, useTranslation } from "@/components/providers/i18n-provider"
 import { useAgencyBranding } from "@/components/providers/agency-branding-provider"
 import { CommandPalette } from "@/components/agent/command-palette"
 import { AIAssistantWidget } from "@/components/agent/ai-assistant-widget"
 
-const DEFAULT_LOGO = "https://jzupwygwzatugbrmqjau.supabase.co/storage/v1/object/sign/image/m_tagagent.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV82NWE4NDk3Zi1iNTdiLTQ1ZDMtOWI3ZC0yNDAxNzU4Njg1NTAiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJpbWFnZS9tX3RhZ2FnZW50LnBuZyIsImlhdCI6MTc3MTc2Mzk4NSwiZXhwIjozMzI3NjIyNzk4NX0.1mf2ApWgy64TXpQXboJXnSGFumPrOCvwn5u9p8EJmlI";
 
 export function AgentLayoutClient({ children, initialBadges, serverUserName }: { children: React.ReactNode, initialBadges: { pendingContracts: number, totalClaims: number }, serverUserName: string | null }) {
     const pathname = usePathname();
     const router = useRouter();
     const { t, lang, setLang } = useTranslation();
     const branding = useAgencyBranding();
-    const logoUrl = branding.logoUrl || DEFAULT_LOGO;
-
     // Determine base path (supports /{slug}/agent or /agent)
     const pathSegments = pathname.split("/").filter(Boolean);
     const isSlugRoute = pathSegments.length >= 2 && pathSegments[1] === "agent" && pathSegments[0] !== "agent";
@@ -114,13 +112,17 @@ export function AgentLayoutClient({ children, initialBadges, serverUserName }: {
         <DashboardSidebar>
             <SidebarHeader>
                 <Link href={basePath}>
-                    <Image
-                        src={logoUrl}
-                        alt="AsistenQu Agent"
-                        width={200}
-                        height={40}
-                        className="h-8 w-auto object-contain"
-                    />
+                    {branding.logoUrl ? (
+                        <Image
+                            src={branding.logoUrl}
+                            alt="Logo"
+                            width={200}
+                            height={40}
+                            className="h-8 w-auto object-contain"
+                        />
+                    ) : (
+                        <Logo height={28} />
+                    )}
                 </Link>
             </SidebarHeader>
 
@@ -195,13 +197,17 @@ export function AgentLayoutClient({ children, initialBadges, serverUserName }: {
             <DashboardLayout fabInset sidebar={sidebar} isCollapsed={false} header={
                 <DashboardHeader mobileSidebar={sidebar} actions={<Notifications />}>
                     <Link href={basePath}>
-                        <Image
-                            src={logoUrl}
-                            alt="AsistenQu Agent"
-                            width={120}
-                            height={24}
-                            className="h-5 w-auto object-contain"
-                        />
+                        {branding.logoUrl ? (
+                            <Image
+                                src={branding.logoUrl}
+                                alt="Logo"
+                                width={120}
+                                height={24}
+                                className="h-5 w-auto object-contain"
+                            />
+                        ) : (
+                            <Logo height={20} />
+                        )}
                     </Link>
                 </DashboardHeader>
             }>
