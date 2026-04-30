@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { Bot, X, Send, MessageSquare, Zap, Copy, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useChat } from "ai/react";
+import { useFabVisibility } from "@/hooks/use-fab-visibility";
 
 const PREDEFINED_PROMPTS = [
     "Draft email motivasi ke agen",
@@ -21,6 +22,9 @@ export function AIAgencyAssistantWidget() {
     const [isOpen, setIsOpen] = useState(false);
     const [copiedId, setCopiedId] = useState<string | null>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
+    // Hide FAB on scroll-down, when a modal is open, or while the mobile
+    // keyboard is up — prevents it from covering other CTAs.
+    const fabVisible = useFabVisibility({ enabled: !isOpen });
 
     const handleCopy = (text: string, id: string) => {
         navigator.clipboard.writeText(text);
@@ -52,10 +56,18 @@ export function AIAgencyAssistantWidget() {
                 whileTap={{ scale: 0.95 }}
                 type="button"
                 aria-label="Buka AI Asisten"
+                aria-hidden={!fabVisible}
+                tabIndex={fabVisible ? 0 : -1}
+                animate={{
+                    y: fabVisible ? 0 : 96,
+                    opacity: fabVisible ? 1 : 0,
+                }}
+                transition={{ duration: 0.22, ease: "easeOut" }}
                 className={cn(
                     fabPosition,
                     "flex h-12 w-12 sm:h-14 sm:w-auto items-center justify-center sm:justify-start gap-0 sm:gap-3 rounded-full sm:px-5 shadow-lg",
                     "bg-black text-white shadow-[0_8px_30px_rgb(0,0,0,0.2)] border border-gray-800 transition-shadow hover:shadow-[0_8px_30px_rgb(0,0,0,0.4)]",
+                    !fabVisible && "pointer-events-none",
                     isOpen && "hidden"
                 )}
             >
