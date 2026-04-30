@@ -117,6 +117,22 @@ function pickWeighted(arr) {
   return arr[arr.length - 1];
 }
 
+// Run a "best-effort" query inside a SAVEPOINT so its failure can't
+// abort the surrounding transaction. Returns null on failure.
+let __spCounter = 0;
+async function safeQuery(c, sql, params) {
+  const sp = "sp_" + ++__spCounter;
+  await c.query("SAVEPOINT " + sp);
+  try {
+    const r = await c.query(sql, params);
+    await c.query("RELEASE SAVEPOINT " + sp);
+    return r;
+  } catch (e) {
+    await c.query("ROLLBACK TO SAVEPOINT " + sp);
+    return null;
+  }
+}
+
 // ── main ─────────────────────────────────────────────────────────
 async function main() {
   const useSsl =
@@ -258,14 +274,22 @@ async function ensurePersonAndAgent(c, userId) {
       [NATALIE_FULL_NAME, NATALIE_PHONE],
     );
     personId = p.rows[0].person_id;
-    await c
-      .query(
-        `INSERT INTO public.user_person_link (user_id, person_id, relation_type)
+    // Some schemas don't have relation_type — try with, then without.
+    let linked = await safeQuery(
+      c,
+      `INSERT INTO public.user_person_link (user_id, person_id, relation_type)
        VALUES ($1, $2, 'OWNER')
        ON CONFLICT DO NOTHING`,
+      [userId, personId],
+    );
+    if (!linked) {
+      await safeQuery(
+        c,
+        `INSERT INTO public.user_person_link (user_id, person_id)
+         VALUES ($1, $2) ON CONFLICT DO NOTHING`,
         [userId, personId],
-      )
-      .catch(() => {});
+      );
+    }
   }
 
   const insRes = await c.query("SELECT insurance_id FROM public.insurance LIMIT 1");
@@ -284,32 +308,39 @@ async function ensurePersonAndAgent(c, userId) {
     [userId],
   );
   if (agentRes.rows.length === 0) {
-    try {
-      await c.query(
-        `INSERT INTO public.agent (agent_id, agent_name, insurance_id, status, person_id)
-         VALUES ($1, $2, $3, 'ACTIVE', $4)`,
-        [userId, NATALIE_FULL_NAME, insuranceId, personId],
-      );
-    } catch (_) {
-      await c.query(
+    const inserted = await safeQuery(
+      c,
+      `INSERT INTO public.agent (agent_id, agent_name, insurance_id, status, person_id)
+       VALUES ($1, $2, $3, 'ACTIVE', $4)`,
+      [userId, NATALIE_FULL_NAME, insuranceId, personId],
+    );
+    if (!inserted) {
+      await safeQuery(
+        c,
         `INSERT INTO public.agent (agent_id, agent_name, insurance_id, status)
          VALUES ($1, $2, $3, 'ACTIVE')`,
         [userId, NATALIE_FULL_NAME, insuranceId],
       );
     }
   } else {
-    await c.query("UPDATE public.agent SET status = 'ACTIVE' WHERE agent_id = $1", [
-      userId,
-    ]);
+    await safeQuery(
+      c,
+      "UPDATE public.agent SET status = 'ACTIVE' WHERE agent_id = $1",
+      [userId],
+    );
   }
 
   // Best-effort points/wallet — column names vary across migrations.
-  await c
-    .query("UPDATE public.agent SET points_balance = 2400 WHERE agent_id = $1", [userId])
-    .catch(() => {});
-  await c
-    .query("UPDATE public.agent SET wallet_balance = 250000 WHERE agent_id = $1", [userId])
-    .catch(() => {});
+  await safeQuery(
+    c,
+    "UPDATE public.agent SET points_balance = 2400 WHERE agent_id = $1",
+    [userId],
+  );
+  await safeQuery(
+    c,
+    "UPDATE public.agent SET wallet_balance = 250000 WHERE agent_id = $1",
+    [userId],
+  );
 }
 
 // ── helpers for idempotency ─────────────────────────────────────
@@ -346,13 +377,12 @@ async function wipeNatalieSeed(c, userId) {
   await c.query("DELETE FROM public.claim WHERE client_id = ANY($1::uuid[])", [
     clientIds,
   ]);
-  await c
-    .query(
-      `DELETE FROM public.contract_detail
-       WHERE contract_id IN (SELECT contract_id FROM public.contract WHERE client_id = ANY($1::uuid[]))`,
-      [clientIds],
-    )
-    .catch(() => {});
+  await safeQuery(
+    c,
+    `DELETE FROM public.contract_detail
+     WHERE contract_id IN (SELECT contract_id FROM public.contract WHERE client_id = ANY($1::uuid[]))`,
+    [clientIds],
+  );
   await c.query("DELETE FROM public.contract WHERE client_id = ANY($1::uuid[])", [
     clientIds,
   ]);
@@ -385,50 +415,50 @@ async function ensureHospitals(c) {
   const ids = existing.rows.map((r) => r.hospital_id);
   for (const name of HOSPITAL_NAMES) {
     if (ids.length >= 3) break;
-    const ins = await c
-      .query(
-        `INSERT INTO public.hospital (name, address, is_partner, status)
-         VALUES ($1, $2, true, 'ACTIVE') RETURNING hospital_id`,
-        [name, "Jakarta"],
-      )
-      .catch(() => null);
+    const ins = await safeQuery(
+      c,
+      `INSERT INTO public.hospital (name, address, is_partner, status)
+       VALUES ($1, $2, true, 'ACTIVE') RETURNING hospital_id`,
+      [name, "Jakarta"],
+    );
     if (ins) ids.push(ins.rows[0].hospital_id);
   }
   return ids;
 }
 
 async function ensureDoctors(c, hospitalIds) {
-  const existing = await c
-    .query("SELECT doctor_id FROM public.doctor ORDER BY created_at LIMIT 3")
-    .catch(() => ({ rows: [] }));
-  const ids = existing.rows.map((r) => r.doctor_id);
+  const existing = await safeQuery(
+    c,
+    "SELECT doctor_id FROM public.doctor ORDER BY created_at LIMIT 3",
+  );
+  const ids = existing ? existing.rows.map((r) => r.doctor_id) : [];
   if (ids.length >= 3) return ids;
   for (let i = 0; ids.length < 3 && i < DOCTOR_NAMES.length; i++) {
-    const ins = await c
-      .query(
-        `INSERT INTO public.doctor (doctor_name, specialty, hospital_id, status)
-         VALUES ($1, $2, $3, 'ACTIVE') RETURNING doctor_id`,
-        [DOCTOR_NAMES[i], "Internis", hospitalIds[i % hospitalIds.length]],
-      )
-      .catch(() => null);
+    const ins = await safeQuery(
+      c,
+      `INSERT INTO public.doctor (doctor_name, specialty, hospital_id, status)
+       VALUES ($1, $2, $3, 'ACTIVE') RETURNING doctor_id`,
+      [DOCTOR_NAMES[i], "Internis", hospitalIds[i % hospitalIds.length]],
+    );
     if (ins) ids.push(ins.rows[0].doctor_id);
   }
   return ids;
 }
 
 async function ensureDiseases(c) {
-  const r = await c
-    .query("SELECT disease_id FROM public.disease ORDER BY disease_name LIMIT 5")
-    .catch(() => ({ rows: [] }));
-  const ids = r.rows.map((x) => x.disease_id);
+  const r = await safeQuery(
+    c,
+    "SELECT disease_id FROM public.disease ORDER BY disease_name LIMIT 5",
+  );
+  const ids = r ? r.rows.map((x) => x.disease_id) : [];
   if (ids.length >= 3) return ids;
   for (const d of DISEASES) {
     if (ids.length >= 5) break;
-    const ins = await c
-      .query("INSERT INTO public.disease (disease_name) VALUES ($1) RETURNING disease_id", [
-        d,
-      ])
-      .catch(() => null);
+    const ins = await safeQuery(
+      c,
+      "INSERT INTO public.disease (disease_name) VALUES ($1) RETURNING disease_id",
+      [d],
+    );
     if (ins) ids.push(ins.rows[0].disease_id);
   }
   return ids;
@@ -498,33 +528,31 @@ async function seedContracts(c, clientIds) {
 
     const sumInsured = rand(50, 500) * 1_000_000;
     const premium = rand(500, 3500) * 1000;
-    await c
-      .query(
-        `INSERT INTO public.contract_detail (
-           contract_id, sum_insured, payment_type, premium_amount,
-           premium_frequency, coverage_area
-         ) VALUES ($1, $2, 'MONTHLY', $3, 'MONTHLY', 'INDONESIA')`,
-        [contractId, sumInsured, premium],
-      )
-      .catch(() => {});
+    await safeQuery(
+      c,
+      `INSERT INTO public.contract_detail (
+         contract_id, sum_insured, payment_type, premium_amount,
+         premium_frequency, coverage_area
+       ) VALUES ($1, $2, 'MONTHLY', $3, 'MONTHLY', 'INDONESIA')`,
+      [contractId, sumInsured, premium],
+    );
 
     if (isPending) {
       const pendingNumber = `POL-ND-${Date.now().toString().slice(-6)}-${i + 1}P`;
-      await c
-        .query(
-          `INSERT INTO public.contract (
-             client_id, contract_number, contract_product,
-             contract_startdate, contract_duedate, status,
-             insurance_company_name, policy_status, currency
-           ) VALUES (
-             $1, $2, $3,
-             (NOW() - INTERVAL '5 days')::date,
-             (NOW() + INTERVAL '360 days')::date,
-             'PENDING', 'PT Asuransi Demo', 'PENGAJUAN', 'IDR'
-           )`,
-          [clientIds[i], pendingNumber, pick(PRODUCTS)],
-        )
-        .catch(() => {});
+      await safeQuery(
+        c,
+        `INSERT INTO public.contract (
+           client_id, contract_number, contract_product,
+           contract_startdate, contract_duedate, status,
+           insurance_company_name, policy_status, currency
+         ) VALUES (
+           $1, $2, $3,
+           (NOW() - INTERVAL '5 days')::date,
+           (NOW() + INTERVAL '360 days')::date,
+           'PENDING', 'PT Asuransi Demo', 'PENGAJUAN', 'IDR'
+         )`,
+        [clientIds[i], pendingNumber, pick(PRODUCTS)],
+      );
     }
   }
   console.log(`• Seeded ${contractIds.length} ACTIVE contracts (+2 PENDING)`);
