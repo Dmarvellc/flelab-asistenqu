@@ -95,9 +95,11 @@ const DISEASES = [
   "Bronkitis",
 ];
 
-// Claim status/stage mix and weights for the 18 claims
+// Claim status/stage mix and weights for the 18 claims.
+// status is a Postgres enum: DRAFT / SUBMITTED / APPROVED / REJECTED / PAID / INFO_REQUESTED.
+// stage is wider: DRAFT_AGENT / PENDING_LOG / LOG_ISSUED / PENDING_REVIEW / APPROVED / REJECTED / COMPLETED.
 const CLAIM_STATUS_MIX = [
-  { status: "COMPLETED", stage: "COMPLETED", weight: 4 },
+  { status: "PAID", stage: "COMPLETED", weight: 4 },
   { status: "APPROVED", stage: "APPROVED", weight: 4 },
   { status: "SUBMITTED", stage: "PENDING_REVIEW", weight: 4 },
   { status: "DRAFT", stage: "DRAFT_AGENT", weight: 3 },
@@ -710,7 +712,7 @@ async function seedAgentPerformance(c, userId, claims) {
     );
     const total = monthClaims.length;
     const approved = monthClaims.filter(
-      (cl) => cl.status === "APPROVED" || cl.status === "COMPLETED",
+      (cl) => cl.status === "APPROVED" || cl.status === "PAID",
     ).length;
     const rejected = monthClaims.filter((cl) => cl.status === "REJECTED").length;
     const totalValue = monthClaims.reduce((s, cl) => s + cl.amount, 0);
