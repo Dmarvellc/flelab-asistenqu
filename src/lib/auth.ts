@@ -9,6 +9,22 @@ import { normalizeRole, type Role } from "@/lib/rbac";
 
 export const AUTH_SESSION_COOKIE = "session_id";
 
+export const PORTAL_COOKIE_NAMES = {
+  agent: "session_agent",
+  hospital: "session_hospital",
+  developer: "session_developer",
+  admin_agency: "session_admin_agency",
+} as const;
+
+export type PortalKey = keyof typeof PORTAL_COOKIE_NAMES;
+
+export function getPortalCookieName(portal: string | null | undefined): string | null {
+  if (!portal) return null;
+  return PORTAL_COOKIE_NAMES[portal as PortalKey] ?? null;
+}
+
+export const ALL_PORTAL_COOKIE_NAMES = Object.values(PORTAL_COOKIE_NAMES);
+
 const SESSION_CACHE_PREFIX = "auth:session";
 const DEFAULT_SESSION_TTL_SECONDS = 12 * 60 * 60;
 const REMEMBER_ME_TTL_SECONDS = 30 * 24 * 60 * 60;
@@ -259,25 +275,81 @@ async function loadSessionFromDatabase(sessionId: string): Promise<AppSession | 
   return session;
 }
 
-export async function getSession(options?: { forceRevalidate?: boolean }): Promise<AppSession | null> {
-  const cookieStore = await cookies();
-  const sessionId = cookieStore.get(AUTH_SESSION_COOKIE)?.value;
-
-  if (!sessionId) {
-    return null;
-  }
-
+async function loadAndValidateSession(
+  sessionId: string,
+  forceRevalidate?: boolean
+): Promise<AppSession | null> {
   const cached = await getCachedSession(sessionId);
   if (
     cached &&
-    !options?.forceRevalidate &&
+    !forceRevalidate &&
     !isSessionExpired(cached.expiresAt) &&
     Date.now() - cached.validatedAt < SESSION_REVALIDATE_SECONDS * 1000
   ) {
     return cached;
   }
-
   return loadSessionFromDatabase(sessionId);
+}
+
+/**
+ * Read session for a specific portal. Multi-portal aware: each portal has its
+ * own cookie so a user can be logged into developer + agent at the same time.
+ *
+ * If `portal` is omitted, we try to derive it from the `x-portal` request
+ * header (set by middleware), then fall back to scanning every portal cookie
+ * and returning the first valid session. This keeps existing call sites
+ * (`getSession()` with no args) working.
+ */
+export async function getSession(options?: {
+  forceRevalidate?: boolean;
+  portal?: string | null;
+}): Promise<AppSession | null> {
+  const cookieStore = await cookies();
+  const explicitPortal = options?.portal ?? null;
+
+  // 1. Explicit portal — read that portal's cookie only
+  if (explicitPortal) {
+    const cookieName = getPortalCookieName(explicitPortal);
+    if (!cookieName) return null;
+    const sid = cookieStore.get(cookieName)?.value;
+    if (!sid) return null;
+    return loadAndValidateSession(sid, options?.forceRevalidate);
+  }
+
+  // 2. Derive portal from middleware-injected header
+  try {
+    const { headers } = await import("next/headers");
+    const headerStore = await headers();
+    const headerPortal = headerStore.get("x-portal");
+    if (headerPortal) {
+      const cookieName = getPortalCookieName(headerPortal);
+      if (cookieName) {
+        const sid = cookieStore.get(cookieName)?.value;
+        if (sid) {
+          const s = await loadAndValidateSession(sid, options?.forceRevalidate);
+          if (s) return s;
+        }
+      }
+    }
+  } catch {
+    // headers() can fail outside a request scope — ignore and fall through
+  }
+
+  // 3. Scan every portal cookie; return the first valid session.
+  for (const cookieName of ALL_PORTAL_COOKIE_NAMES) {
+    const sid = cookieStore.get(cookieName)?.value;
+    if (!sid) continue;
+    const s = await loadAndValidateSession(sid, options?.forceRevalidate);
+    if (s) return s;
+  }
+
+  // 4. Backward-compat: legacy single-cookie session
+  const legacySid = cookieStore.get(AUTH_SESSION_COOKIE)?.value;
+  if (legacySid) {
+    return loadAndValidateSession(legacySid, options?.forceRevalidate);
+  }
+
+  return null;
 }
 
 export async function requireSession() {
@@ -563,21 +635,52 @@ export function applySessionCookie(
   agencySlug?: string | null
 ) {
   const maxAge = rememberMe ? REMEMBER_ME_TTL_SECONDS : undefined;
-  response.cookies.set(AUTH_SESSION_COOKIE, sessionId, getSessionCookieConfig(maxAge));
 
-  // Set a lightweight portal cookie so middleware can validate portal context
-  // without hitting DB/Redis on every request.
-  if (portal) {
-    response.cookies.set("session_portal", portal, getSessionCookieConfig(maxAge));
+  // Per-portal cookie. Each portal has its own cookie so a user can be
+  // logged in to multiple portals simultaneously across browser tabs.
+  const portalCookie = getPortalCookieName(portal);
+  if (portalCookie) {
+    response.cookies.set(portalCookie, sessionId, getSessionCookieConfig(maxAge));
   }
 
-  // Set agency slug cookie for dynamic routing
-  if (agencySlug) {
-    response.cookies.set("session_agency_slug", agencySlug, getSessionCookieConfig(maxAge));
+  // Agency slug cookie is portal-scoped to agent only — namespaced so it
+  // doesn't collide if user is also logged in as a different role.
+  if (agencySlug && portal === "agent") {
+    response.cookies.set(
+      "session_agency_slug_agent",
+      agencySlug,
+      getSessionCookieConfig(maxAge),
+    );
   }
 }
 
-export function clearSessionCookie(response: NextResponse) {
+/**
+ * Clear session cookies. If `portal` given, only clear that portal so other
+ * portals stay logged in. If omitted, clear everything (used during full
+ * sign-out / legacy migration).
+ */
+export function clearSessionCookie(
+  response: NextResponse,
+  portal?: string | null,
+) {
+  if (portal) {
+    const portalCookie = getPortalCookieName(portal);
+    if (portalCookie) {
+      response.cookies.set(portalCookie, "", {
+        ...getSessionCookieConfig(),
+        maxAge: 0,
+      });
+    }
+    if (portal === "agent") {
+      response.cookies.set("session_agency_slug_agent", "", {
+        ...getSessionCookieConfig(),
+        maxAge: 0,
+      });
+    }
+    return;
+  }
+
+  // No portal specified → clear everything (legacy + all portal cookies)
   response.cookies.set(AUTH_SESSION_COOKIE, "", {
     ...getSessionCookieConfig(),
     maxAge: 0,
@@ -590,6 +693,16 @@ export function clearSessionCookie(response: NextResponse) {
     ...getSessionCookieConfig(),
     maxAge: 0,
   });
+  response.cookies.set("session_agency_slug_agent", "", {
+    ...getSessionCookieConfig(),
+    maxAge: 0,
+  });
+  for (const cookieName of ALL_PORTAL_COOKIE_NAMES) {
+    response.cookies.set(cookieName, "", {
+      ...getSessionCookieConfig(),
+      maxAge: 0,
+    });
+  }
 }
 
 export function clearLegacyAuthCookies(response: NextResponse) {

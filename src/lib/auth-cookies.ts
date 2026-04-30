@@ -12,26 +12,26 @@ export async function getUserIdFromCookies(): Promise<string | null> {
 }
 
 export async function getHospitalUserIdFromCookies(): Promise<string | null> {
-  const session = await getSession();
+  const session = await getSession({ portal: "hospital" });
   return session?.role === "hospital_admin" ? session.userId : null;
 }
 
 export async function getAgentUserIdFromCookies(): Promise<string | null> {
-  const session = await getSession();
+  const session = await getSession({ portal: "agent" });
   return session && (session.role === "agent" || session.role === "agent_manager")
     ? session.userId
     : null;
 }
 
 export async function getAdminAgencyUserIdFromCookies(): Promise<string | null> {
-  const session = await getSession();
+  const session = await getSession({ portal: "admin_agency" });
   return session && (session.role === "admin_agency" || session.role === "insurance_admin")
     ? session.userId
     : null;
 }
 
 export async function getDeveloperUserIdFromCookies(): Promise<string | null> {
-  const session = await getSession();
+  const session = await getSession({ portal: "developer" });
   return session && (session.role === "developer" || session.role === "super_admin")
     ? session.userId
     : null;

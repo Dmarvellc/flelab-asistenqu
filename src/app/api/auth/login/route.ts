@@ -4,10 +4,10 @@ import { z } from "zod";
 import { verifyPassword } from "@/lib/auth-queries";
 import {
   applySessionCookie,
-  AUTH_SESSION_COOKIE,
   clearLegacyAuthCookies,
   clearSessionCookie,
   createSession,
+  getPortalCookieName,
   revokeSession,
 } from "@/lib/auth";
 import { consumeRateLimit, getClientIp } from "@/lib/rate-limit";
@@ -131,15 +131,20 @@ export async function POST(request: Request) {
           { status: 403 }
         );
         clearLegacyAuthCookies(forbiddenResponse);
-        clearSessionCookie(forbiddenResponse);
+        // Don't clear other portals — only clear THIS portal's failed attempt
+        if (body.portal) clearSessionCookie(forbiddenResponse, body.portal);
         return forbiddenResponse;
       }
     }
 
+    // Revoke any prior session FOR THIS PORTAL only — other portals stay logged in.
     const cookieStore = await cookies();
-    const existingSessionId = cookieStore.get(AUTH_SESSION_COOKIE)?.value;
-    if (existingSessionId) {
-      await revokeSession(existingSessionId).catch(() => {});
+    const portalCookieName = body.portal ? getPortalCookieName(body.portal) : null;
+    if (portalCookieName) {
+      const existingSessionId = cookieStore.get(portalCookieName)?.value;
+      if (existingSessionId) {
+        await revokeSession(existingSessionId).catch(() => {});
+      }
     }
 
     // Fetch agency info for agents/admin_agency
@@ -190,7 +195,9 @@ export async function POST(request: Request) {
     });
 
     clearLegacyAuthCookies(response);
-    clearSessionCookie(response);
+    // Only clear the legacy single-cookie session; do NOT clear other portal
+    // cookies so the user stays logged in to those tabs.
+    if (body.portal) clearSessionCookie(response, body.portal);
     applySessionCookie(response, session.sessionId, body.rememberMe, body.portal, agencySlug);
     return response;
   } catch (error) {

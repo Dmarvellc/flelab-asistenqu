@@ -1,21 +1,22 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import {
-  AUTH_SESSION_COOKIE,
   clearLegacyAuthCookies,
   clearSessionCookie,
+  getPortalCookieName,
   revokeSession,
 } from "@/lib/auth";
 
 export async function POST() {
     const cookieStore = await cookies();
-    const sessionId = cookieStore.get(AUTH_SESSION_COOKIE)?.value;
+    const portalCookie = getPortalCookieName("agent");
+    const sessionId = portalCookie ? cookieStore.get(portalCookie)?.value : null;
     if (sessionId) {
         await revokeSession(sessionId).catch(() => {});
     }
 
     const response = NextResponse.json({ success: true });
     clearLegacyAuthCookies(response);
-    clearSessionCookie(response);
+    clearSessionCookie(response, "agent");
     return response;
 }

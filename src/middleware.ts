@@ -2,7 +2,17 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { getAllowedRolesForPath } from "./lib/rbac";
 
-const AUTH_SESSION_COOKIE = "session_id";
+/**
+ * Per-portal session cookies. Each portal has its own cookie so a user can be
+ * logged in to multiple portals at once (e.g. developer in one tab, agent in
+ * another) without one session overwriting the other.
+ */
+const PORTAL_COOKIE_NAMES: Record<string, string> = {
+  agent: "session_agent",
+  hospital: "session_hospital",
+  developer: "session_developer",
+  admin_agency: "session_admin_agency",
+};
 
 /**
  * Map route prefix → portal value stored in auth_session.
@@ -16,18 +26,6 @@ const ROUTE_TO_PORTAL: Record<string, string> = {
 };
 
 /**
- * Where to send a user whose session.portal doesn't match the URL portal.
- * Used when a logged-in user accidentally navigates to a portal they don't
- * belong to — we gently bounce them to their actual dashboard.
- */
-const PORTAL_TO_DASHBOARD: Record<string, string> = {
-  agent: "/agent",
-  hospital: "/hospital",
-  developer: "/developer",
-  admin_agency: "/admin-agency",
-};
-
-/**
  * Known static route prefixes (NOT agency slugs).
  */
 const KNOWN_PREFIXES = new Set([
@@ -35,8 +33,45 @@ const KNOWN_PREFIXES = new Set([
   "api", "_next", "favicon.ico", "status",
 ]);
 
+const LEGACY_AUTH_COOKIE = "session_id";
+
+function readPortalSession(request: NextRequest, portal: string | null | undefined) {
+  if (!portal) return null;
+  const cookieName = PORTAL_COOKIE_NAMES[portal];
+  if (!cookieName) return null;
+  const value = request.cookies.get(cookieName)?.value;
+  return value || null;
+}
+
+/**
+ * Derive the portal a request belongs to from its URL.
+ * Works for both page routes (/agent/...) and API routes (/api/agent/...).
+ */
+function derivePortalFromPath(path: string): string | null {
+  const segments = path.split("/").filter(Boolean);
+  if (segments.length === 0) return null;
+  if (segments[0] === "api" && segments.length >= 2) {
+    const apiPrefix = segments[1];
+    return ROUTE_TO_PORTAL[apiPrefix] ?? null;
+  }
+  return ROUTE_TO_PORTAL[segments[0]] ?? null;
+}
+
 export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
+
+  // Inject `x-portal` header on API requests so route handlers' getSession()
+  // can pick the correct portal-specific cookie. We don't enforce auth here
+  // — RBAC stays inside the route handler — we just label the request.
+  if (path.startsWith("/api/")) {
+    const apiPortal = derivePortalFromPath(path);
+    if (apiPortal) {
+      const headers = new Headers(request.headers);
+      headers.set("x-portal", apiPortal);
+      return NextResponse.next({ request: { headers } });
+    }
+    return NextResponse.next();
+  }
 
   // Check if current path requires specific roles
   const allowedRoles = getAllowedRolesForPath(path);
@@ -51,9 +86,6 @@ export async function middleware(request: NextRequest) {
 
   const forceLogin = request.nextUrl.searchParams.get("force") === "true";
 
-  const sessionId = request.cookies.get(AUTH_SESSION_COOKIE)?.value;
-  const hasSession = Boolean(sessionId);
-
   // Determine which portal this route belongs to
   const segments = path.split("/").filter(Boolean);
   const routePrefix = segments[0] || "";
@@ -62,41 +94,40 @@ export async function middleware(request: NextRequest) {
   const isDynamicAgentRoute = !KNOWN_PREFIXES.has(routePrefix) && segments.length >= 2 && segments[1] === "agent";
   const expectedPortal = isDynamicAgentRoute ? "agent" : ROUTE_TO_PORTAL[routePrefix];
 
+  // Read the session FOR THIS PORTAL only — other portal sessions are ignored
+  // here so they never trigger cross-portal redirects.
+  const portalSessionId = readPortalSession(request, expectedPortal);
+  // Legacy single-cookie fallback (pre-migration users still mid-session)
+  const legacySessionId = request.cookies.get(LEGACY_AUTH_COOKIE)?.value;
+  const hasSessionForThisPortal = Boolean(portalSessionId);
+
   if (isPublicPage) {
     if (forceLogin) {
-      return NextResponse.next();
+      // Inject portal header so downstream getSession() can find the right cookie
+      const headers = new Headers(request.headers);
+      if (expectedPortal) headers.set("x-portal", expectedPortal);
+      return NextResponse.next({ request: { headers } });
     }
 
-    if (hasSession && sessionId) {
-      const sessionPortal = request.cookies.get("session_portal")?.value;
-
-      if (sessionPortal && sessionPortal === expectedPortal) {
-        // For dynamic routes, redirect to /{slug}/agent (dashboard)
-        if (isDynamicAgentRoute) {
-          const dashboardPath = `/${routePrefix}/agent`;
-          return NextResponse.redirect(new URL(dashboardPath, request.url));
-        }
-        // Static route — redirect to dashboard
-        const dashboardPath = path.replace(/\/login$|\/register$/, "");
-        return NextResponse.redirect(new URL(dashboardPath, request.url));
+    // Only bounce away from the login page if the user has a session FOR
+    // THIS portal. If they're logged in elsewhere (e.g. developer) and
+    // visit /agent/login, let them sign in to agent without disruption —
+    // that's the whole point of multi-portal login.
+    if (hasSessionForThisPortal) {
+      if (isDynamicAgentRoute) {
+        return NextResponse.redirect(new URL(`/${routePrefix}/agent`, request.url));
       }
-
-      // Logged-in user is on the WRONG portal's login page.
-      // Send them to their own dashboard so they don't get stuck.
-      if (sessionPortal && PORTAL_TO_DASHBOARD[sessionPortal]) {
-        const dest = PORTAL_TO_DASHBOARD[sessionPortal];
-        if (!path.startsWith(dest)) {
-          return NextResponse.redirect(new URL(dest, request.url));
-        }
-      }
-
-      return NextResponse.next();
+      const dashboardPath = path.replace(/\/login$|\/register$/, "");
+      return NextResponse.redirect(new URL(dashboardPath, request.url));
     }
-    return NextResponse.next();
+
+    const headers = new Headers(request.headers);
+    if (expectedPortal) headers.set("x-portal", expectedPortal);
+    return NextResponse.next({ request: { headers } });
   }
 
-  // Protected page — must have session
-  if (!hasSession) {
+  // Protected page — must have session for THIS portal
+  if (!hasSessionForThisPortal && !legacySessionId) {
     if (isDynamicAgentRoute) {
       return NextResponse.redirect(
         new URL(`/${routePrefix}/agent/login`, request.url)
@@ -108,39 +139,22 @@ export async function middleware(request: NextRequest) {
     );
   }
 
-  // Verify portal match: the session must belong to this portal
-  const sessionPortal = request.cookies.get("session_portal")?.value;
-
-  if (expectedPortal && sessionPortal && sessionPortal !== expectedPortal) {
-    // User is logged in but browsing a portal that doesn't match their role.
-    // Bounce them to their own dashboard instead of a login loop.
-    const ownDashboard = PORTAL_TO_DASHBOARD[sessionPortal];
-    if (ownDashboard) {
-      return NextResponse.redirect(new URL(ownDashboard, request.url));
-    }
-    if (isDynamicAgentRoute) {
-      return NextResponse.redirect(
-        new URL(`/${routePrefix}/agent/login`, request.url)
-      );
-    }
-    const moduleRoot = `/${segments[0]}`;
-    return NextResponse.redirect(
-      new URL(`${moduleRoot}/login`, request.url)
-    );
-  }
-
   // For dynamic agent routes, also verify the session's agency slug matches the URL slug
   if (isDynamicAgentRoute) {
-    const sessionAgencySlug = request.cookies.get("session_agency_slug")?.value;
+    const sessionAgencySlug =
+      request.cookies.get("session_agency_slug_agent")?.value ||
+      request.cookies.get("session_agency_slug")?.value; // legacy fallback
     if (sessionAgencySlug && sessionAgencySlug !== routePrefix) {
-      // Redirect to the correct agency's agent dashboard
       return NextResponse.redirect(
         new URL(`/${sessionAgencySlug}/agent`, request.url)
       );
     }
   }
 
-  return NextResponse.next();
+  // Inject portal header so route handlers' getSession() picks the right cookie
+  const headers = new Headers(request.headers);
+  if (expectedPortal) headers.set("x-portal", expectedPortal);
+  return NextResponse.next({ request: { headers } });
 }
 
 export const config = {
@@ -152,6 +166,6 @@ export const config = {
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
      */
-    "/((?!api|_next/static|_next/image|favicon.ico).*)",
+    "/((?!_next/static|_next/image|favicon.ico).*)",
   ],
 };
