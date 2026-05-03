@@ -49,9 +49,11 @@ interface Props {
 const districtsCache = new Map<string, RegionWithParent[]>();
 const villagesCache = new Map<string, RegionWithParent[]>();
 
+// Static shards live under /public/wilayah and are served from Vercel's
+// edge CDN — no serverless function needed, no cold start, instant.
 async function fetchDistricts(regencyCode: string): Promise<RegionWithParent[]> {
     if (districtsCache.has(regencyCode)) return districtsCache.get(regencyCode)!;
-    const res = await fetch(`/api/wilayah/districts?regency_code=${encodeURIComponent(regencyCode)}`);
+    const res = await fetch(`/wilayah/districts/${encodeURIComponent(regencyCode)}.json`);
     if (!res.ok) return [];
     const data = await res.json();
     const list: RegionWithParent[] = Array.isArray(data) ? data : [];
@@ -61,7 +63,7 @@ async function fetchDistricts(regencyCode: string): Promise<RegionWithParent[]> 
 
 async function fetchVillages(districtCode: string): Promise<RegionWithParent[]> {
     if (villagesCache.has(districtCode)) return villagesCache.get(districtCode)!;
-    const res = await fetch(`/api/wilayah/villages?district_code=${encodeURIComponent(districtCode)}`);
+    const res = await fetch(`/wilayah/villages/${encodeURIComponent(districtCode)}.json`);
     if (!res.ok) return [];
     const data = await res.json();
     const list: RegionWithParent[] = Array.isArray(data) ? data : [];
