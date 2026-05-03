@@ -17,8 +17,7 @@ import { AlertCircle, CheckCircle2, Loader2, AlertTriangle, ArrowRight, Zap, Glo
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/components/providers/i18n-provider";
 import { PhoneInput } from "@/components/ui/phone-input";
-
-type Region = { code: string; name: string; }
+import { IndonesiaAddressFields, resolveAddressNames, formatFullAddress, type AddressValue } from "@/components/forms/indonesia-address-fields";
 
 function parseNikData(nik: string) {
     if (nik.length !== 16) return null;
@@ -54,46 +53,13 @@ export default function AgentRegisterPage() {
     const [error, setError] = useState<string | null>(null);
     const [nikValidation, setNikValidation] = useState<{ valid: boolean, message?: string }>({ valid: true });
 
-    const [provinces, setProvinces] = useState<Region[]>([]);
-    const [regencies, setRegencies] = useState<Region[]>([]);
-    const [districts, setDistricts] = useState<Region[]>([]);
-    const [villages, setVillages] = useState<Region[]>([]);
     const [agencies, setAgencies] = useState<{ agency_id: string; name: string }[]>([]);
-    const [addressLoading, setAddressLoading] = useState(false);
 
     useEffect(() => {
-        fetch("/api/wilayah/provinces").then(res => res.json()).then(data => {
-            if (Array.isArray(data)) setProvinces(data);
-        }).catch(err => console.error(err));
-
         fetch("/api/agencies").then(res => res.json()).then(data => {
             if (Array.isArray(data)) setAgencies(data);
         }).catch(err => console.error(err));
     }, []);
-
-    useEffect(() => {
-        if (!formData.provinceId) { setRegencies([]); return; }
-        setAddressLoading(true);
-        fetch(`/api/wilayah/regencies?province_code=${formData.provinceId}`).then(res => res.json()).then(data => {
-            if (Array.isArray(data)) setRegencies(data); setAddressLoading(false);
-        }).catch(() => setAddressLoading(false));
-    }, [formData.provinceId]);
-
-    useEffect(() => {
-        if (!formData.regencyId) { setDistricts([]); return; }
-        setAddressLoading(true);
-        fetch(`/api/wilayah/districts?regency_code=${formData.regencyId}`).then(res => res.json()).then(data => {
-            if (Array.isArray(data)) setDistricts(data); setAddressLoading(false);
-        }).catch(() => setAddressLoading(false));
-    }, [formData.regencyId]);
-
-    useEffect(() => {
-        if (!formData.districtId) { setVillages([]); return; }
-        setAddressLoading(true);
-        fetch(`/api/wilayah/villages?district_code=${formData.districtId}`).then(res => res.json()).then(data => {
-            if (Array.isArray(data)) setVillages(data); setAddressLoading(false);
-        }).catch(() => setAddressLoading(false));
-    }, [formData.districtId]);
 
     useEffect(() => {
         if (formData.nik.length === 16) {
@@ -152,11 +118,15 @@ export default function AgentRegisterPage() {
             setLoading(false); return;
         }
 
-        const provName = provinces.find(p => p.code === formData.provinceId)?.name || "";
-        const regName = regencies.find(r => r.code === formData.regencyId)?.name || "";
-        const distName = districts.find(d => d.code === formData.districtId)?.name || "";
-        const villName = villages.find(v => v.code === formData.villageId)?.name || "";
-        const fullAddress = `${formData.addressStreet}, ${villName}, ${distName}, ${regName}, ${provName} ${formData.postalCode}`;
+        const names = await resolveAddressNames({
+            addressStreet: formData.addressStreet,
+            provinceId: formData.provinceId,
+            regencyId: formData.regencyId,
+            districtId: formData.districtId,
+            villageId: formData.villageId,
+            postalCode: formData.postalCode,
+        });
+        const fullAddress = formatFullAddress(names, formData.addressStreet, formData.postalCode);
 
         const finalBody = {
             email: formData.email, password: formData.password, role: "agent", fullName: formData.fullName, nik: formData.nik, phoneNumber: formData.phoneNumber, address: fullAddress, birthDate: formData.birthDate, gender: formData.gender, agencyId: formData.agencyId, referralCode: formData.referralCode,
@@ -304,59 +274,32 @@ export default function AgentRegisterPage() {
                             <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
                                 <span className="bg-gray-100 text-gray-500 w-6 h-6 rounded-full flex items-center justify-center text-xs">3</span>
                                 {lang === 'en' ? "Address" : "Alamat Domisili"}
-                                {addressLoading && <Loader2 className="w-4 h-4 animate-spin text-gray-400" />}
                             </h3>
 
-                            <div className="space-y-2">
-                                <Label htmlFor="addressStreet" className="text-xs font-semibold uppercase tracking-wider text-gray-500">{lang === 'en' ? "Street / House No." : "Jalan / No. Rumah"}</Label>
-                                <Input id="addressStreet" name="addressStreet" required value={formData.addressStreet} onChange={(e) => { handleChange(e); if (fieldErrors.addressStreet) setFieldErrors({ ...fieldErrors, addressStreet: false }); }} className={cn("h-12 rounded-xl bg-gray-50 border-gray-200 focus:bg-white focus:border-black", fieldErrors.addressStreet && "border-red-500")} />
-                            </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div className="space-y-2">
-                                    <Label htmlFor="provinceId" className="text-xs font-semibold uppercase tracking-wider text-gray-500">{lang === 'en' ? "Province" : "Provinsi"}</Label>
-                                    <Select name="provinceId" value={formData.provinceId} onValueChange={(value) => { handleChange({ target: { name: 'provinceId', value } } as any); if (fieldErrors.provinceId) setFieldErrors({ ...fieldErrors, provinceId: false }); }}>
-                                        <SelectTrigger id="provinceId" className={cn("h-12 rounded-xl bg-gray-50 border-gray-200 focus:bg-white focus:border-black", fieldErrors.provinceId && "border-red-500")}>
-                                            <SelectValue placeholder="Pilih Provinsi" />
-                                        </SelectTrigger>
-                                        <SelectContent>{provinces.map(p => <SelectItem key={p.code} value={p.code}>{p.name}</SelectItem>)}</SelectContent>
-                                    </Select>
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="regencyId" className="text-xs font-semibold uppercase tracking-wider text-gray-500">{lang === 'en' ? "City / Regency" : "Kabupaten / Kota"}</Label>
-                                    <Select name="regencyId" value={formData.regencyId} onValueChange={(value) => { handleChange({ target: { name: 'regencyId', value } } as any); if (fieldErrors.regencyId) setFieldErrors({ ...fieldErrors, regencyId: false }); }} disabled={!formData.provinceId}>
-                                        <SelectTrigger id="regencyId" className={cn("h-12 rounded-xl bg-gray-50 border-gray-200 focus:bg-white focus:border-black", fieldErrors.regencyId && "border-red-500")}>
-                                            <SelectValue placeholder="Pilih Kabupaten/Kota" />
-                                        </SelectTrigger>
-                                        <SelectContent>{regencies.map(r => <SelectItem key={r.code} value={r.code}>{r.name}</SelectItem>)}</SelectContent>
-                                    </Select>
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                <div className="space-y-2">
-                                    <Label htmlFor="districtId" className="text-xs font-semibold uppercase tracking-wider text-gray-500">{lang === 'en' ? "District" : "Kecamatan"}</Label>
-                                    <Select name="districtId" value={formData.districtId} onValueChange={(value) => { handleChange({ target: { name: 'districtId', value } } as any); if (fieldErrors.districtId) setFieldErrors({ ...fieldErrors, districtId: false }); }} disabled={!formData.regencyId}>
-                                        <SelectTrigger id="districtId" className={cn("h-12 rounded-xl bg-gray-50 border-gray-200 focus:bg-white focus:border-black", fieldErrors.districtId && "border-red-500")}>
-                                            <SelectValue placeholder="Pilih Kecamatan" />
-                                        </SelectTrigger>
-                                        <SelectContent>{districts.map(d => <SelectItem key={d.code} value={d.code}>{d.name}</SelectItem>)}</SelectContent>
-                                    </Select>
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="villageId" className="text-xs font-semibold uppercase tracking-wider text-gray-500">{lang === 'en' ? "Village" : "Kelurahan"}</Label>
-                                    <Select name="villageId" value={formData.villageId} onValueChange={(value) => { handleChange({ target: { name: 'villageId', value } } as any); if (fieldErrors.villageId) setFieldErrors({ ...fieldErrors, villageId: false }); }} disabled={!formData.districtId}>
-                                        <SelectTrigger id="villageId" className={cn("h-12 rounded-xl bg-gray-50 border-gray-200 focus:bg-white focus:border-black", fieldErrors.villageId && "border-red-500")}>
-                                            <SelectValue placeholder="Pilih Kelurahan" />
-                                        </SelectTrigger>
-                                        <SelectContent>{villages.map(v => <SelectItem key={v.code} value={v.code}>{v.name}</SelectItem>)}</SelectContent>
-                                    </Select>
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="postalCode" className="text-xs font-semibold uppercase tracking-wider text-gray-500">{lang === 'en' ? "Postal Code" : "Kode Pos"}</Label>
-                                    <Input id="postalCode" name="postalCode" value={formData.postalCode} onChange={(e) => { handleChange(e); if (fieldErrors.postalCode) setFieldErrors({ ...fieldErrors, postalCode: false }); }} className={cn("h-12 rounded-xl bg-gray-50 border-gray-200 focus:bg-white focus:border-black", fieldErrors.postalCode && "border-red-500")} />
-                                </div>
-                            </div>
+                            <IndonesiaAddressFields
+                                style="default"
+                                language={lang === 'en' ? 'en' : 'id'}
+                                value={{
+                                    addressStreet: formData.addressStreet,
+                                    provinceId: formData.provinceId,
+                                    regencyId: formData.regencyId,
+                                    districtId: formData.districtId,
+                                    villageId: formData.villageId,
+                                    postalCode: formData.postalCode,
+                                }}
+                                onChange={(v: AddressValue) => {
+                                    setFormData(prev => ({ ...prev, ...v }));
+                                    setFieldErrors(prev => ({ ...prev, addressStreet: false, provinceId: false, regencyId: false, districtId: false, villageId: false, postalCode: false }));
+                                }}
+                                errors={{
+                                    addressStreet: fieldErrors.addressStreet,
+                                    provinceId: fieldErrors.provinceId,
+                                    regencyId: fieldErrors.regencyId,
+                                    districtId: fieldErrors.districtId,
+                                    villageId: fieldErrors.villageId,
+                                    postalCode: fieldErrors.postalCode,
+                                }}
+                            />
                         </div>
 
                         <div className="pt-6 border-t border-gray-100">

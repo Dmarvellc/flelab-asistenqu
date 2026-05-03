@@ -19,7 +19,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { PhoneInput } from "@/components/ui/phone-input";
 
 /* ─── Types ──────────────────────────────────────────────────────── */
-type Region = { code: string; name: string };
+import { IndonesiaAddressFields, resolveAddressNames, formatFullAddress, type AddressValue } from "@/components/forms/indonesia-address-fields";
 type Rider = { name: string; coverage: string };
 type Beneficiary = { name: string; relationship: string; percentage: string };
 
@@ -80,12 +80,6 @@ export default function NewClientPage() {
     const [aiError, setAiError] = useState<string | null>(null);
     const [fieldErrors, setFieldErrors] = useState<Record<string, boolean>>({});
 
-    // Address cascades
-    const [provinces, setProvinces]   = useState<Region[]>([]);
-    const [regencies, setRegencies]   = useState<Region[]>([]);
-    const [districts, setDistricts]   = useState<Region[]>([]);
-    const [villages, setVillages]     = useState<Region[]>([]);
-    const [addressLoading, setAddressLoading] = useState(false);
 
     // Dynamic arrays
     const [riders, setRiders] = useState<Rider[]>([{ name: "", coverage: "" }]);
@@ -210,31 +204,6 @@ export default function NewClientPage() {
         update("cardExpiry", digits.length > 2 ? digits.slice(0, 2) + "/" + digits.slice(2) : digits);
     };
 
-    /* ── Address Effects ────────────────────────────────────────── */
-    useEffect(() => {
-        fetch("/api/wilayah/provinces").then(r => r.json()).then(d => { if (Array.isArray(d)) setProvinces(d); });
-    }, []);
-
-    useEffect(() => {
-        if (!formData.provinceId) { setRegencies([]); return; }
-        setAddressLoading(true);
-        fetch(`/api/wilayah/regencies?province_code=${formData.provinceId}`).then(r => r.json())
-            .then(d => { if (Array.isArray(d)) setRegencies(d); }).finally(() => setAddressLoading(false));
-    }, [formData.provinceId]);
-
-    useEffect(() => {
-        if (!formData.regencyId) { setDistricts([]); return; }
-        setAddressLoading(true);
-        fetch(`/api/wilayah/districts?regency_code=${formData.regencyId}`).then(r => r.json())
-            .then(d => { if (Array.isArray(d)) setDistricts(d); }).finally(() => setAddressLoading(false));
-    }, [formData.regencyId]);
-
-    useEffect(() => {
-        if (!formData.districtId) { setVillages([]); return; }
-        setAddressLoading(true);
-        fetch(`/api/wilayah/villages?district_code=${formData.districtId}`).then(r => r.json())
-            .then(d => { if (Array.isArray(d)) setVillages(d); }).finally(() => setAddressLoading(false));
-    }, [formData.districtId]);
 
     /* ── File Handler ───────────────────────────────────────────── */
     const MAX_FILE_MB = 10;
@@ -409,11 +378,15 @@ export default function NewClientPage() {
     /* ── Submit ─────────────────────────────────────────────────── */
     const handleSubmit = async () => {
         setIsLoading(true);
-        const provName  = provinces.find(p => p.code === formData.provinceId)?.name  || "";
-        const regName   = regencies.find(r => r.code === formData.regencyId)?.name   || "";
-        const distName  = districts.find(d => d.code === formData.districtId)?.name  || "";
-        const villName  = villages.find(v => v.code === formData.villageId)?.name    || "";
-        const fullAddress = `${formData.addressStreet}, ${villName}, ${distName}, ${regName}, ${provName} ${formData.postalCode}`;
+        const names = await resolveAddressNames({
+            addressStreet: formData.addressStreet,
+            provinceId: formData.provinceId,
+            regencyId: formData.regencyId,
+            districtId: formData.districtId,
+            villageId: formData.villageId,
+            postalCode: formData.postalCode,
+        });
+        const fullAddress = formatFullAddress(names, formData.addressStreet, formData.postalCode);
 
         try {
             const res = await fetch("/api/agent/clients/create", {
@@ -1346,60 +1319,26 @@ export default function NewClientPage() {
 
                                     {/* Alamat */}
                                     <Section title="Alamat Domisili" icon={MapPin}>
-                                        <div className="flex items-center justify-between mb-1">
-                                            <span />
-                                            {addressLoading && <span className="flex items-center gap-1.5 text-xs text-muted-foreground"><RefreshCw className="w-3 h-3 animate-spin" /> Memuat wilayah...</span>}
-                                        </div>
-                                        <div className="space-y-1.5">
-                                            <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Jalan / Gedung / No. Rumah *</Label>
-                                            <div className="relative"><MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
-                                                <Input value={formData.addressStreet} onChange={e => update("addressStreet", e.target.value)} placeholder="Contoh: Jl. Sudirman No. 10, Blok A" className={cn("h-10 rounded-lg bg-background pl-9", fieldErrors.addressStreet && "border-red-500")} />
-                                            </div>
-                                            <ErrMsg show={fieldErrors.addressStreet} msg="Alamat wajib diisi." />
-                                        </div>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                            <div className="space-y-1.5">
-                                                <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Provinsi *</Label>
-                                                <Select value={formData.provinceId} onValueChange={v => { update("provinceId", v); update("regencyId",""); update("districtId",""); update("villageId",""); }}>
-                                                    <SelectTrigger className={cn("h-10 rounded-lg bg-background", fieldErrors.provinceId && "border-red-500")}><SelectValue placeholder="Pilih provinsi" /></SelectTrigger>
-                                                    <SelectContent className="max-h-64">{provinces.map(p => <SelectItem key={p.code} value={p.code}>{p.name}</SelectItem>)}</SelectContent>
-                                                </Select>
-                                                <ErrMsg show={fieldErrors.provinceId} msg="Wajib dipilih." />
-                                            </div>
-                                            <div className="space-y-1.5">
-                                                <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Kabupaten / Kota *</Label>
-                                                <Select value={formData.regencyId} onValueChange={v => { update("regencyId", v); update("districtId",""); update("villageId",""); }} disabled={!formData.provinceId}>
-                                                    <SelectTrigger className={cn("h-10 rounded-lg bg-background", fieldErrors.regencyId && "border-red-500", !formData.provinceId && "opacity-50")}><SelectValue placeholder={formData.provinceId ? "Pilih kota/kab" : "Pilih provinsi dahulu"} /></SelectTrigger>
-                                                    <SelectContent className="max-h-64">{regencies.map(r => <SelectItem key={r.code} value={r.code}>{r.name}</SelectItem>)}</SelectContent>
-                                                </Select>
-                                                <ErrMsg show={fieldErrors.regencyId} msg="Wajib dipilih." />
-                                            </div>
-                                        </div>
-                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                            <div className="space-y-1.5">
-                                                <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Kecamatan *</Label>
-                                                <Select value={formData.districtId} onValueChange={v => { update("districtId", v); update("villageId",""); }} disabled={!formData.regencyId}>
-                                                    <SelectTrigger className={cn("h-10 rounded-lg bg-background", fieldErrors.districtId && "border-red-500", !formData.regencyId && "opacity-50")}><SelectValue placeholder={formData.regencyId ? "Pilih kecamatan" : "Pilih kab/kota dahulu"} /></SelectTrigger>
-                                                    <SelectContent className="max-h-64">{districts.map(d => <SelectItem key={d.code} value={d.code}>{d.name}</SelectItem>)}</SelectContent>
-                                                </Select>
-                                                <ErrMsg show={fieldErrors.districtId} msg="Wajib dipilih." />
-                                            </div>
-                                            <div className="space-y-1.5">
-                                                <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Kelurahan / Desa *</Label>
-                                                <Select value={formData.villageId} onValueChange={v => update("villageId", v)} disabled={!formData.districtId}>
-                                                    <SelectTrigger className={cn("h-10 rounded-lg bg-background", fieldErrors.villageId && "border-red-500", !formData.districtId && "opacity-50")}><SelectValue placeholder={formData.districtId ? "Pilih kelurahan" : "Pilih kecamatan dahulu"} /></SelectTrigger>
-                                                    <SelectContent className="max-h-64">{villages.map(v => <SelectItem key={v.code} value={v.code}>{v.name}</SelectItem>)}</SelectContent>
-                                                </Select>
-                                                <ErrMsg show={fieldErrors.villageId} msg="Wajib dipilih." />
-                                            </div>
-                                            <div className="space-y-1.5">
-                                                <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Kode Pos *</Label>
-                                                <div className="relative"><Hash className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
-                                                    <Input value={formData.postalCode} onChange={e => update("postalCode", e.target.value)} placeholder="12xxx" maxLength={5} className={cn("h-10 rounded-lg bg-background pl-9", fieldErrors.postalCode && "border-red-500")} />
-                                                </div>
-                                                <ErrMsg show={fieldErrors.postalCode} msg="Kode pos wajib diisi." />
-                                            </div>
-                                        </div>
+                                        <IndonesiaAddressFields
+                                            style="compact"
+                                            value={{
+                                                addressStreet: formData.addressStreet,
+                                                provinceId: formData.provinceId,
+                                                regencyId: formData.regencyId,
+                                                districtId: formData.districtId,
+                                                villageId: formData.villageId,
+                                                postalCode: formData.postalCode,
+                                            }}
+                                            onChange={(v: AddressValue) => setFormData(prev => ({ ...prev, ...v }))}
+                                            errors={{
+                                                addressStreet: fieldErrors.addressStreet,
+                                                provinceId: fieldErrors.provinceId,
+                                                regencyId: fieldErrors.regencyId,
+                                                districtId: fieldErrors.districtId,
+                                                villageId: fieldErrors.villageId,
+                                                postalCode: fieldErrors.postalCode,
+                                            }}
+                                        />
                                     </Section>
                                 </div>
                             )}
