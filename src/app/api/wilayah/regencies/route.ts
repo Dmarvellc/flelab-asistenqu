@@ -1,19 +1,15 @@
 import { NextResponse } from "next/server";
-import { getRegencies } from "idn-area-data";
+import { getCachedRegencies } from "@/lib/wilayah-cache";
 
 export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const provinceCode = searchParams.get("province_code");
 
     try {
-        const allRegencies = await getRegencies(); // Wait, this might be slow if it reads every time.
-        // However, it's efficient enough for now (15KB).
-
+        const allRegencies = await getCachedRegencies();
         if (provinceCode) {
-            const filtered = allRegencies.filter((regency: any) => regency.province_code === provinceCode);
-            return NextResponse.json(filtered);
+            return NextResponse.json(allRegencies.filter((r: any) => r.province_code === provinceCode));
         }
-
         return NextResponse.json(allRegencies);
     } catch (error) {
         console.error("Failed to fetch regencies", error);
