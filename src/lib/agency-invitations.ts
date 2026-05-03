@@ -8,6 +8,15 @@ import {
   syncAgencyMembership,
   writeAgencyMemberAudit,
 } from "@/lib/agency-rbac";
+import { encryptNik, hashNik } from "@/lib/encryption";
+
+/** 16-digit NIK validator. Same rules as the public registration form. */
+function validateNik(nik: string): { valid: boolean; reason?: string } {
+  if (!/^\d{16}$/.test(nik)) {
+    return { valid: false, reason: "NIK harus 16 digit angka" };
+  }
+  return { valid: true };
+}
 
 /**
  * Invitation-token flow for onboarding new agents/admins into an agency.
@@ -205,10 +214,20 @@ export async function acceptInvitation(input: {
   password: string;
   fullName?: string;
   phoneNumber?: string;
+  nik: string;
+  birthDate: string;
+  gender: "LAKI-LAKI" | "PEREMPUAN";
 }): Promise<{ userId: string; agencyId: string }> {
   const tokenHash = hashToken(input.rawToken);
   if (!input.password || input.password.length < 8) {
     throw new Error("Password minimum 8 karakter");
+  }
+  const nik = (input.nik || "").trim();
+  const nikCheck = validateNik(nik);
+  if (!nikCheck.valid) throw new Error(nikCheck.reason!);
+  if (!input.birthDate) throw new Error("Tanggal lahir wajib diisi");
+  if (!["LAKI-LAKI", "PEREMPUAN"].includes(input.gender)) {
+    throw new Error("Jenis kelamin wajib dipilih");
   }
 
   const client = await dbPool.connect();
@@ -269,32 +288,37 @@ export async function acceptInvitation(input: {
     // Sync person row (works for both new and existing users)
     const fullName = input.fullName?.trim() || inv.full_name || null;
     const phoneNum = input.phoneNumber?.trim() || inv.phone_number || null;
+    const nikCipher = encryptNik(nik);
+    const nikHashVal = hashNik(nik);
 
-    if (fullName || phoneNum) {
-      const linkRes = await client.query<{ person_id: string }>(
-        `SELECT person_id FROM public.user_person_link WHERE user_id = $1 LIMIT 1`,
-        [userId],
+    const linkRes = await client.query<{ person_id: string }>(
+      `SELECT person_id FROM public.user_person_link WHERE user_id = $1 LIMIT 1`,
+      [userId],
+    );
+    if (linkRes.rows.length > 0) {
+      await client.query(
+        `UPDATE public.person
+           SET full_name = COALESCE($2, full_name),
+               phone_number = COALESCE($3, phone_number),
+               id_card_encrypted = $4,
+               id_card_hash = $5,
+               id_card = NULL,
+               birth_date = $6,
+               gender = $7
+         WHERE person_id = $1`,
+        [linkRes.rows[0].person_id, fullName, phoneNum, nikCipher, nikHashVal, input.birthDate, input.gender],
       );
-      if (linkRes.rows.length > 0) {
-        await client.query(
-          `UPDATE public.person
-             SET full_name = COALESCE($2, full_name),
-                 phone_number = COALESCE($3, phone_number)
-           WHERE person_id = $1`,
-          [linkRes.rows[0].person_id, fullName, phoneNum],
-        );
-      } else {
-        const personRes = await client.query<{ person_id: string }>(
-          `INSERT INTO public.person (full_name, phone_number)
-           VALUES ($1, $2) RETURNING person_id`,
-          [fullName, phoneNum],
-        );
-        await client.query(
-          `INSERT INTO public.user_person_link (user_id, person_id, relation_type)
-           VALUES ($1, $2, 'OWNER')`,
-          [userId, personRes.rows[0].person_id],
-        );
-      }
+    } else {
+      const personRes = await client.query<{ person_id: string }>(
+        `INSERT INTO public.person (full_name, phone_number, id_card_encrypted, id_card_hash, birth_date, gender)
+         VALUES ($1, $2, $3, $4, $5, $6) RETURNING person_id`,
+        [fullName, phoneNum, nikCipher, nikHashVal, input.birthDate, input.gender],
+      );
+      await client.query(
+        `INSERT INTO public.user_person_link (user_id, person_id, relation_type)
+         VALUES ($1, $2, 'OWNER')`,
+        [userId, personRes.rows[0].person_id],
+      );
     }
 
     // Attach to agency (syncs app_user.role + agency_member + audit)

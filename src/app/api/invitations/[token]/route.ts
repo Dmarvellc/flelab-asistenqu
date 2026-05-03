@@ -7,7 +7,7 @@ import {
 /**
  * Public endpoints for the invitation flow.
  * GET  → preview invite metadata (agency name, role, email, status)
- * POST → accept the invite by supplying a password (+ optional profile)
+ * POST → accept the invite by supplying password + KTP data
  *
  * No auth — the raw token IS the authentication.
  */
@@ -34,18 +34,30 @@ export async function POST(
       password?: string;
       fullName?: string;
       phoneNumber?: string;
+      nik?: string;
+      birthDate?: string;
+      gender?: "LAKI-LAKI" | "PEREMPUAN";
     };
     if (!body.password) {
-      return NextResponse.json(
-        { error: "Password wajib diisi" },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: "Password wajib diisi" }, { status: 400 });
+    }
+    if (!body.nik) {
+      return NextResponse.json({ error: "NIK (KTP) wajib diisi" }, { status: 400 });
+    }
+    if (!body.birthDate) {
+      return NextResponse.json({ error: "Tanggal lahir wajib diisi" }, { status: 400 });
+    }
+    if (!body.gender) {
+      return NextResponse.json({ error: "Jenis kelamin wajib dipilih" }, { status: 400 });
     }
     const result = await acceptInvitation({
       rawToken: token,
       password: body.password,
       fullName: body.fullName,
       phoneNumber: body.phoneNumber,
+      nik: body.nik,
+      birthDate: body.birthDate,
+      gender: body.gender,
     });
     return NextResponse.json({ success: true, ...result });
   } catch (err) {

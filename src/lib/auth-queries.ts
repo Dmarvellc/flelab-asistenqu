@@ -2,6 +2,7 @@ import "server-only";
 import bcrypt from "bcryptjs";
 import { dbPool } from "@/lib/db";
 import { syncAgencyMembership } from "@/lib/agency-rbac";
+import { encryptNik, hashNik, decryptNikSafe } from "@/lib/encryption";
 
 const E164_PHONE_REGEX = /^\+?[1-9]\d{6,14}$/;
 
@@ -105,13 +106,16 @@ export async function registerUser(params: {
     let personId = null;
     if (params.fullName) {
       const normalizedPhone = parsePhoneNumberOrThrow(params.phoneNumber);
+      const nikCipher = params.nik ? encryptNik(params.nik) : null;
+      const nikHash = params.nik ? hashNik(params.nik) : null;
       const personRes = await client.query(
-        `insert into public.person (full_name, id_card, phone_number, address, birth_date, gender, ktp_image_path, selfie_image_path)
-         values ($1, $2, $3, $4, $5, $6, $7, $8)
+        `insert into public.person (full_name, id_card_encrypted, id_card_hash, phone_number, address, birth_date, gender, ktp_image_path, selfie_image_path)
+         values ($1, $2, $3, $4, $5, $6, $7, $8, $9)
          returning person_id`,
         [
           params.fullName,
-          params.nik,
+          nikCipher,
+          nikHash,
           normalizedPhone,
           params.address,
           params.birthDate || null,
@@ -259,13 +263,16 @@ export async function createActiveUser(params: {
     // Create Person (if profile details provided)
     if (params.profile && (params.profile.fullName || params.profile.nik)) {
       const normalizedPhone = parsePhoneNumberOrThrow(params.profile.phoneNumber);
+      const nikCipher = params.profile.nik ? encryptNik(params.profile.nik) : null;
+      const nikHash = params.profile.nik ? hashNik(params.profile.nik) : null;
       const personRes = await client.query(
-        `insert into public.person (full_name, id_card, phone_number, address, birth_date, gender)
-         values ($1, $2, $3, $4, $5, $6)
+        `insert into public.person (full_name, id_card_encrypted, id_card_hash, phone_number, address, birth_date, gender)
+         values ($1, $2, $3, $4, $5, $6, $7)
          returning person_id`,
         [
           params.profile.fullName,
-          params.profile.nik,
+          nikCipher,
+          nikHash,
           normalizedPhone,
           params.profile.address,
           params.profile.birthDate || null,
@@ -355,7 +362,7 @@ export async function listPendingUsers(): Promise<PendingUser[]> {
        u.role,
        u.created_at,
        p.full_name,
-       p.id_card as nik,
+       coalesce(p.id_card_encrypted, p.id_card) as nik_raw,
        p.phone_number,
        p.address,
        p.birth_date,
@@ -368,7 +375,10 @@ export async function listPendingUsers(): Promise<PendingUser[]> {
      where u.status = 'PENDING'
      order by u.created_at desc`
   );
-  return result.rows as PendingUser[];
+  return result.rows.map((r: any) => {
+    const { nik_raw, ...rest } = r;
+    return { ...rest, nik: decryptNikSafe(nik_raw) };
+  }) as PendingUser[];
 }
 
 export async function verifyPassword(params: {
@@ -444,7 +454,7 @@ export async function findUserWithProfile(userId: string) {
        ag.address as agency_address,
        ag.claim_form_url,
        p.full_name,
-       p.id_card as nik,
+       coalesce(p.id_card_encrypted, p.id_card) as nik_raw,
        p.phone_number,
        p.address,
        p.birth_date,
@@ -458,7 +468,10 @@ export async function findUserWithProfile(userId: string) {
      where u.user_id = $1`,
     [userId]
   );
-  return result.rows[0];
+  const row = result.rows[0];
+  if (!row) return row;
+  const { nik_raw, ...rest } = row;
+  return { ...rest, nik: decryptNikSafe(nik_raw) };
 }
 
 export async function updateUserProfile(userId: string, data: {
@@ -484,13 +497,16 @@ export async function updateUserProfile(userId: string, data: {
 
     let personId;
 
+    const nikCipher = data.nik ? encryptNik(data.nik) : null;
+    const nikHashVal = data.nik ? hashNik(data.nik) : null;
+
     if (linkRes.rows.length === 0) {
       // Create Person
       const personRes = await client.query(
-        `insert into public.person (full_name, id_card, phone_number, address, birth_date, gender, ktp_image_path, selfie_image_path)
-         values ($1, $2, $3, $4, $5, $6, $7, $8)
+        `insert into public.person (full_name, id_card_encrypted, id_card_hash, phone_number, address, birth_date, gender, ktp_image_path, selfie_image_path)
+         values ($1, $2, $3, $4, $5, $6, $7, $8, $9)
          returning person_id`,
-        [data.fullName, data.nik, normalizedPhone, data.address, data.birthDate || null, data.gender, data.ktpImagePath || null, data.selfieImagePath || null]
+        [data.fullName, nikCipher, nikHashVal, normalizedPhone, data.address, data.birthDate || null, data.gender, data.ktpImagePath || null, data.selfieImagePath || null]
       );
       personId = personRes.rows[0].person_id;
 
@@ -502,14 +518,22 @@ export async function updateUserProfile(userId: string, data: {
       );
     } else {
       personId = linkRes.rows[0].person_id;
-      // Update Person
+      // Update Person — also clear legacy plaintext id_card so a profile
+      // edit migrates the row off the old column.
       await client.query(
         `update public.person
-         set full_name = $1, id_card = $2, phone_number = $3, address = $4, birth_date = $5, gender = $6,
-             ktp_image_path = coalesce($7, ktp_image_path),
-             selfie_image_path = coalesce($8, selfie_image_path)
-         where person_id = $9`,
-        [data.fullName, data.nik, normalizedPhone, data.address, data.birthDate || null, data.gender, data.ktpImagePath || null, data.selfieImagePath || null, personId]
+         set full_name = $1,
+             id_card_encrypted = $2,
+             id_card_hash = $3,
+             id_card = NULL,
+             phone_number = $4,
+             address = $5,
+             birth_date = $6,
+             gender = $7,
+             ktp_image_path = coalesce($8, ktp_image_path),
+             selfie_image_path = coalesce($9, selfie_image_path)
+         where person_id = $10`,
+        [data.fullName, nikCipher, nikHashVal, normalizedPhone, data.address, data.birthDate || null, data.gender, data.ktpImagePath || null, data.selfieImagePath || null, personId]
       );
     }
 

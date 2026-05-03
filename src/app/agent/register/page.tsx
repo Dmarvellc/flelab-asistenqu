@@ -18,26 +18,7 @@ import { cn } from "@/lib/utils";
 import { useTranslation } from "@/components/providers/i18n-provider";
 import { PhoneInput } from "@/components/ui/phone-input";
 import { IndonesiaAddressFields, resolveAddressNames, formatFullAddress, type AddressValue } from "@/components/forms/indonesia-address-fields";
-
-function parseNikData(nik: string) {
-    if (nik.length !== 16) return null;
-    const dayCode = parseInt(nik.substring(6, 8));
-    const monthCode = parseInt(nik.substring(8, 10));
-    const yearCode = parseInt(nik.substring(10, 12));
-    if (isNaN(dayCode) || isNaN(monthCode) || isNaN(yearCode)) return null;
-
-    let gender = "LAKI-LAKI";
-    let day = dayCode;
-    if (dayCode > 40) {
-        gender = "PEREMPUAN";
-        day = dayCode - 40;
-    }
-    const currentYearShort = new Date().getFullYear() % 100;
-    const yearPrefix = yearCode > currentYearShort ? "19" : "20";
-    const fullYear = `${yearPrefix}${yearCode.toString().padStart(2, '0')}`;
-    const birthDate = `${fullYear}-${monthCode.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
-    return { gender, birthDate };
-}
+import { parseNikData } from "@/lib/nik";
 
 export default function AgentRegisterPage() {
     const router = useRouter();

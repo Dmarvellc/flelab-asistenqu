@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Logo } from "@/components/ui/logo";
@@ -8,10 +8,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
+  Select, SelectTrigger, SelectValue, SelectContent, SelectItem,
+} from "@/components/ui/select";
+import {
   Loader2,
   CheckCircle2,
   Lock,
+  AlertTriangle,
 } from "lucide-react";
+import { parseNikData } from "@/lib/nik";
 
 
 /**
@@ -51,10 +56,40 @@ export default function InvitationLandingPage() {
   const [confirm, setConfirm] = useState("");
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
+  const [nik, setNik] = useState("");
+  const [birthDate, setBirthDate] = useState("");
+  const [gender, setGender] = useState<"LAKI-LAKI" | "PEREMPUAN">("LAKI-LAKI");
   const [agreeTos, setAgreeTos] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [done, setDone] = useState(false);
+
+  // NIK validation: same rules as agent registration. NIK must be 16 digits
+  // and the embedded gender + birth date must match the user's input.
+  const nikValidation = useMemo<{ valid: boolean; message?: string }>(() => {
+    if (nik.length === 0) return { valid: true };
+    if (nik.length !== 16) return { valid: false, message: "NIK harus 16 digit" };
+    const parsed = parseNikData(nik);
+    if (!parsed) return { valid: false, message: "Format NIK tidak valid" };
+    if (birthDate && birthDate !== parsed.birthDate) {
+      return { valid: false, message: `Tanggal lahir tidak sesuai NIK (${parsed.birthDate})` };
+    }
+    if (gender !== parsed.gender) {
+      return { valid: false, message: `Jenis kelamin tidak sesuai NIK (${parsed.gender})` };
+    }
+    return { valid: true };
+  }, [nik, birthDate, gender]);
+
+  // When the user types a complete valid NIK, auto-fill bio fields.
+  useEffect(() => {
+    if (nik.length === 16) {
+      const parsed = parseNikData(nik);
+      if (parsed) {
+        if (!birthDate) setBirthDate(parsed.birthDate);
+        if (gender !== parsed.gender) setGender(parsed.gender);
+      }
+    }
+  }, [nik]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!token) return;
@@ -83,6 +118,18 @@ export default function InvitationLandingPage() {
       setErr("Konfirmasi password tidak cocok");
       return;
     }
+    if (nik.length !== 16) {
+      setErr("NIK harus 16 digit");
+      return;
+    }
+    if (!nikValidation.valid) {
+      setErr(nikValidation.message || "NIK tidak valid");
+      return;
+    }
+    if (!birthDate) {
+      setErr("Tanggal lahir wajib diisi");
+      return;
+    }
     setSubmitting(true);
     try {
       const res = await fetch(`/api/invitations/${token}`, {
@@ -92,6 +139,9 @@ export default function InvitationLandingPage() {
           password,
           fullName: fullName.trim() || undefined,
           phoneNumber: phone.trim() || undefined,
+          nik,
+          birthDate,
+          gender,
         }),
       });
       const j = await res.json();
@@ -221,6 +271,56 @@ export default function InvitationLandingPage() {
               className="h-12 bg-transparent border-0 border-b border-[#CCCCCC] rounded-none px-0 focus-visible:ring-0 focus-visible:border-black text-base text-black placeholder:text-[#999999]"
             />
           </div>
+
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <Label className="text-sm font-medium text-[#666666]">NIK (KTP)</Label>
+              {nik.length > 0 && nikValidation.valid && nik.length === 16 && (
+                <span className="text-xs text-emerald-600 flex items-center gap-1 font-medium">
+                  <CheckCircle2 className="w-3 h-3" /> Valid
+                </span>
+              )}
+              {!nikValidation.valid && (
+                <span className="text-xs text-red-500 flex items-center gap-1 font-medium">
+                  <AlertTriangle className="w-3 h-3" /> {nikValidation.message}
+                </span>
+              )}
+            </div>
+            <Input
+              value={nik}
+              onChange={(e) => setNik(e.target.value.replace(/\D/g, "").slice(0, 16))}
+              placeholder="16 digit NIK pada KTP"
+              inputMode="numeric"
+              maxLength={16}
+              className="h-12 bg-transparent border-0 border-b border-[#CCCCCC] rounded-none px-0 focus-visible:ring-0 focus-visible:border-black text-base text-black placeholder:text-[#999999] tracking-widest"
+            />
+            <p className="text-xs text-[#888888]">Disimpan terenkripsi (AES-256-GCM). Hanya admin terotorisasi yang dapat membacanya.</p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-3">
+              <Label className="text-sm font-medium text-[#666666]">Tanggal Lahir</Label>
+              <Input
+                type="date"
+                value={birthDate}
+                onChange={(e) => setBirthDate(e.target.value)}
+                className="h-12 bg-transparent border-0 border-b border-[#CCCCCC] rounded-none px-0 focus-visible:ring-0 focus-visible:border-black text-base text-black"
+              />
+            </div>
+            <div className="space-y-3">
+              <Label className="text-sm font-medium text-[#666666]">Jenis Kelamin</Label>
+              <Select value={gender} onValueChange={(v) => setGender(v as "LAKI-LAKI" | "PEREMPUAN")}>
+                <SelectTrigger className="h-12 bg-transparent border-0 border-b border-[#CCCCCC] rounded-none px-0 focus:ring-0 focus:border-black text-base text-black">
+                  <SelectValue placeholder="Pilih" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="LAKI-LAKI">Laki-laki</SelectItem>
+                  <SelectItem value="PEREMPUAN">Perempuan</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
           <div className="space-y-3">
             <Label className="text-sm font-medium text-[#666666]">Password</Label>
             <Input
@@ -270,7 +370,7 @@ export default function InvitationLandingPage() {
             <Button
               className="w-full h-12 rounded-none bg-black hover:bg-[#333333] text-white text-base font-medium transition-colors"
               onClick={submit}
-              disabled={submitting || !password || !confirm || !agreeTos}
+              disabled={submitting || !password || !confirm || !agreeTos || nik.length !== 16 || !birthDate || !nikValidation.valid}
             >
               {submitting && <Loader2 className="h-4 w-4 mr-2 animate-spin text-white" />}
               Aktifkan Akun
