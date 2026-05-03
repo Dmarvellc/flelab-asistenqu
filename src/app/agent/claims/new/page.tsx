@@ -759,7 +759,7 @@ export default function NewClaimPage() {
             </div>
 
             {/* Floating Bottom Navigation Bar */}
-            <div className="shrink-0 border-t border-border/60 bg-background/80 backdrop-blur-md px-8 sm:pr-48 py-3 flex items-center justify-between">
+            <div className="shrink-0 border-t border-border/60 bg-background/80 backdrop-blur-md px-8 py-3 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                     <Button
                         variant="ghost"

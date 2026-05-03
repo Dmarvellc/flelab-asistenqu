@@ -12,7 +12,7 @@ import {
     NavItem,
 } from "@/components/dashboard/dashboard-layout"
 
-import { LayoutDashboard, Users, FileText, LogOut, Settings, ClipboardList, Stethoscope, CalendarCheck, Gift, Globe, Search, Bell } from "lucide-react"
+import { LayoutDashboard, Users, FileText, LogOut, Settings, ClipboardList, Stethoscope, CalendarCheck, Gift, Globe, Search, Bell, Bot } from "lucide-react"
 import { Notifications } from "@/components/dashboard/notifications";
 import Link from "next/link"
 import Image from "next/image"
@@ -20,7 +20,6 @@ import { Logo } from "@/components/ui/logo"
 import { I18nProvider, useTranslation } from "@/components/providers/i18n-provider"
 import { useAgencyBranding } from "@/components/providers/agency-branding-provider"
 import { CommandPalette } from "@/components/agent/command-palette"
-import { AIAssistantWidget } from "@/components/agent/ai-assistant-widget"
 
 
 export function AgentLayoutClient({ children, initialBadges, serverUserName }: { children: React.ReactNode, initialBadges: { pendingContracts: number, totalClaims: number }, serverUserName: string | null }) {
@@ -93,6 +92,7 @@ export function AgentLayoutClient({ children, initialBadges, serverUserName }: {
 
     const navItems = [
         { href: basePath, icon: LayoutDashboard, label: t.dashboard, exact: true, badge: undefined },
+        { href: `${basePath}/assistant`, icon: Bot, label: "AI Asisten", badge: undefined },
         { href: `${basePath}/clients`, icon: Users, label: t.clients, badge: undefined },
         { href: `${basePath}/claims`, icon: FileText, label: t.claims, badge: badges.totalClaims || undefined },
         { href: `${basePath}/appointments`, icon: CalendarCheck, label: t.appointments, badge: undefined },
@@ -194,7 +194,7 @@ export function AgentLayoutClient({ children, initialBadges, serverUserName }: {
 
     return (
         <>
-            <DashboardLayout fabInset sidebar={sidebar} isCollapsed={false} header={
+            <DashboardLayout sidebar={sidebar} isCollapsed={false} header={
                 <DashboardHeader mobileSidebar={sidebar} actions={<Notifications />}>
                     <Link href={basePath}>
                         {branding.logoUrl ? (
@@ -214,7 +214,6 @@ export function AgentLayoutClient({ children, initialBadges, serverUserName }: {
                 {children}
             </DashboardLayout>
             <CommandPalette isOpen={isCommandOpen} setIsOpen={setIsCommandOpen} />
-            <AIAssistantWidget />
         </>
     )
 }

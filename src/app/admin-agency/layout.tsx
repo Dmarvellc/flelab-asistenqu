@@ -3,12 +3,11 @@
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useCallback, useEffect } from "react";
 import { DashboardLayout, DashboardSidebar, DashboardHeader, SidebarHeader, SidebarContent, SidebarFooter, NavItem } from "@/components/dashboard/dashboard-layout"
-import { LayoutDashboard, Settings, LogOut, Users, UserCog, FileText, GitPullRequest, Trophy, Search, Stethoscope, Network, ShieldCheck, TrendingUp, Building2, BarChart3 } from "lucide-react"
+import { LayoutDashboard, Settings, LogOut, Users, UserCog, FileText, GitPullRequest, Trophy, Search, Stethoscope, Network, ShieldCheck, TrendingUp, Building2, BarChart3, Bot } from "lucide-react"
 import Link from "next/link"
 import { Logo } from "@/components/ui/logo"
 import { CommandPalette } from "@/components/admin-agency/command-palette"
 import { I18nProvider, useTranslation } from "@/components/providers/i18n-provider";
-import { AIAgencyAssistantWidget } from "@/components/admin-agency/ai-assistant-widget";
 import { Notifications } from "@/components/dashboard/notifications";
 
 export default function AdminAgencyLayout({ children }: { children: React.ReactNode }) {
@@ -82,6 +81,9 @@ function AdminAgencyLayoutContent({ children }: { children: React.ReactNode }) {
           <NavItem href="/admin-agency" icon={LayoutDashboard} active={pathname === '/admin-agency'} isCollapsed={false}>
             {t.dashboard}
           </NavItem>
+          <NavItem href="/admin-agency/assistant" icon={Bot} active={pathname.startsWith('/admin-agency/assistant')} isCollapsed={false}>
+            AI Asisten
+          </NavItem>
           {/* ── People ────────────────────────────────────────── */}
           <p className="text-[10px] font-semibold tracking-widest text-gray-400 uppercase px-4 mt-4 mb-1">Orang</p>
           <NavItem href="/admin-agency/agents" icon={Users} active={pathname.startsWith('/admin-agency/agents')} isCollapsed={false}>
@@ -133,7 +135,7 @@ function AdminAgencyLayoutContent({ children }: { children: React.ReactNode }) {
 
   return (
     <>
-      <DashboardLayout fabInset sidebar={sidebar} isCollapsed={false} header={
+      <DashboardLayout sidebar={sidebar} isCollapsed={false} header={
         <DashboardHeader mobileSidebar={sidebar} actions={<Notifications />}>
           <Link href="/admin-agency">
             <Logo height={20} />
@@ -143,7 +145,6 @@ function AdminAgencyLayoutContent({ children }: { children: React.ReactNode }) {
         {children}
       </DashboardLayout>
       <CommandPalette isOpen={isCommandOpen} setIsOpen={setIsCommandOpen} />
-      <AIAgencyAssistantWidget />
     </>
   )
 }
