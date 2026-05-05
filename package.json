@@ -13,6 +13,7 @@
     "doctors:update": "node scripts/update-doctors.js"
   },
   "dependencies": {
+    "@ai-sdk/anthropic": "^0.0.56",
     "@ai-sdk/openai": "^0.0.14",
     "@ai-sdk/react": "^3.0.99",
     "@sentry/nextjs": "^10.49.0",
