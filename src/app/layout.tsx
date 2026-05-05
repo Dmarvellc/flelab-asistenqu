@@ -3,6 +3,8 @@ import { Poppins, Instrument_Serif } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { BusyOverlayProvider } from "@/components/ui/busy-overlay-provider";
+import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 const poppins = Poppins({
   variable: "--font-poppins",
@@ -37,6 +39,8 @@ export default function RootLayout({
           {children}
         </BusyOverlayProvider>
         <Toaster />
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );

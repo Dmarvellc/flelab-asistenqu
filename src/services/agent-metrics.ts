@@ -10,6 +10,7 @@ export interface AgentChartData {
 export interface AgentMetrics {
   activeClients: number;
   pendingContracts: number;
+  pendingRequests: number;
   points: number;
   totalClaims: number;
   chartData: AgentChartData[];
@@ -28,7 +29,7 @@ export async function getAgentMetrics(userId: string): Promise<AgentMetrics> {
 async function fetchAgentMetrics(userId: string): Promise<AgentMetrics> {
   const client = await dbPool.connect();
   try {
-    const [clientsRes, pendingRes, agentRes, claimsRes, chartRes] = await Promise.all([
+    const [clientsRes, pendingRes, requestsRes, agentRes, claimsRes, chartRes] = await Promise.all([
       // 1. Active clients where this user is the agent
       client.query(
         `SELECT COUNT(*) AS count
@@ -46,7 +47,15 @@ async function fetchAgentMetrics(userId: string): Promise<AgentMetrics> {
         [userId]
       ).catch(() => ({ rows: [{ count: "0" }] })),
 
-      // 3. Agent points (agent_id == user_id in this schema)
+      // 3. Pending patient data requests for this agent
+      client.query(
+        `SELECT COUNT(*) AS count
+         FROM public.patient_data_request
+         WHERE agent_id = $1 AND status NOT IN ('COMPLETED', 'REJECTED')`,
+        [userId]
+      ).catch(() => ({ rows: [{ count: "0" }] })),
+
+      // 4. Agent points (agent_id == user_id in this schema)
       client.query(
         `SELECT points_balance
          FROM public.agent
@@ -55,7 +64,7 @@ async function fetchAgentMetrics(userId: string): Promise<AgentMetrics> {
         [userId]
       ).catch(() => ({ rows: [] })),
 
-      // 4. Total claims assigned to or created by this agent
+      // 5. Total claims assigned to or created by this agent
       client.query(
         `SELECT COUNT(*) AS count
          FROM public.claim
@@ -64,7 +73,7 @@ async function fetchAgentMetrics(userId: string): Promise<AgentMetrics> {
         [userId]
       ).catch(() => ({ rows: [{ count: "0" }] })),
 
-      // 5. Monthly chart data for the last 6 months
+      // 6. Monthly chart data for the last 6 months
       client.query(
         `WITH months AS (
           SELECT date_trunc('month', NOW() - (s.a || ' months')::interval) AS month
@@ -99,6 +108,7 @@ async function fetchAgentMetrics(userId: string): Promise<AgentMetrics> {
     return {
       activeClients: parseInt(clientsRes.rows[0]?.count ?? "0", 10),
       pendingContracts: parseInt(pendingRes.rows[0]?.count ?? "0", 10),
+      pendingRequests: parseInt(requestsRes.rows[0]?.count ?? "0", 10),
       points: agentRes.rows[0]?.points_balance ?? 0,
       totalClaims: parseInt(claimsRes.rows[0]?.count ?? "0", 10),
       chartData: chartRes.rows.length > 0 ? chartRes.rows.map(row => ({

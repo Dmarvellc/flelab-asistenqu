@@ -23,7 +23,7 @@ import { CommandPalette } from "@/components/agent/command-palette"
 import { AIAssistantWidget } from "@/components/agent/ai-assistant-widget"
 
 
-export function AgentLayoutClient({ children, initialBadges, serverUserName }: { children: React.ReactNode, initialBadges: { pendingContracts: number, totalClaims: number }, serverUserName: string | null }) {
+export function AgentLayoutClient({ children, initialBadges, serverUserName }: { children: React.ReactNode, initialBadges: { pendingContracts: number, pendingRequests: number, totalClaims: number }, serverUserName: string | null }) {
     const pathname = usePathname();
     const router = useRouter();
     const { t, lang, setLang } = useTranslation();
@@ -97,7 +97,7 @@ export function AgentLayoutClient({ children, initialBadges, serverUserName }: {
         { href: `${basePath}/claims`, icon: FileText, label: t.claims, badge: badges.totalClaims || undefined },
         { href: `${basePath}/appointments`, icon: CalendarCheck, label: t.appointments, badge: undefined },
         { href: `${basePath}/reminders`, icon: Bell, label: "Pengingat", badge: undefined },
-        { href: `${basePath}/requests`, icon: ClipboardList, label: t.requests, badge: badges.pendingContracts || undefined },
+        { href: `${basePath}/requests`, icon: ClipboardList, label: t.requests, badge: badges.pendingRequests || undefined },
         { href: `${basePath}/network`, icon: Stethoscope, label: "Marketplace", badge: undefined },
         { href: `${basePath}/referral`, icon: Gift, label: t.referral, badge: undefined },
         { href: `${basePath}/settings`, icon: Settings, label: t.settings, badge: undefined },

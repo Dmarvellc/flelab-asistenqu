@@ -8,7 +8,7 @@ export default async function AgentLayout(props: { children: React.ReactNode }) 
   const session = await getSession();
   const userId = session?.userId;
 
-  let initialBadges = { pendingContracts: 0, totalClaims: 0 };
+  let initialBadges = { pendingContracts: 0, pendingRequests: 0, totalClaims: 0 };
   let serverUserName: string | null = null;
 
   if (userId) {
@@ -17,14 +17,17 @@ export default async function AgentLayout(props: { children: React.ReactNode }) 
         getAgentMetrics(userId).catch(() => ({
           activeClients: 0,
           pendingContracts: 0,
+          pendingRequests: 0,
           totalClaims: 0,
           points: 0,
+          chartData: [],
         })),
         findUserWithProfile(userId).catch(() => null)
       ]);
 
       initialBadges = {
         pendingContracts: metrics.pendingContracts || 0,
+        pendingRequests: metrics.pendingRequests || 0,
         totalClaims: metrics.totalClaims || 0,
       };
 
