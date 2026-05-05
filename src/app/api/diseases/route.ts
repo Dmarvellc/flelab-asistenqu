@@ -4,7 +4,7 @@ import { dbPool } from "@/lib/db";
 export async function GET() {
   const client = await dbPool.connect();
   try {
-    const result = await client.query(`SELECT disease_id, disease_name AS name FROM public.disease ORDER BY disease_name`);
+    const result = await client.query(`SELECT disease_id, name FROM public.disease ORDER BY name`);
     return NextResponse.json({ diseases: result.rows });
   } catch (error) {
     console.error("Failed to fetch diseases", error);

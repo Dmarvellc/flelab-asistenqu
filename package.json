@@ -10,7 +10,8 @@
     "db:migrate": "node scripts/run-migrations.js all",
     "create:developer": "node scripts/create-developer.js",
     "doctors:migrate": "node -e \"require('dotenv').config({ path: '.env.local' }); const { Pool } = require('pg'); const fs = require('fs'); const pool = new Pool({ connectionString: process.env.DATABASE_URL }); fs.readFile('scripts/migrate-doctors.sql', 'utf8', (e, sql) => pool.query(sql).then(() => { console.log('✅ Doctors migration sukses!'); pool.end(); }))\"",
-    "doctors:update": "node scripts/update-doctors.js"
+    "doctors:update": "node scripts/update-doctors.js",
+    "diseases:seed": "node scripts/seed-diseases.js"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^0.0.56",
