@@ -5,25 +5,22 @@ import { useEffect, useState } from "react";
 /**
  * Visibility controller for floating action buttons (e.g. AI Asisten FAB).
  *
- * Hides the FAB in 3 situations that commonly cause overlap with other buttons:
+ * Hides the FAB in 4 situations:
  *
- *   1. User is scrolling DOWN (FAB slides away so it doesn't cover bottom-aligned
- *      "Simpan / Kirim / Submit" CTAs the user is scrolling toward). Reappears as
- *      soon as the user scrolls UP, or stops near the very top / very bottom.
+ *   1. User is scrolling DOWN — FAB slides away so it doesn't cover CTAs the
+ *      user is scrolling toward. Reappears on scroll UP or near top/bottom.
  *
- *   2. A modal / dialog / sheet / drawer is open. Detected by Radix-style
- *      `[data-state="open"]` on `[role="dialog"]` / `[role="alertdialog"]`.
- *      Modals usually have their own primary CTA — the FAB just gets in the way.
+ *   2. A modal / dialog / sheet is open (Radix `[data-state="open"]`).
+ *      Modals have their own primary CTA — FAB just gets in the way.
  *
- *   3. The mobile virtual keyboard is open. Detected via the visualViewport API
- *      (height shrinks noticeably). When the keyboard is up, every form has its
- *      own "Kirim" / "Simpan" button right above it, and the FAB obscures it.
+ *   3. Mobile virtual keyboard is open (visualViewport height shrinks).
+ *      Every form has its own submit button above the keyboard.
  *
- * The component using this hook is responsible for actually animating the FAB
- * (e.g. translateY + opacity + pointer-events).
- *
- * @param options.enabled set to false to keep the FAB always visible
- *                        (e.g. while the chat panel is open)
+ *   4. An element with [data-hides-fab] is present in the DOM — used by
+ *      bottom navigation bars in multi-step forms (e.g. claim wizard) to
+ *      explicitly signal they conflict with the FAB position.
+ *      Also detects interactive elements (button/a/input) that overlap
+ *      the FAB's bounding box in the bottom-right corner.
  */
 export function useFabVisibility(options?: { enabled?: boolean }): boolean {
   const enabled = options?.enabled ?? true;
@@ -39,10 +36,10 @@ export function useFabVisibility(options?: { enabled?: boolean }): boolean {
     let lastY = typeof window !== "undefined" ? window.scrollY : 0;
     let ticking = false;
 
-    const SCROLL_DOWN_THRESHOLD = 8; // px of downward movement before hiding
-    const SCROLL_UP_THRESHOLD = 4;   // px of upward movement before re-showing
-    const NEAR_TOP = 80;             // always visible near top
-    const NEAR_BOTTOM = 120;         // always visible near bottom
+    const SCROLL_DOWN_THRESHOLD = 8;
+    const SCROLL_UP_THRESHOLD = 4;
+    const NEAR_TOP = 80;
+    const NEAR_BOTTOM = 120;
 
     const onScroll = () => {
       if (ticking) return;
@@ -83,11 +80,8 @@ export function useFabVisibility(options?: { enabled?: boolean }): boolean {
 
     const checkModalOpen = () => {
       const hasOpenModal = document.querySelector(SELECTOR);
-      // Also treat scroll-locked body (Radix sets data-scroll-locked) as a modal open.
       const scrollLocked = document.body.hasAttribute("data-scroll-locked");
-      if (hasOpenModal || scrollLocked) {
-        setVisible(false);
-      }
+      if (hasOpenModal || scrollLocked) setVisible(false);
     };
 
     checkModalOpen();
@@ -111,18 +105,82 @@ export function useFabVisibility(options?: { enabled?: boolean }): boolean {
     if (!vv) return;
 
     const onResize = () => {
-      // If visual viewport shrank significantly relative to layout viewport,
-      // a virtual keyboard is most likely open.
       const ratio = vv.height / window.innerHeight;
-      if (ratio < 0.78) {
-        setVisible(false);
-      }
-      // We intentionally do NOT auto-show on keyboard close; the next scroll
-      // event will bring it back. This avoids flicker.
+      if (ratio < 0.78) setVisible(false);
     };
 
     vv.addEventListener("resize", onResize);
     return () => vv.removeEventListener("resize", onResize);
+  }, [enabled]);
+
+  // ---- 4. Bottom action bar / element overlap ----
+  useEffect(() => {
+    if (!enabled) return;
+    if (typeof document === "undefined") return;
+
+    const checkConflict = () => {
+      // a) Explicit signal: any element with [data-hides-fab] is present
+      if (document.querySelector("[data-hides-fab]")) {
+        setVisible(false);
+        return;
+      }
+
+      // b) Proximity check: find buttons/links near the FAB's bounding area.
+      //    FAB sits at bottom-right: approx right-3 bottom-4 on mobile (sm: right-6 bottom-6).
+      const isSm = window.innerWidth >= 640;
+      const fabW = isSm ? 176 : 48;  // sm: pill ~176px wide, mobile: 48px square
+      const fabH = isSm ? 56 : 48;
+      const fabRight = isSm ? 24 : 12;
+      const fabBottom = isSm ? 24 : 16;
+
+      const fabRect = {
+        left: window.innerWidth - fabRight - fabW,
+        top: window.innerHeight - fabBottom - fabH,
+        right: window.innerWidth - fabRight,
+        bottom: window.innerHeight - fabBottom,
+      };
+
+      const candidates = document.querySelectorAll<HTMLElement>(
+        'button:not([aria-label="Buka Natalie AI"]), a[href]:not([aria-label="Buka Natalie AI"]), input:not([type="hidden"]), select, textarea'
+      );
+
+      for (const el of candidates) {
+        const r = el.getBoundingClientRect();
+        if (r.width === 0 || r.height === 0) continue;
+        const overlaps =
+          r.left < fabRect.right + 4 &&
+          r.right > fabRect.left - 4 &&
+          r.top < fabRect.bottom + 4 &&
+          r.bottom > fabRect.top - 4;
+        if (overlaps) {
+          setVisible(false);
+          return;
+        }
+      }
+
+      // No conflict found — ensure visible (scroll logic may have already hidden it)
+      // Only restore if we're near the top or page has no scroll
+      const noScroll = document.documentElement.scrollHeight <= window.innerHeight + 2;
+      const nearTop = window.scrollY < 80;
+      if (noScroll || nearTop) setVisible(true);
+    };
+
+    // Run after DOM settles, and re-run on any DOM mutations (form step changes)
+    const timeout = setTimeout(checkConflict, 120);
+
+    const observer = new MutationObserver(() => {
+      clearTimeout(0);
+      setTimeout(checkConflict, 80);
+    });
+    observer.observe(document.body, { subtree: true, childList: true });
+
+    window.addEventListener("resize", checkConflict, { passive: true });
+
+    return () => {
+      clearTimeout(timeout);
+      observer.disconnect();
+      window.removeEventListener("resize", checkConflict);
+    };
   }, [enabled]);
 
   return enabled ? visible : true;

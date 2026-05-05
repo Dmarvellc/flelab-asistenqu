@@ -1509,7 +1509,7 @@ export default function NewClientPage() {
             </div>
 
             {/* ── Bottom Navigation ─────────────────────────────── */}
-            <div className="shrink-0 border-t border-border/60 bg-background/80 backdrop-blur-md px-8 py-3 flex items-center justify-between">
+            <div data-hides-fab className="shrink-0 border-t border-border/60 bg-background/80 backdrop-blur-md px-8 py-3 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                     <Button
                         variant="ghost" onClick={prevStep}
