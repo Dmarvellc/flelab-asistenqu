@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "motion/react";
 import {
     Bot, X, Send, Copy, Check, Sparkles,
     ClipboardList, Users, Search, TriangleAlert,
-    Loader2, ChevronDown, Zap,
+    Loader2, ChevronDown, Zap, AlertCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useChat, type Message } from "ai/react";
@@ -135,6 +135,7 @@ export function AIAssistantWidget() {
     const [isOpen, setIsOpen] = useState(false);
     const [copiedId, setCopiedId] = useState<string | null>(null);
     const [isExpanded, setIsExpanded] = useState(false);
+    const [hasError, setHasError] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLTextAreaElement>(null);
     const pathname = usePathname();
@@ -150,7 +151,8 @@ export function AIAssistantWidget() {
             },
         ],
         onError: () => {
-            // silently handle errors; the UI shows the loading state
+            setHasError(true);
+            setTimeout(() => setHasError(false), 5000);
         },
     });
 
@@ -177,9 +179,6 @@ export function AIAssistantWidget() {
     }, [messages, isLoading]);
 
     const hasMessages = messages.length > 1;
-    const panelHeight = isExpanded
-        ? "h-[85dvh]"
-        : "h-[600px] max-h-[min(85vh,calc(100dvh-5rem))]";
 
     return (
         <>
@@ -214,13 +213,15 @@ export function AIAssistantWidget() {
                 {isOpen && (
                     <motion.div
                         initial={{ opacity: 0, y: 20, scale: 0.96 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        animate={{
+                            opacity: 1, y: 0, scale: 1,
+                            height: isExpanded ? "85dvh" : "min(600px, calc(100dvh - 5rem))",
+                        }}
                         exit={{ opacity: 0, y: 20, scale: 0.96 }}
                         transition={{ duration: 0.18, ease: "easeOut" }}
                         className={cn(
                             panelPosition,
                             "w-full sm:max-w-[380px] overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-2xl flex flex-col",
-                            panelHeight,
                         )}
                     >
                         {/* ── Header ── */}
@@ -236,8 +237,7 @@ export function AIAssistantWidget() {
                                 </div>
                                 <div>
                                     <h3 className="font-bold text-[14px] leading-none">Natalie AI</h3>
-                                    <p className="mt-1 text-[11px] text-gray-400 flex items-center gap-1">
-                                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 inline-block" />
+                                    <p className="mt-1 text-[11px] text-gray-400">
                                         Terhubung ke database
                                     </p>
                                 </div>
@@ -285,6 +285,21 @@ export function AIAssistantWidget() {
                                     copiedId={copiedId}
                                 />
                             ))}
+
+                            {/* Error banner */}
+                            <AnimatePresence>
+                                {hasError && (
+                                    <motion.div
+                                        initial={{ opacity: 0, y: -4 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, y: -4 }}
+                                        className="flex items-center gap-2 rounded-xl bg-red-50 border border-red-200 px-3 py-2.5 text-[12px] text-red-700"
+                                    >
+                                        <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+                                        <span>Gagal menghubungi AI. Pastikan <strong>ANTHROPIC_API_KEY</strong> sudah diisi di <code>.env.local</code>.</span>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
 
                             {/* Typing indicator */}
                             {isLoading && (
@@ -351,7 +366,7 @@ export function AIAssistantWidget() {
                                     {isLoading ? (
                                         <Loader2 className="h-4 w-4 animate-spin" />
                                     ) : (
-                                        <Send className="h-4 w-4 ml-0.5" />
+                                        <Send className="h-4 w-4" />
                                     )}
                                 </button>
                             </form>
