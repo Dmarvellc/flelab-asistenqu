@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, AlertCircle, RefreshCw, Edit2, Save, X, User, Mail, Phone, MapPin, Calendar, Shield, Building2, ArrowRight } from "lucide-react";
+import { Loader2, AlertCircle, RefreshCw, Edit2, Save, X, User, Mail, Phone, MapPin, Calendar, Shield, Building2, ArrowRight, RotateCcw } from "lucide-react";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
@@ -85,6 +85,7 @@ export default function AgentSettingsPage() {
         gender: "",
     });
     const [saving, setSaving] = useState(false);
+    const [editDraftRestored, setEditDraftRestored] = useState(false);
     const [agencies, setAgencies] = useState<{ agency_id: string, name: string }[]>([]);
     const [showTransferForm, setShowTransferForm] = useState(false);
     const [transferForm, setTransferForm] = useState({ agencyId: "", reason: "" });
@@ -143,6 +144,26 @@ export default function AgentSettingsPage() {
         fetchAgencies();
     }, []);
 
+    const SETTINGS_DRAFT_KEY = "agent_settings_draft_v1";
+
+    // Auto-save editForm while editing
+    useEffect(() => {
+        if (!isEditing) return;
+        try { localStorage.setItem(SETTINGS_DRAFT_KEY, JSON.stringify(editForm)); } catch { /* ignore */ }
+    }, [editForm, isEditing]);
+
+    // When user opens edit mode, check for a saved draft
+    const handleStartEdit = () => {
+        setIsEditing(true);
+        try {
+            const saved = localStorage.getItem(SETTINGS_DRAFT_KEY);
+            if (saved) {
+                setEditForm(prev => ({ ...prev, ...JSON.parse(saved) }));
+                setEditDraftRestored(true);
+            }
+        } catch { /* ignore */ }
+    };
+
     const handleSave = async () => {
         setSaving(true);
         setError(null);
@@ -165,9 +186,11 @@ export default function AgentSettingsPage() {
                 throw new Error(data.error || "Gagal menyimpan perubahan");
             }
 
+            localStorage.removeItem(SETTINGS_DRAFT_KEY);
             toast({ title: "Berhasil", description: "Profil berhasil diperbarui." });
             await fetchProfile();
             setIsEditing(false);
+            setEditDraftRestored(false);
         } catch (err: any) {
             toast({ title: "Gagal", description: err.message || "Gagal menyimpan perubahan.", variant: "destructive" });
         } finally {
@@ -176,7 +199,9 @@ export default function AgentSettingsPage() {
     };
 
     const handleCancel = () => {
+        localStorage.removeItem(SETTINGS_DRAFT_KEY);
         setIsEditing(false);
+        setEditDraftRestored(false);
         if (profile) {
             setEditForm({
                 fullName: profile.full_name || "",
@@ -289,7 +314,7 @@ export default function AgentSettingsPage() {
 
                 {!isEditing && (
                     <button
-                        onClick={() => { setIsEditing(true); setActiveSection('personal'); }}
+                        onClick={() => { handleStartEdit(); setActiveSection('personal'); }}
                         className="bg-gray-50 hover:bg-gray-100 text-gray-900 text-[15px] font-semibold h-12 px-6 rounded-2xl transition-all shadow-sm border border-gray-200 flex items-center gap-2 mt-4 sm:mt-0"
                     >
                         <Edit2 className="h-4 w-4" />
@@ -352,6 +377,17 @@ export default function AgentSettingsPage() {
                     </div>
 
                     <div className="p-4 sm:p-8">
+                        {editDraftRestored && isEditing && (
+                            <div className="flex items-center justify-between gap-3 px-4 py-2.5 mb-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-sm">
+                                <div className="flex items-center gap-2">
+                                    <RotateCcw className="w-4 h-4 shrink-0" />
+                                    <span className="font-medium">Perubahan yang belum disimpan dipulihkan.</span>
+                                </div>
+                                <button onClick={() => setEditDraftRestored(false)} className="text-amber-600 hover:text-amber-900">
+                                    <X className="w-3.5 h-3.5" />
+                                </button>
+                            </div>
+                        )}
                         <FieldRow
                             label="Email"
                             icon={Mail}

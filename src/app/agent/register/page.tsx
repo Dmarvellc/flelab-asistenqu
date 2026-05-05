@@ -13,7 +13,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { AlertCircle, CheckCircle2, Loader2, AlertTriangle, ArrowRight, Zap, Globe } from "lucide-react";
+import { AlertCircle, CheckCircle2, Loader2, AlertTriangle, ArrowRight, Zap, Globe, RotateCcw, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/components/providers/i18n-provider";
 import { PhoneInput } from "@/components/ui/phone-input";
@@ -40,6 +40,8 @@ function parseNikData(nik: string) {
     return { gender, birthDate };
 }
 
+const REGISTER_DRAFT_KEY = "agent_register_draft_v1";
+
 export default function AgentRegisterPage() {
     const router = useRouter();
     const { t, lang, setLang } = useTranslation();
@@ -48,6 +50,7 @@ export default function AgentRegisterPage() {
         addressStreet: "", provinceId: "", regencyId: "", districtId: "", villageId: "", postalCode: "", agencyId: "",
         referralCode: "",
     });
+    const [draftRestored, setDraftRestored] = useState(false);
 
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState<string | null>(null);
@@ -120,6 +123,33 @@ export default function AgentRegisterPage() {
         }
     }, [formData.nik, formData.birthDate, formData.gender, lang]);
 
+    // Draft: restore on mount (skip password for security)
+    useEffect(() => {
+        try {
+            const saved = localStorage.getItem(REGISTER_DRAFT_KEY);
+            if (saved) {
+                const { formData: f } = JSON.parse(saved);
+                setFormData(prev => ({ ...prev, ...f, password: "" }));
+                setDraftRestored(true);
+            }
+        } catch { /* ignore */ }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    // Draft: auto-save (omit password)
+    useEffect(() => {
+        try {
+            const { password: _, ...rest } = formData;
+            localStorage.setItem(REGISTER_DRAFT_KEY, JSON.stringify({ formData: rest }));
+        } catch { /* ignore */ }
+    }, [formData]);
+
+    const clearRegisterDraft = () => {
+        localStorage.removeItem(REGISTER_DRAFT_KEY);
+        setFormData({ email: "", password: "", fullName: "", nik: "", phoneNumber: "", birthDate: "", gender: "LAKI-LAKI", addressStreet: "", provinceId: "", regencyId: "", districtId: "", villageId: "", postalCode: "", agencyId: "", referralCode: "" });
+        setDraftRestored(false);
+    };
+
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
         setFormData((prev) => ({ ...prev, [name]: value }));
@@ -171,6 +201,7 @@ export default function AgentRegisterPage() {
                 setError(data.error ?? (lang === 'en' ? "Registration failed" : "Pendaftaran gagal"));
                 return;
             }
+            localStorage.removeItem(REGISTER_DRAFT_KEY);
             setMessage(lang === 'en' ? "Registration successful! Redirecting..." : "Pendaftaran berhasil! Mengalihkan...");
             setTimeout(() => { router.push("/agent/login"); }, 2000);
             window.scrollTo({ top: 0, behavior: "smooth" });
@@ -204,6 +235,18 @@ export default function AgentRegisterPage() {
                 </div>
 
                 <div className="space-y-8">
+                    {draftRestored && (
+                        <div className="flex items-center justify-between gap-3 px-4 py-2.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-sm">
+                            <div className="flex items-center gap-2">
+                                <RotateCcw className="w-4 h-4 shrink-0" />
+                                <span className="font-medium">Draft tersimpan dipulihkan.</span>
+                                <span className="text-amber-600">Password dikosongkan untuk keamanan.</span>
+                            </div>
+                            <button onClick={clearRegisterDraft} className="flex items-center gap-1 text-xs font-medium text-amber-700 hover:text-amber-900 transition-colors shrink-0">
+                                <X className="w-3.5 h-3.5" /> Hapus Draft
+                            </button>
+                        </div>
+                    )}
                     {message && !error && (
                         <div className="flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-700 animate-in zoom-in-95 duration-200">
                             <CheckCircle2 className="h-5 w-5" />

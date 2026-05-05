@@ -10,7 +10,7 @@ import {
     CheckCircle2, Upload, FileText, User, ShieldCheck, Loader2, ArrowRight, ArrowLeft,
     AlertTriangle, Hash, Building2, CalendarDays, CreditCard, Mail, MapPin, AlertCircle,
     Heart, Users, Plus, Trash2, Wallet, Star, Briefcase, RefreshCw,
-    Activity, Clock, Globe, Stethoscope, Percent, Timer, BadgeCheck,
+    Activity, Clock, Globe, Stethoscope, Percent, Timer, BadgeCheck, RotateCcw, X,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
@@ -68,12 +68,15 @@ function idrFmt(v: string) {
     return isNaN(n) ? "Rp 0" : "Rp " + n.toLocaleString("id-ID");
 }
 
+const CLIENT_DRAFT_KEY = "new_client_draft_v1";
+
 /* ─── Page ───────────────────────────────────────────────────────── */
 export default function NewClientPage() {
     const router = useRouter();
     const { toast } = useToast();
     const [currentStep, setCurrentStep] = useState(1);
     const [isLoading, setIsLoading] = useState(false);
+    const [draftRestored, setDraftRestored] = useState(false);
     const [file, setFile] = useState<File | null>(null);
     const [filePreview, setFilePreview] = useState<string | null>(null);
     const [isDragActive, setIsDragActive] = useState(false);
@@ -185,6 +188,38 @@ export default function NewClientPage() {
     });
 
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    // Draft: restore on mount (skip policyFileBase64 — too large)
+    useEffect(() => {
+        try {
+            const saved = localStorage.getItem(CLIENT_DRAFT_KEY);
+            if (saved) {
+                const { formData: f, step, riders: r, beneficiaries: b, insuredSameAsPolicyholder: same } = JSON.parse(saved);
+                setFormData(prev => ({ ...prev, ...f, policyFileBase64: "" }));
+                if (step) setCurrentStep(step);
+                if (r) setRiders(r);
+                if (b) setBeneficiaries(b);
+                if (typeof same === "boolean") setInsuredSameAsPolicyholder(same);
+                setDraftRestored(true);
+            }
+        } catch { /* ignore */ }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    // Draft: auto-save on every change (omit large base64 file)
+    useEffect(() => {
+        try {
+            const { policyFileBase64: _, ...rest } = formData;
+            localStorage.setItem(CLIENT_DRAFT_KEY, JSON.stringify({
+                formData: rest, step: currentStep, riders, beneficiaries, insuredSameAsPolicyholder,
+            }));
+        } catch { /* ignore quota errors */ }
+    }, [formData, currentStep, riders, beneficiaries, insuredSameAsPolicyholder]);
+
+    const clearClientDraft = () => {
+        localStorage.removeItem(CLIENT_DRAFT_KEY);
+        setDraftRestored(false);
+    };
 
     // Shorthand updater that also clears field error
     const update = (field: string, value: string) => {
@@ -429,6 +464,7 @@ export default function NewClientPage() {
             });
 
             if (res.ok) {
+                localStorage.removeItem(CLIENT_DRAFT_KEY);
                 toast({ title: "Berhasil", description: "Data klien dan polis berhasil disimpan." });
                 router.push("/agent/clients");
             } else {
@@ -467,6 +503,22 @@ export default function NewClientPage() {
     /* ── Render ─────────────────────────────────────────────────── */
     return (
         <div className="flex flex-col h-full w-full">
+            {draftRestored && (
+                <div className="flex items-center justify-between gap-3 px-4 py-2.5 mb-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-sm">
+                    <div className="flex items-center gap-2">
+                        <RotateCcw className="w-4 h-4 shrink-0" />
+                        <span className="font-medium">Draft tersimpan dipulihkan.</span>
+                        <span className="text-amber-600">Lanjutkan dari langkah terakhir atau mulai ulang.</span>
+                    </div>
+                    <button
+                        onClick={() => { clearClientDraft(); setCurrentStep(1); setFormData({ policyNumber: "", insuranceCompany: "", productName: "", policyType: "", currency: "IDR", issueDate: "", startDate: "", endDate: "", dueDay: "", nextDueDate: "", gracePeriodDays: "30", reinstatementPeriod: "24", policyTerm: "", premiumPaymentTerm: "", policyStatus: "AKTIF", underwritingStatus: "STANDARD", sumInsured: "", premiumAmount: "", premiumFrequency: "MONTHLY", coverageArea: "INDONESIA", roomPlan: "", annualLimit: "", lifetimeLimit: "", deductible: "", coinsurancePct: "", waitingPeriodDays: "30", preExistingCovered: "NO", cashlessNetwork: "", benefitLife: "", benefitAccidentalDeath: "", benefitHospitalization: "", benefitIcu: "", benefitSurgery: "", benefitOutpatient: "", benefitDailyCash: "", benefitMaternity: "", benefitDental: "", benefitOptical: "", benefitAmbulance: "", benefitMedicalCheckup: "", benefitDisability: "", benefitCritical: "", paymentMethod: "", bankName: "", accountNumber: "", accountHolderName: "", cardExpiry: "", cardNetwork: "", virtualAccountNumber: "", autodebetStartDate: "", autodebetEndDate: "", autodebetMandateRef: "", billingCycleDay: "", fullName: "", nik: "", passportNumber: "", birthDate: "", gender: "", phoneNumber: "", email: "", occupation: "", maritalStatus: "", insuredName: "", insuredNIK: "", insuredBirthDate: "", insuredGender: "", insuredRelationship: "", addressStreet: "", provinceId: "", regencyId: "", districtId: "", villageId: "", postalCode: "", policyFileBase64: "" }); setRiders([{ name: "", coverage: "" }]); setBeneficiaries([{ name: "", relationship: "PASANGAN", percentage: "100" }]); setInsuredSameAsPolicyholder(true); }}
+                        className="flex items-center gap-1 text-xs font-medium text-amber-700 hover:text-amber-900 transition-colors shrink-0"
+                    >
+                        <X className="w-3.5 h-3.5" />
+                        Hapus Draft
+                    </button>
+                </div>
+            )}
             <div className="flex flex-1 min-h-0">
 
                 {/* ── Sidebar Stepper ───────────────────────────── */}

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, AlertCircle, RefreshCw, Edit2, Save, X, User, Mail, Phone, MapPin, Calendar, Shield, Building2, UploadCloud, FileText, Palette, Link2, Eye } from "lucide-react";
+import { Loader2, AlertCircle, RefreshCw, Edit2, Save, X, User, Mail, Phone, MapPin, Calendar, Shield, Building2, UploadCloud, FileText, Palette, Link2, Eye, RotateCcw } from "lucide-react";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
@@ -97,6 +97,11 @@ export default function AdminAgencySettingsPage() {
     const [brandingLoading, setBrandingLoading] = useState(true);
     const [brandingSaving, setBrandingSaving] = useState(false);
     const [showBrandingEdit, setShowBrandingEdit] = useState(false);
+    const [editDraftRestored, setEditDraftRestored] = useState(false);
+    const [brandingDraftRestored, setBrandingDraftRestored] = useState(false);
+
+    const AGENCY_SETTINGS_DRAFT_KEY = "admin_agency_settings_draft_v1";
+    const AGENCY_BRANDING_DRAFT_KEY = "admin_agency_branding_draft_v1";
 
     const fetchProfile = async () => {
         try {
@@ -161,8 +166,10 @@ export default function AdminAgencySettingsPage() {
                 const data = await res.json();
                 throw new Error(data.error || "Gagal menyimpan branding");
             }
+            localStorage.removeItem(AGENCY_BRANDING_DRAFT_KEY);
             toast({ title: "Berhasil", description: "Branding berhasil diperbarui." });
             setShowBrandingEdit(false);
+            setBrandingDraftRestored(false);
         } catch (err: unknown) {
             const msg = err instanceof Error ? err.message : "Gagal menyimpan.";
             toast({ title: "Gagal", description: msg, variant: "destructive" });
@@ -175,6 +182,34 @@ export default function AdminAgencySettingsPage() {
         fetchProfile();
         fetchBranding();
     }, []);
+
+    // Auto-save editForm while in edit mode
+    useEffect(() => {
+        if (!isEditing) return;
+        try { localStorage.setItem(AGENCY_SETTINGS_DRAFT_KEY, JSON.stringify(editForm)); } catch { /* ignore */ }
+    }, [editForm, isEditing]);
+
+    // Auto-save branding while in branding edit mode
+    useEffect(() => {
+        if (!showBrandingEdit) return;
+        try { localStorage.setItem(AGENCY_BRANDING_DRAFT_KEY, JSON.stringify(branding)); } catch { /* ignore */ }
+    }, [branding, showBrandingEdit]);
+
+    const handleStartEdit = () => {
+        setIsEditing(true);
+        try {
+            const saved = localStorage.getItem(AGENCY_SETTINGS_DRAFT_KEY);
+            if (saved) { setEditForm(prev => ({ ...prev, ...JSON.parse(saved) })); setEditDraftRestored(true); }
+        } catch { /* ignore */ }
+    };
+
+    const handleStartBrandingEdit = () => {
+        setShowBrandingEdit(true);
+        try {
+            const saved = localStorage.getItem(AGENCY_BRANDING_DRAFT_KEY);
+            if (saved) { setBranding(prev => ({ ...prev, ...JSON.parse(saved) })); setBrandingDraftRestored(true); }
+        } catch { /* ignore */ }
+    };
 
     const handleSave = async () => {
         setSaving(true);
@@ -191,9 +226,11 @@ export default function AdminAgencySettingsPage() {
                 throw new Error(data.error || "Gagal menyimpan perubahan");
             }
 
+            localStorage.removeItem(AGENCY_SETTINGS_DRAFT_KEY);
             toast({ title: "Berhasil", description: "Profil berhasil diperbarui." });
             await fetchProfile();
             setIsEditing(false);
+            setEditDraftRestored(false);
         } catch (err: any) {
             toast({ title: "Gagal", description: err.message || "Gagal menyimpan perubahan.", variant: "destructive" });
         } finally {
@@ -233,7 +270,9 @@ export default function AdminAgencySettingsPage() {
     };
 
     const handleCancel = () => {
+        localStorage.removeItem(AGENCY_SETTINGS_DRAFT_KEY);
         setIsEditing(false);
+        setEditDraftRestored(false);
         if (profile) {
             setEditForm({
                 agency_name: profile.agency_name || "",
@@ -314,7 +353,7 @@ export default function AdminAgencySettingsPage() {
 
                 {!isEditing && (
                     <button
-                        onClick={() => setIsEditing(true)}
+                        onClick={handleStartEdit}
                         className="bg-gray-50 hover:bg-white text-gray-900 text-[15px] font-semibold h-12 px-6 rounded-2xl transition-all shadow-sm border border-gray-200 flex items-center gap-2 mt-4 sm:mt-0 hover:shadow-md"
                     >
                         <Edit2 className="h-4 w-4" />
@@ -367,6 +406,15 @@ export default function AdminAgencySettingsPage() {
                     </div>
 
                     <div className="p-4 sm:p-8">
+                        {editDraftRestored && isEditing && (
+                            <div className="flex items-center justify-between gap-3 px-4 py-2.5 mb-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-sm">
+                                <div className="flex items-center gap-2">
+                                    <RotateCcw className="w-4 h-4 shrink-0" />
+                                    <span className="font-medium">Perubahan yang belum disimpan dipulihkan.</span>
+                                </div>
+                                <button onClick={() => setEditDraftRestored(false)} className="text-amber-600 hover:text-amber-900"><X className="w-3.5 h-3.5" /></button>
+                            </div>
+                        )}
                         <FieldRow
                             label="Nama Agensi Resmi"
                             icon={Building2}
@@ -469,7 +517,7 @@ export default function AdminAgencySettingsPage() {
                         </div>
                         {!showBrandingEdit && (
                             <button
-                                onClick={() => setShowBrandingEdit(true)}
+                                onClick={handleStartBrandingEdit}
                                 className="bg-gray-50 hover:bg-white text-gray-900 text-[14px] font-semibold h-10 px-5 rounded-xl border border-gray-200 flex items-center gap-2 shadow-sm hover:shadow-md transition-all"
                             >
                                 <Edit2 className="h-4 w-4" />
@@ -485,6 +533,15 @@ export default function AdminAgencySettingsPage() {
                             </div>
                         ) : (
                             <div className="flex flex-col gap-6">
+                                {brandingDraftRestored && showBrandingEdit && (
+                                    <div className="flex items-center justify-between gap-3 px-4 py-2.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-sm">
+                                        <div className="flex items-center gap-2">
+                                            <RotateCcw className="w-4 h-4 shrink-0" />
+                                            <span className="font-medium">Perubahan branding yang belum disimpan dipulihkan.</span>
+                                        </div>
+                                        <button onClick={() => setBrandingDraftRestored(false)} className="text-amber-600 hover:text-amber-900"><X className="w-3.5 h-3.5" /></button>
+                                    </div>
+                                )}
                                 {/* Agency Slug / Path */}
                                 <div className="flex flex-col gap-2">
                                     <label className="text-xs font-medium text-gray-500 flex items-center gap-1.5">
@@ -599,7 +656,7 @@ export default function AdminAgencySettingsPage() {
                                 {/* Save/Cancel */}
                                 {showBrandingEdit && (
                                     <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
-                                        <Button variant="outline" onClick={() => { setShowBrandingEdit(false); fetchBranding(); }} className="rounded-xl">
+                                        <Button variant="outline" onClick={() => { localStorage.removeItem(AGENCY_BRANDING_DRAFT_KEY); setShowBrandingEdit(false); setBrandingDraftRestored(false); fetchBranding(); }} className="rounded-xl">
                                             Batal
                                         </Button>
                                         <Button onClick={handleBrandingSave} disabled={brandingSaving} className="bg-gray-900 hover:bg-gray-800 rounded-xl gap-2">
