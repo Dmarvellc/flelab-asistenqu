@@ -5,28 +5,26 @@ import { useEffect, useState } from "react";
 /**
  * Visibility controller for floating action buttons (e.g. Natalie AI FAB).
  *
- * Hides the FAB in 4 situations:
+ * Each reason for hiding is tracked independently so they can't override
+ * each other. Final visibility = not any reason.
  *
- *   1. User is scrolling DOWN — FAB slides away so it doesn't cover CTAs the
- *      user is scrolling toward. Reappears on scroll UP or near top/bottom.
- *
+ *   1. Scrolling DOWN  — reappears on scroll UP or near top/bottom.
  *   2. A modal / dialog / sheet is open (Radix `[data-state="open"]`).
- *
  *   3. Mobile virtual keyboard is open (visualViewport height shrinks).
- *
- *   4. An interactive element (button, link, input) is visually behind the FAB.
- *      Uses document.elementsFromPoint() at the FAB's exact screen coordinates —
- *      only the pixels the FAB actually occupies are checked, so sidebar links
- *      and header buttons never trigger a false positive.
- *      Also respects [data-hides-fab] on any element as an explicit override.
+ *   4. An interactive element is visually behind the FAB (elementsFromPoint).
+ *      Also respects [data-hides-fab] as an explicit override.
  */
 export function useFabVisibility(options?: { enabled?: boolean }): boolean {
   const enabled = options?.enabled ?? true;
-  const [visible, setVisible] = useState(true);
+
+  const [scrollHidden,   setScrollHidden]   = useState(false);
+  const [modalOpen,      setModalOpen]      = useState(false);
+  const [keyboardOpen,   setKeyboardOpen]   = useState(false);
+  const [conflict,       setConflict]       = useState(false);
 
   // ── 1. Scroll direction ────────────────────────────────────────────────────
   useEffect(() => {
-    if (!enabled) { setVisible(true); return; }
+    if (!enabled) { setScrollHidden(false); return; }
 
     let lastY = typeof window !== "undefined" ? window.scrollY : 0;
     let ticking = false;
@@ -45,9 +43,9 @@ export function useFabVisibility(options?: { enabled?: boolean }): boolean {
         const nearTop = y < NEAR_TOP;
         const nearBottom = max > 0 && y > max - NEAR_BOTTOM;
 
-        if (nearTop || nearBottom) setVisible(true);
-        else if (delta > SCROLL_DOWN)  setVisible(false);
-        else if (delta < -SCROLL_UP)   setVisible(true);
+        if (nearTop || nearBottom) setScrollHidden(false);
+        else if (delta > SCROLL_DOWN)  setScrollHidden(true);
+        else if (delta < -SCROLL_UP)   setScrollHidden(false);
 
         lastY = y;
         ticking = false;
@@ -60,7 +58,7 @@ export function useFabVisibility(options?: { enabled?: boolean }): boolean {
 
   // ── 2. Open modal / dialog / sheet ────────────────────────────────────────
   useEffect(() => {
-    if (!enabled) return;
+    if (!enabled) { setModalOpen(false); return; }
     if (typeof document === "undefined") return;
 
     const SELECTOR =
@@ -71,7 +69,7 @@ export function useFabVisibility(options?: { enabled?: boolean }): boolean {
     const check = () => {
       const open = document.querySelector(SELECTOR);
       const locked = document.body.hasAttribute("data-scroll-locked");
-      if (open || locked) setVisible(false);
+      setModalOpen(!!(open || locked));
     };
 
     check();
@@ -86,18 +84,18 @@ export function useFabVisibility(options?: { enabled?: boolean }): boolean {
 
   // ── 3. Mobile virtual keyboard ─────────────────────────────────────────────
   useEffect(() => {
-    if (!enabled) return;
+    if (!enabled) { setKeyboardOpen(false); return; }
     if (typeof window === "undefined") return;
     const vv = window.visualViewport;
     if (!vv) return;
-    const onResize = () => { if (vv.height / window.innerHeight < 0.78) setVisible(false); };
+    const onResize = () => setKeyboardOpen(vv.height / window.innerHeight < 0.78);
     vv.addEventListener("resize", onResize);
     return () => vv.removeEventListener("resize", onResize);
   }, [enabled]);
 
   // ── 4. Visual overlap at FAB position ─────────────────────────────────────
   useEffect(() => {
-    if (!enabled) return;
+    if (!enabled) { setConflict(false); return; }
     if (typeof document === "undefined") return;
 
     const INTERACTIVE = [
@@ -114,48 +112,45 @@ export function useFabVisibility(options?: { enabled?: boolean }): boolean {
     const check = () => {
       // a) Explicit override — any element can signal it conflicts with the FAB
       if (document.querySelector("[data-hides-fab]")) {
-        setVisible(false);
+        setConflict(true);
         return;
       }
 
       // b) elementsFromPoint at the FAB's visual center.
-      //    This only looks at the exact pixels the FAB occupies, so sidebar
-      //    nav links, header icons, etc. are never considered.
       const isSm = window.innerWidth >= 640;
-      const right  = isSm ? 24 : 12;   // Tailwind right-6 / right-3
-      const bottom = isSm ? 24 : 16;   // Tailwind bottom-6 / bottom-[max(1rem,...)]
-      const size   = isSm ? 56 : 48;   // h-14 / h-12
+      const right  = isSm ? 24 : 12;
+      const bottom = isSm ? 24 : 16;
+      const size   = isSm ? 56 : 48;
 
       const cx = window.innerWidth  - right  - size / 2;
       const cy = window.innerHeight - bottom - size / 2;
 
-      // elementsFromPoint (plural) returns ALL layers at that point, top to bottom.
       const stack = document.elementsFromPoint(cx, cy);
-
-      const conflict = stack.some(el =>
-        // Exclude the FAB itself and anything inside it
+      const hasConflict = stack.some(el =>
         !el.closest("[data-natalie-fab]") &&
         el.matches(INTERACTIVE)
       );
 
-      if (conflict) setVisible(false);
+      setConflict(hasConflict);
     };
 
     const debounced = () => { clearTimeout(timer); timer = setTimeout(check, 150); };
 
     debounced();
     window.addEventListener("resize", debounced, { passive: true });
+    window.addEventListener("scroll", debounced, { passive: true });
 
-    // Only watch for elements added/removed, not attribute churn
     const obs = new MutationObserver(debounced);
     obs.observe(document.body, { childList: true, subtree: true });
 
     return () => {
       clearTimeout(timer);
       window.removeEventListener("resize", debounced);
+      window.removeEventListener("scroll", debounced);
       obs.disconnect();
     };
   }, [enabled]);
 
-  return enabled ? visible : true;
+  if (!enabled) return true;
+  return !(scrollHidden || modalOpen || keyboardOpen || conflict);
 }
