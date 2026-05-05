@@ -26,7 +26,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { CheckCircle2, FileText, User, ShieldCheck, Loader2, ArrowRight, ArrowLeft, Building2, Stethoscope, Check, ChevronsUpDown } from "lucide-react";
+import { CheckCircle2, FileText, User, ShieldCheck, Loader2, ArrowRight, ArrowLeft, Building2, Stethoscope, Check, ChevronsUpDown, RotateCcw, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { LiquidButton } from "@/components/animate-ui/components/buttons/liquid";
@@ -55,6 +55,28 @@ type Disease = {
     disease_id: string;
     name: string;
     icd10_code?: string;
+};
+
+const DRAFT_KEY = "claim_draft_v1";
+
+const DEFAULT_FORM = {
+    client_id: "",
+    hospital_id: "",
+    disease_id: "",
+    claim_date: new Date().toISOString().split('T')[0],
+    total_amount: "",
+    notes: "",
+    claim_category: "MANFAAT_HIDUP",
+    benefit_type: "",
+    care_cause: "",
+    symptom_onset_date: "",
+    previous_treatment: "",
+    doctor_hospital_history: "",
+    accident_chronology: "",
+    alcohol_drug_related: "",
+    death_datetime: "",
+    death_place: "",
+    beneficiary_notes: "",
 };
 
 const steps: Step[] = [
@@ -138,6 +160,7 @@ export default function NewClaimPage() {
     const { toast } = useToast();
     const [currentStep, setCurrentStep] = useState(1);
     const [isLoading, setIsLoading] = useState(false);
+    const [draftRestored, setDraftRestored] = useState(false);
 
     // Data Sources
     const [clients, setClients] = useState<Client[]>([]);
@@ -145,27 +168,37 @@ export default function NewClaimPage() {
     const [diseases, setDiseases] = useState<Disease[]>([]);
 
     // Form Data
-    const [formData, setFormData] = useState({
-        client_id: "",
-        hospital_id: "",
-        disease_id: "",
-        claim_date: new Date().toISOString().split('T')[0],
-        total_amount: "",
-        notes: "",
-        claim_category: "MANFAAT_HIDUP",
-        benefit_type: "",
-        care_cause: "",
-        symptom_onset_date: "",
-        previous_treatment: "",
-        doctor_hospital_history: "",
-        accident_chronology: "",
-        alcohol_drug_related: "",
-        death_datetime: "",
-        death_place: "",
-        beneficiary_notes: "",
-    });
+    const [formData, setFormData] = useState(DEFAULT_FORM);
 
     const [fieldErrors, setFieldErrors] = useState<Record<string, boolean>>({});
+
+    // Draft: restore on mount
+    useEffect(() => {
+        try {
+            const saved = localStorage.getItem(DRAFT_KEY);
+            if (saved) {
+                const { formData: savedForm, step } = JSON.parse(saved);
+                setFormData({ ...DEFAULT_FORM, ...savedForm });
+                if (step) setCurrentStep(step);
+                setDraftRestored(true);
+            }
+        } catch { /* ignore malformed draft */ }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    // Draft: auto-save on every change
+    useEffect(() => {
+        try {
+            localStorage.setItem(DRAFT_KEY, JSON.stringify({ formData, step: currentStep }));
+        } catch { /* ignore storage quota errors */ }
+    }, [formData, currentStep]);
+
+    const clearDraft = () => {
+        localStorage.removeItem(DRAFT_KEY);
+        setFormData(DEFAULT_FORM);
+        setCurrentStep(1);
+        setDraftRestored(false);
+    };
     const fieldLabelMap: Record<string, string> = {
         client_id: "Nama Nasabah",
         hospital_id: "Rumah Sakit",
@@ -292,7 +325,8 @@ export default function NewClaimPage() {
             });
 
             if (res.ok) {
-                toast({ title: "Berhasil", description: "Klaim berhasil dibuat (Draft)." });
+                localStorage.removeItem(DRAFT_KEY);
+                toast({ title: "Berhasil", description: "Klaim berhasil dibuat." });
                 router.push("/agent/claims");
             } else {
                 toast({
@@ -334,6 +368,23 @@ export default function NewClaimPage() {
 
     return (
         <div className="flex flex-col h-full w-full">
+            {/* Draft restored banner */}
+            {draftRestored && (
+                <div className="flex items-center justify-between gap-3 px-4 py-2.5 mb-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-sm">
+                    <div className="flex items-center gap-2">
+                        <RotateCcw className="w-4 h-4 shrink-0" />
+                        <span className="font-medium">Draft tersimpan dipulihkan.</span>
+                        <span className="text-amber-600">Lanjutkan dari langkah terakhir atau mulai ulang.</span>
+                    </div>
+                    <button
+                        onClick={clearDraft}
+                        className="flex items-center gap-1 text-xs font-medium text-amber-700 hover:text-amber-900 transition-colors shrink-0"
+                    >
+                        <X className="w-3.5 h-3.5" />
+                        Hapus Draft
+                    </button>
+                </div>
+            )}
             <div className="flex flex-1 min-h-0">
                 {/* Sidebar Stepper */}
                 <div className="w-60 shrink-0 border-r border-border/60 pr-6 flex flex-col pt-1">

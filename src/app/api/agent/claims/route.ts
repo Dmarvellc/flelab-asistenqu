@@ -68,7 +68,9 @@ export async function POST(req: Request) {
     const userId = session.userId;
 
     const body = await req.json();
-    const { client_id, hospital_id, disease_id, claim_date, total_amount, notes, claim_meta } = body;
+    const { client_id, hospital_id, claim_date, notes, claim_meta } = body;
+    const disease_id = body.disease_id || null;
+    const total_amount = body.total_amount !== "" && body.total_amount != null ? body.total_amount : null;
 
     // Get person_id from client_id and verify client belongs to this agent
     const clientRes = await client.query(
