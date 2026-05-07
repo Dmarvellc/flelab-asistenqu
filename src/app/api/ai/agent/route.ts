@@ -11,12 +11,9 @@ export const maxDuration = 60;
 function resolveAgentLanguageModel(): LanguageModel {
     const anthropicKey = process.env.ANTHROPIC_API_KEY?.trim();
     if (anthropicKey) {
-        const anthropic = createAnthropic({
-            apiKey: anthropicKey,
-            // Enables Anthropic's prompt caching beta — system prompt cached after first request
-            // Cache read: $0.30/1M tokens (90% cheaper than normal $3.00)
-        });
-        return anthropic("claude-haiku-4-5-20251001", { cacheControl: true }) as LanguageModel;
+        const anthropic = createAnthropic({ apiKey: anthropicKey });
+        // Model alias + no cache-control beta header — avoids provider/API mismatches on Vercel.
+        return anthropic("claude-haiku-4-5") as LanguageModel;
     }
     const openaiKey = process.env.OPENAI_API_KEY?.trim();
     if (openaiKey) {
@@ -406,13 +403,11 @@ export async function POST(req: Request) {
     try {
         model = resolveAgentLanguageModel();
     } catch {
-        return new Response(
-            JSON.stringify({
-                error: "AI_NOT_CONFIGURED",
-                message: "Set ANTHROPIC_API_KEY or OPENAI_API_KEY in the server environment.",
-            }),
-            { status: 503, headers: { "Content-Type": "application/json" } },
-        );
+        console.error("[api/ai/agent] No AI credentials configured for this deployment.");
+        return new Response(JSON.stringify({ error: "unavailable" }), {
+            status: 503,
+            headers: { "Content-Type": "application/json" },
+        });
     }
 
     const body = await req.json();

@@ -298,10 +298,8 @@ export function AIAssistantWidget() {
                                     >
                                         <AlertCircle className="h-3.5 w-3.5 shrink-0" />
                                         <span>
-                                            Gagal menghubungi AI. Untuk lokal: isi{" "}
-                                            <strong>ANTHROPIC_API_KEY</strong> atau <strong>OPENAI_API_KEY</strong> di{" "}
-                                            <code>.env.local</code>. Untuk produksi (mis. Vercel): set salah satu variabel
-                                            tersebut di Environment Variables lalu redeploy.
+                                            Asisten AI tidak dapat dihubungi sementara. Silakan coba lagi dalam beberapa
+                                            saat.
                                         </span>
                                     </motion.div>
                                 )}
