@@ -150,10 +150,11 @@ function PageHeader({ stats, hospitalCount }: { stats: NetworkStats | null; hosp
   )
 }
 
-function HeaderStat({ value, label }: { value: number; label: string }) {
+function HeaderStat({ value, label }: { value?: number | null; label: string }) {
+  const displayValue = value ?? 0
   return (
     <div>
-      <p className="text-2xl sm:text-3xl font-semibold text-slate-900 tracking-tight">{value.toLocaleString("id-ID")}</p>
+      <p className="text-2xl sm:text-3xl font-semibold text-slate-900 tracking-tight">{displayValue.toLocaleString("id-ID")}</p>
       <p className="text-[11px] sm:text-xs text-slate-500 mt-1 tracking-wide">{label}</p>
     </div>
   )
