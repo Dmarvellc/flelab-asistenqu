@@ -507,7 +507,7 @@ export default function NetworkMarketplacePage() {
       {/* Search */}
       <div className="mt-6 -mx-4 px-4 sm:-mx-6 sm:px-6">
         <div className="relative">
-          <Search className="absolute left-0 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+          <Search className="absolute left-0 top-1/2 -translate-y-1/2 h-[18px] w-[18px] text-slate-400 pointer-events-none" />
           <input
             type="text"
             value={query}
@@ -517,7 +517,7 @@ export default function NetworkMarketplacePage() {
                 ? "Cari rumah sakit, kota, jaringan Generali..."
                 : "Cari dokter, spesialisasi, kondisi..."
             }
-            className="w-full pl-7 pr-10 py-3.5 text-[15px] text-slate-900 bg-transparent border-0 border-b border-slate-200 focus:outline-none focus:border-slate-900 transition-colors placeholder:text-slate-400"
+            className="w-full pl-8 pr-10 py-3.5 text-[15px] text-slate-900 bg-transparent border-0 border-b border-slate-200 focus:outline-none focus:border-slate-900 transition-colors placeholder:text-slate-400"
           />
           {query && (
             <button onClick={() => setQuery("")} className="absolute right-0 top-1/2 -translate-y-1/2 text-slate-300 hover:text-slate-600">
