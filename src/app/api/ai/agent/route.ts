@@ -1,27 +1,13 @@
-import { createAnthropic } from "@ai-sdk/anthropic";
-import { openai } from "@ai-sdk/openai";
-import { convertToModelMessages, stepCountIs, streamText, tool, type LanguageModel } from "ai";
+import { convertToModelMessages, stepCountIs, streamText, tool } from "ai";
 import { z } from "zod";
 import type { PoolClient } from "pg";
 import { getSession } from "@/lib/auth";
 import { dbPool } from "@/lib/db";
 import { findUserWithProfile } from "@/lib/auth-queries";
+import { assertAIConfigured, resolveEconomicalLanguageModels } from "@/lib/ai-runtime";
+import { consumeRateLimit, getClientIp } from "@/lib/rate-limit";
 
 export const maxDuration = 60;
-
-function resolveAgentLanguageModel(): LanguageModel {
-    const anthropicKey = process.env.ANTHROPIC_API_KEY?.trim();
-    if (anthropicKey) {
-        const anthropic = createAnthropic({ apiKey: anthropicKey });
-        // Model alias + no cache-control beta header — avoids provider/API mismatches on Vercel.
-        return anthropic("claude-haiku-4-5") as LanguageModel;
-    }
-    const openaiKey = process.env.OPENAI_API_KEY?.trim();
-    if (openaiKey) {
-        return openai("gpt-4o-mini");
-    }
-    throw new Error("AI_CREDENTIALS_MISSING");
-}
 
 // ─── Tools ────────────────────────────────────────────────────────────────────
 
@@ -40,42 +26,54 @@ function buildTools(userId: string) {
                 let db: PoolClient | undefined;
                 try {
                     db = await dbPool.connect();
-                    const [claimsRes, premiumRes, requestsRes] = await Promise.all([
-                        db.query<{
-                            claim_number: string; stage: string;
-                            client_name: string; hospital_name: string; updated_at: string;
-                        }>(`
-                            SELECT cl.claim_number, cl.stage,
-                                   p.full_name AS client_name,
-                                   h.name AS hospital_name, cl.updated_at
-                            FROM claim cl
-                            JOIN client c ON cl.client_id = c.client_id
-                            JOIN person p ON c.person_id = p.person_id
-                            LEFT JOIN hospital h ON cl.hospital_id = h.hospital_id
-                            WHERE cl.agent_id = $1
-                              AND cl.status NOT IN ('APPROVED','REJECTED','CANCELLED')
-                            ORDER BY cl.updated_at ASC LIMIT 8
-                        `, [userId]),
+                    const unavailableSections: string[] = [];
 
-                        db.query<{ client_name: string; due_date: string; policy: string }>(`
-                            SELECT p.full_name AS client_name,
-                                   ct.next_due_date AS due_date,
-                                   ct.contract_number AS policy
-                            FROM contract ct
-                            JOIN client c ON ct.client_id = c.client_id
-                            JOIN person p ON c.person_id = p.person_id
-                            WHERE c.agent_id = $1
-                              AND ct.next_due_date BETWEEN NOW() AND NOW() + INTERVAL '14 days'
-                              AND ct.status = 'ACTIVE'
-                            ORDER BY ct.next_due_date ASC LIMIT 8
-                        `, [userId]),
+                    const claimsRes = await db.query<{
+                        claim_number: string; stage: string;
+                        client_name: string; hospital_name: string; updated_at: string;
+                    }>(`
+                        SELECT cl.claim_number, cl.stage,
+                               p.full_name AS client_name,
+                               h.name AS hospital_name, cl.updated_at
+                        FROM claim cl
+                        JOIN client c ON cl.client_id = c.client_id
+                        JOIN person p ON c.person_id = p.person_id
+                        LEFT JOIN hospital h ON cl.hospital_id = h.hospital_id
+                        WHERE (cl.created_by_user_id = $1 OR cl.assigned_agent_id = $1 OR c.agent_id = $1)
+                          AND cl.status NOT IN ('APPROVED','REJECTED','CANCELLED')
+                        ORDER BY cl.updated_at ASC NULLS LAST, cl.created_at ASC LIMIT 8
+                    `, [userId]).catch((error) => {
+                        console.error("[get_daily_briefing.claims]", error);
+                        unavailableSections.push("klaim aktif");
+                        return { rows: [] };
+                    });
 
-                        db.query<{ count: string }>(`
-                            SELECT COUNT(*) AS count FROM patient_data_request pdr
-                            JOIN claim cl ON pdr.claim_id = cl.claim_id
-                            WHERE cl.agent_id = $1 AND pdr.status = 'PENDING'
-                        `, [userId]),
-                    ]);
+                    const premiumRes = await db.query<{ client_name: string; due_date: string; policy: string }>(`
+                        SELECT p.full_name AS client_name,
+                               ct.next_due_date AS due_date,
+                               ct.contract_number AS policy
+                        FROM contract ct
+                        JOIN client c ON ct.client_id = c.client_id
+                        JOIN person p ON c.person_id = p.person_id
+                        WHERE c.agent_id = $1
+                          AND ct.next_due_date BETWEEN CURRENT_DATE AND CURRENT_DATE + INTERVAL '14 days'
+                          AND COALESCE(ct.status, ct.policy_status, 'ACTIVE') IN ('ACTIVE', 'AKTIF')
+                        ORDER BY ct.next_due_date ASC LIMIT 8
+                    `, [userId]).catch((error) => {
+                        console.error("[get_daily_briefing.premiums]", error);
+                        unavailableSections.push("premi jatuh tempo");
+                        return { rows: [] };
+                    });
+
+                    const requestsRes = await db.query<{ count: string }>(`
+                        SELECT COUNT(*) AS count
+                        FROM patient_data_request
+                        WHERE agent_id = $1 AND status = 'PENDING'
+                    `, [userId]).catch((error) => {
+                        console.error("[get_daily_briefing.requests]", error);
+                        unavailableSections.push("permintaan RS");
+                        return { rows: [{ count: "0" }] };
+                    });
 
                     const staleDays = (d: string) =>
                         Math.floor((Date.now() - new Date(d).getTime()) / 86400000);
@@ -96,6 +94,8 @@ function buildTools(userId: string) {
                             due: new Date(r.due_date).toLocaleDateString("id-ID"),
                         })),
                         pending_requests: Number(requestsRes.rows[0]?.count ?? 0),
+                        partial: unavailableSections.length > 0,
+                        unavailable_sections: unavailableSections,
                     };
                 } catch (e) {
                     console.error("[get_daily_briefing]", e);
@@ -178,12 +178,13 @@ function buildTools(userId: string) {
 
                         db.query<{ claim_number: string; stage: string; status: string; claim_date: string; disease_name: string }>(`
                             SELECT cl.claim_number, cl.stage, cl.status,
-                                   cl.claim_date, d.disease_name
+                                   cl.claim_date, d.name AS disease_name
                             FROM claim cl
+                            JOIN client c ON cl.client_id = c.client_id
                             LEFT JOIN disease d ON cl.disease_id = d.disease_id
-                            WHERE cl.client_id = $1
+                            WHERE cl.client_id = $1 AND (cl.created_by_user_id = $2 OR cl.assigned_agent_id = $2 OR c.agent_id = $2)
                             ORDER BY cl.claim_date DESC LIMIT 3
-                        `, [client_id]),
+                        `, [client_id, userId]),
                     ]);
 
                     if (!profileRes.rows.length) return { found: false };
@@ -236,20 +237,22 @@ function buildTools(userId: string) {
                             SELECT cl.stage, cl.status, cl.total_amount, cl.claim_date,
                                    cl.log_number, cl.required_action_by_role, cl.benefit_type,
                                    p.full_name AS client_name,
-                                   h.name AS hospital_name, d.disease_name
+                                   h.name AS hospital_name, d.name AS disease_name
                             FROM claim cl
                             JOIN client c ON cl.client_id = c.client_id
                             JOIN person p ON c.person_id = p.person_id
                             LEFT JOIN hospital h ON cl.hospital_id = h.hospital_id
                             LEFT JOIN disease d ON cl.disease_id = d.disease_id
-                            WHERE cl.agent_id = $1 AND cl.claim_number ILIKE $2 LIMIT 1
+                            WHERE (cl.created_by_user_id = $1 OR cl.assigned_agent_id = $1 OR c.agent_id = $1)
+                              AND cl.claim_number ILIKE $2 LIMIT 1
                         `, [userId, `%${claim_number}%`]),
 
                         db.query<{ event_type: string; created_at: string }>(`
                             SELECT event_type, created_at FROM claim_timeline
                             WHERE claim_id = (
                                 SELECT claim_id FROM claim
-                                WHERE agent_id = $1 AND claim_number ILIKE $2 LIMIT 1
+                                WHERE (created_by_user_id = $1 OR assigned_agent_id = $1)
+                                  AND claim_number ILIKE $2 LIMIT 1
                             )
                             ORDER BY created_at DESC LIMIT 5
                         `, [userId, `%${claim_number}%`]),
@@ -262,6 +265,7 @@ function buildTools(userId: string) {
                     const nextAction: Record<string, string> = {
                         DRAFT: "Lengkapi data & ajukan",
                         PENDING_LOG: "Tunggu LOG dari agensi",
+                        DRAFT_AGENT: "Lengkapi data & ajukan",
                         LOG_ISSUED: "Kirim LOG ke RS segera",
                         LOG_SENT_TO_HOSPITAL: "Tunggu konfirmasi RS",
                         PENDING_HOSPITAL_INPUT: "Follow up RS jika >3 hari",
@@ -362,11 +366,13 @@ function buildTools(userId: string) {
                     }>(`
                         SELECT cl.stage, cl.benefit_type, cl.care_cause,
                                cl.symptom_onset_date, cl.previous_treatment,
-                               d.disease_name, cl.log_number,
+                               d.name AS disease_name, cl.log_number,
                                COALESCE((SELECT COUNT(*) FROM claim_document cd WHERE cd.claim_id = cl.claim_id), 0) AS doc_count
                         FROM claim cl
+                        JOIN client c ON cl.client_id = c.client_id
                         LEFT JOIN disease d ON cl.disease_id = d.disease_id
-                        WHERE cl.agent_id = $1 AND cl.claim_number ILIKE $2 LIMIT 1
+                        WHERE (cl.created_by_user_id = $1 OR cl.assigned_agent_id = $1 OR c.agent_id = $1)
+                          AND cl.claim_number ILIKE $2 LIMIT 1
                     `, [userId, `%${claim_number}%`]);
 
                     if (!res.rows.length) return { found: false };
@@ -410,9 +416,13 @@ function buildSystemPrompt(agentName: string, page: string): string {
 
 Gunakan tools untuk data real — jangan mengarang. Prioritas: klaim macet · premi jatuh tempo · dokumen kurang.
 
-Briefing harian (tool get_daily_briefing): hasil punya field ok. ok=true + semua daftar kosong = memang tidak ada klaim aktif / premi jatuh tempo (14 hari) / permintaan RS pending — ringkas dengan positif (bukan error teknis). ok=false = sesaat tidak bisa baca database; jelaskan singkat, tawarkan bantu lewat cari klien atau nomor klaim, tanpa angka fiksi.
+Briefing harian (tool get_daily_briefing): hasil punya field ok. ok=true + semua daftar kosong = memang tidak ada klaim aktif / premi jatuh tempo (14 hari) / permintaan RS pending — ringkas dengan positif (bukan error teknis). Jika partial=true, pakai data yang tersedia dan sebutkan bagian yang belum bisa dibaca secara singkat. ok=false = sesaat tidak bisa baca database; jelaskan singkat, tawarkan bantu lewat cari klien atau nomor klaim, tanpa angka fiksi.
 
-Draf WA/pesan: keluarkan teks langsung tanpa pengantar. Data: bullet point, ringkas. Jangan ungkap NIK/KTP.`;
+Draf WA/pesan: keluarkan teks langsung tanpa pengantar.
+
+Format jawaban: teks bersih yang enak dibaca di chat. Jangan gunakan syntax Markdown mentah seperti **, ###, tabel Markdown, XML, atau JSON kecuali pengguna memintanya. Gunakan judul biasa, baris pendek, dan bullet sederhana bila perlu.
+
+Privasi: jangan ungkap NIK/KTP, alamat lengkap, token, cookie, atau data sensitif lain di chat. Untuk saran medis/asuransi, bantu secara operasional dan sarankan verifikasi ke polis/rumah sakit bila keputusan berdampak tinggi.`;
 }
 
 // ─── Handler ──────────────────────────────────────────────────────────────────
@@ -421,9 +431,29 @@ export async function POST(req: Request) {
     const session = await getSession();
     if (!session?.userId) return new Response("Unauthorized", { status: 401 });
 
-    let model: LanguageModel;
+    const rateLimit = await consumeRateLimit({
+        namespace: "ai:agent",
+        identifier: `${session.userId}:${getClientIp(req)}`,
+        limit: Number(process.env.AI_AGENT_RATE_LIMIT_PER_MINUTE ?? 30),
+        windowSeconds: 60,
+    });
+
+    if (!rateLimit.allowed) {
+        return new Response(JSON.stringify({
+            error: "rate_limited",
+            retryAfterSeconds: rateLimit.retryAfterSeconds,
+        }), {
+            status: 429,
+            headers: {
+                "Content-Type": "application/json",
+                "Retry-After": String(rateLimit.retryAfterSeconds),
+            },
+        });
+    }
+
+    const models = resolveEconomicalLanguageModels();
     try {
-        model = resolveAgentLanguageModel();
+        assertAIConfigured(models);
     } catch {
         console.error("[api/ai/agent] No AI credentials configured for this deployment.");
         return new Response(JSON.stringify({ error: "unavailable" }), {
@@ -449,26 +479,33 @@ export async function POST(req: Request) {
     const profile = await findUserWithProfile(userId).catch(() => null);
     const agentName = profile?.full_name ?? "Agen";
 
+    const uiMessages = Array.isArray(rawMessages) ? rawMessages.slice(-12) : [];
     const messages = await convertToModelMessages(
-        (Array.isArray(rawMessages) ? rawMessages : []) as Parameters<typeof convertToModelMessages>[0],
+        uiMessages as Parameters<typeof convertToModelMessages>[0],
     );
 
-    try {
-        const result = await streamText({
-            model,
-            system: buildSystemPrompt(agentName, page),
-            messages,
-            tools: buildTools(userId),
-            maxOutputTokens: 800,
-            stopWhen: stepCountIs(15),
-        });
+    let lastError: unknown;
+    for (const candidate of models) {
+        try {
+            const result = await streamText({
+                model: candidate.model,
+                system: buildSystemPrompt(agentName, page),
+                messages,
+                tools: buildTools(userId),
+                maxOutputTokens: 800,
+                stopWhen: stepCountIs(15),
+            });
 
-        return result.toUIMessageStreamResponse();
-    } catch (e) {
-        console.error("[api/ai/agent] streamText failed", e);
-        return new Response(JSON.stringify({ error: "unavailable" }), {
-            status: 502,
-            headers: { "Content-Type": "application/json" },
-        });
+            return result.toUIMessageStreamResponse();
+        } catch (e) {
+            lastError = e;
+            console.error(`[api/ai/agent] streamText failed on ${candidate.label}`, e);
+        }
     }
+
+    console.error("[api/ai/agent] all model candidates failed", lastError);
+    return new Response(JSON.stringify({ error: "unavailable" }), {
+        status: 502,
+        headers: { "Content-Type": "application/json" },
+    });
 }

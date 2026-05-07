@@ -2,23 +2,80 @@
 
 import { useState, useRef, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Bot, X, Send, MessageSquare, Zap, Copy, Check } from "lucide-react";
+import {
+    AlertCircle, BarChart3, Bot, X, Send, MessageSquare, Zap, Copy, Check,
+    ClipboardList, Loader2, Search, Sparkles, Users,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, type UIMessage } from "ai";
 import { useFabVisibility } from "@/hooks/use-fab-visibility";
+import { usePathname } from "next/navigation";
+import { cleanAssistantText } from "@/lib/ai-text";
 
 const PREDEFINED_PROMPTS = [
+    "Briefing agensi hari ini",
     "Draft email motivasi ke agen",
     "Analisis tren performa saat ini",
-    "Apa itu Rasio Lapse?"
 ];
+
+const TOOL_LABELS: Record<string, { label: string; icon: React.ElementType }> = {
+    get_agency_briefing: { label: "Membaca briefing agensi...", icon: ClipboardList },
+    search_agents: { label: "Mencari agen...", icon: Users },
+    get_agent_performance: { label: "Menganalisis performa...", icon: BarChart3 },
+    search_agency_claims: { label: "Mencari klaim agensi...", icon: Search },
+    draft_outreach_message: { label: "Menyiapkan draf pesan...", icon: Sparkles },
+};
 
 function textFromMessage(msg: UIMessage): string {
     return msg.parts
         .filter((p): p is { type: "text"; text: string } => p.type === "text")
         .map(p => p.text)
         .join("");
+}
+
+type ToolBadgeItem = { toolName: string; state: "call" | "result" };
+
+function toolBadgesFromMessage(msg: UIMessage): ToolBadgeItem[] {
+    const out: ToolBadgeItem[] = [];
+    for (const p of msg.parts) {
+        if (typeof p.type === "string" && p.type.startsWith("tool-")) {
+            const toolName = p.type.slice("tool-".length);
+            const st = (p as { state?: string }).state;
+            out.push({
+                toolName,
+                state: st === "output-available" || st === "output-error" ? "result" : "call",
+            });
+        }
+    }
+    return out;
+}
+
+function ToolCallBadge({ toolName, state }: { toolName: string; state: "call" | "result" }) {
+    const meta = TOOL_LABELS[toolName] ?? { label: toolName, icon: Zap };
+    const Icon = meta.icon;
+    const isDone = state === "result";
+
+    return (
+        <motion.div
+            initial={{ opacity: 0, y: 4 }}
+            animate={{ opacity: 1, y: 0 }}
+            className={cn(
+                "flex items-center gap-2 rounded-full px-3 py-1.5 text-[11px] font-medium w-fit",
+                isDone
+                    ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                    : "bg-blue-50 text-blue-700 border border-blue-200"
+            )}
+        >
+            {isDone ? (
+                <Check className="h-3 w-3 text-emerald-600 shrink-0" />
+            ) : (
+                <Loader2 className="h-3 w-3 animate-spin shrink-0" />
+            )}
+            <Icon className="h-3 w-3 shrink-0" />
+            <span>{isDone ? meta.label.replace("...", " ✓") : meta.label}</span>
+        </motion.div>
+    );
 }
 
 const fabPosition =
@@ -30,8 +87,10 @@ export function AIAgencyAssistantWidget() {
     const [isOpen, setIsOpen] = useState(false);
     const [copiedId, setCopiedId] = useState<string | null>(null);
     const [input, setInput] = useState("");
+    const [hasError, setHasError] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const fabVisible = useFabVisibility({ enabled: !isOpen });
+    const pathname = usePathname();
 
     const initialMessages = useMemo<UIMessage[]>(
         () => [
@@ -40,7 +99,7 @@ export function AIAgencyAssistantWidget() {
                 role: "assistant",
                 parts: [{
                     type: "text",
-                    text: "Halo Admin Agensi! Saya adalah Asisten AI Anda. Saya telah membaca kinerja live perusahaan Anda dari database.",
+                    text: "Halo Admin Agensi! Saya siap membantu membaca performa agensi, klaim, transfer, dan tim agen dari data operasional Anda.",
                 }],
             },
         ],
@@ -52,14 +111,25 @@ export function AIAgencyAssistantWidget() {
             new DefaultChatTransport({
                 api: "/api/ai/agency",
                 credentials: "include",
+                prepareSendMessagesRequest: ({ messages: reqMessages, body }) => ({
+                    body: {
+                        ...(typeof body === "object" && body !== null ? body : {}),
+                        messages: reqMessages,
+                        pageContext: pathname,
+                    },
+                }),
             }),
-        [],
+        [pathname],
     );
 
     const { messages, sendMessage, status } = useChat({
         id: "asistenqu-admin-agency-ai",
         messages: initialMessages,
         transport,
+        onError: () => {
+            setHasError(true);
+            setTimeout(() => setHasError(false), 5000);
+        },
     });
 
     const isBusy = status === "submitted" || status === "streaming";
@@ -147,7 +217,9 @@ export function AIAgencyAssistantWidget() {
                         <div className="flex-1 overflow-y-auto p-5 dark-scrollbar bg-gray-50/50">
                             <div className="flex flex-col gap-4">
                                 {messages.map((msg) => {
-                                    const content = textFromMessage(msg);
+                                    const rawContent = textFromMessage(msg);
+                                    const content = msg.role === "user" ? rawContent : cleanAssistantText(rawContent);
+                                    const toolInvocations = toolBadgesFromMessage(msg);
                                     return (
                                         <div
                                             key={msg.id}
@@ -156,6 +228,17 @@ export function AIAgencyAssistantWidget() {
                                                 msg.role === "user" ? "ml-auto" : "mr-auto"
                                             )}
                                         >
+                                            {msg.role === "assistant" && toolInvocations.length > 0 && (
+                                                <div className="flex flex-col gap-1.5">
+                                                    {toolInvocations.map((inv, idx) => (
+                                                        <ToolCallBadge
+                                                            key={`${inv.toolName}-${idx}`}
+                                                            toolName={inv.toolName}
+                                                            state={inv.state}
+                                                        />
+                                                    ))}
+                                                </div>
+                                            )}
                                             {content ? (
                                                 <div
                                                     className={cn(
@@ -194,6 +277,12 @@ export function AIAgencyAssistantWidget() {
                                                 <span className="h-1.5 w-1.5 rounded-full bg-gray-400 animate-bounce" style={{ animationDelay: "300ms" }} />
                                             </div>
                                         </div>
+                                    </div>
+                                )}
+                                {hasError && (
+                                    <div className="mr-auto flex max-w-[85%] items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2.5 text-[12px] text-red-700">
+                                        <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+                                        <span>AI sedang tidak stabil. Coba lagi sebentar lagi, atau persempit pertanyaannya.</span>
                                     </div>
                                 )}
                                 <div ref={messagesEndRef} />

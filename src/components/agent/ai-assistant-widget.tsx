@@ -12,6 +12,7 @@ import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, type UIMessage } from "ai";
 import { useFabVisibility } from "@/hooks/use-fab-visibility";
 import { usePathname } from "next/navigation";
+import { cleanAssistantText } from "@/lib/ai-text";
 
 const WELCOME_TEXT =
     "Halo! Saya Natalie, asisten AI Anda yang terhubung ke data klaim, klien, dan jaringan RS.\n\nSaya bisa bantu briefing harian, analisis klaim, cari klien, rekomendasi RS, atau buatkan draf pesan WhatsApp — cukup tanya saja.";
@@ -102,7 +103,8 @@ function MessageBubble({
     copiedId: string | null;
 }) {
     const isUser = msg.role === "user";
-    const content = textFromMessage(msg);
+    const rawContent = textFromMessage(msg);
+    const content = isUser ? rawContent : cleanAssistantText(rawContent);
     const toolInvocations = toolBadgesFromMessage(msg);
 
     return (
