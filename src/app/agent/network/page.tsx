@@ -3,9 +3,9 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from "react"
 import Link from "next/link"
 import {
-  Search, Building2, MapPin, Star, Stethoscope, X, Filter, Video,
+  Search, Building2, MapPin, Star, Stethoscope, X, Video,
   Heart, Brain, Bone, Microscope, Eye, Baby, Activity, Droplets,
-  Users, Hospital, Award, ChevronRight, ShieldCheck,
+  Hospital, ChevronRight, ShieldCheck,
 } from "lucide-react"
 import { GENERALI_PROVIDERS, type GeneraliProvider } from "@/lib/generali-providers"
 
@@ -129,27 +129,23 @@ const SPECIALIZATIONS = [
   { key: "Urologi", label: "Urologi", icon: Droplets },
 ]
 
-// ─── Header ─────────────────────────────────────────────────
-function PageHeader({ stats }: { stats: NetworkStats | null }) {
+// ─── Header (no separate background, sits flat on the page) ──
+function PageHeader({ stats, hospitalCount }: { stats: NetworkStats | null; hospitalCount: number }) {
   return (
-    <header className="bg-slate-900 -mx-4 sm:-mx-6 -mt-4 sm:-mt-6 px-5 sm:px-12 pt-10 sm:pt-14 pb-8 sm:pb-10 mb-8 sm:mb-12">
-      <div className="max-w-7xl mx-auto">
-        <p className="text-[11px] font-semibold tracking-[0.25em] uppercase text-teal-300/80">Network</p>
-        <h1 className="mt-3 text-2xl sm:text-4xl font-semibold text-white tracking-tight max-w-2xl leading-tight">
-          Marketplace Dokter & Rumah Sakit
-        </h1>
-        <p className="mt-3 text-sm sm:text-[15px] text-white/60 max-w-xl leading-relaxed">
-          Direktori spesialis dan provider yang terverifikasi di Asia Tenggara, termasuk jaringan Generali.
-        </p>
-        {stats && (
-          <div className="mt-8 sm:mt-10 grid grid-cols-2 sm:grid-cols-4 gap-y-4 gap-x-8 max-w-3xl">
-            <HeaderStat value={stats.total_doctors} label="Dokter terdaftar" />
-            <HeaderStat value={stats.total_hospitals} label="Rumah sakit" />
-            <HeaderStat value={GENERALI_PROVIDERS.length} label="Generali Network" />
-            <HeaderStat value={stats.partner_hospitals} label="Mitra aktif" />
-          </div>
-        )}
-      </div>
+    <header className="pt-2 pb-6 sm:pb-8">
+      <h1 className="text-2xl sm:text-4xl font-semibold text-slate-900 tracking-tight max-w-2xl leading-tight">
+        Marketplace Dokter & Rumah Sakit
+      </h1>
+      <p className="mt-2 text-sm sm:text-[15px] text-slate-500 max-w-xl leading-relaxed">
+        Direktori spesialis dan provider yang terverifikasi di Asia Tenggara, termasuk jaringan Generali.
+      </p>
+      {stats && (
+        <div className="mt-6 sm:mt-8 grid grid-cols-3 gap-y-4 gap-x-8 max-w-2xl">
+          <HeaderStat value={stats.total_doctors} label="Dokter terdaftar" />
+          <HeaderStat value={hospitalCount} label="Rumah sakit" />
+          <HeaderStat value={stats.partner_hospitals} label="Mitra aktif" />
+        </div>
+      )}
     </header>
   )
 }
@@ -157,8 +153,8 @@ function PageHeader({ stats }: { stats: NetworkStats | null }) {
 function HeaderStat({ value, label }: { value: number; label: string }) {
   return (
     <div>
-      <p className="text-2xl sm:text-3xl font-semibold text-white tracking-tight">{value.toLocaleString("id-ID")}</p>
-      <p className="text-[11px] sm:text-xs text-white/50 mt-1 tracking-wide">{label}</p>
+      <p className="text-2xl sm:text-3xl font-semibold text-slate-900 tracking-tight">{value.toLocaleString("id-ID")}</p>
+      <p className="text-[11px] sm:text-xs text-slate-500 mt-1 tracking-wide">{label}</p>
     </div>
   )
 }
@@ -319,19 +315,29 @@ function HospitalRow({ hospital }: { hospital: NetworkHospital }) {
   )
 }
 
-// ─── Generali Provider Row ──────────────────────────────────
+// ─── Generali-only Provider Row ─────────────────────────────
+// Used for Generali-network providers that don't have a corresponding
+// row in the doctors/hospitals DB. Visually consistent with HospitalRow
+// but lighter (no rating/bed count, marked with a small Generali tag).
 function GeneraliRow({ provider }: { provider: GeneraliProvider }) {
   const cc = provider.country === "MALAYSIA" ? "MY" : "SG"
   return (
-    <div className="flex items-center gap-4 sm:gap-6 py-4 border-b border-gray-100 -mx-4 px-4 sm:-mx-6 sm:px-6">
-      <div className="h-10 w-10 flex items-center justify-center bg-slate-100 rounded-md shrink-0">
-        <Building2 className="h-4 w-4 text-slate-400" />
+    <div className="flex items-center gap-4 sm:gap-6 py-5 border-b border-gray-100 -mx-4 px-4 sm:-mx-6 sm:px-6">
+      <div className="h-12 w-12 sm:h-14 sm:w-14 flex items-center justify-center bg-white border border-gray-100 rounded-md shrink-0">
+        <Building2 className="h-4 w-4 text-slate-300" />
       </div>
       <div className="flex-1 min-w-0">
-        <h3 className="font-medium text-slate-900 text-[14px] leading-snug line-clamp-1">{provider.name}</h3>
-        <p className="mt-0.5 text-[12px] text-slate-500 line-clamp-1">{provider.address}</p>
+        <h3 className="font-medium text-slate-900 text-[15px] leading-snug line-clamp-1">{provider.name}</h3>
+        <p className="mt-1 text-[12px] text-slate-500 flex items-center gap-1.5 line-clamp-1">
+          <MapPin className="h-3 w-3 shrink-0 text-slate-300" />
+          {provider.city}, {provider.state}
+          <span className="text-slate-300">·</span>
+          <span>{provider.network}</span>
+        </p>
       </div>
-      <span className="hidden sm:inline text-[11px] text-slate-400 shrink-0 font-medium">{provider.network}</span>
+      <span className="inline-flex items-center gap-1 text-[10px] font-semibold tracking-wider uppercase text-slate-400 shrink-0">
+        <ShieldCheck className="h-3 w-3" /> Generali
+      </span>
       <span className="text-slate-300 text-[11px] font-mono tracking-wider w-6 text-right">{cc}</span>
     </div>
   )
@@ -352,7 +358,19 @@ function RowSkeleton() {
 }
 
 // ─── Main Page ──────────────────────────────────────────────
-type ActiveTab = "doctors" | "hospitals" | "generali"
+type ActiveTab = "doctors" | "hospitals"
+
+// Normalize hospital names for fuzzy dedup between the DB hospitals and
+// the Generali provider directory.
+function normalizeName(s: string): string {
+  return s
+    .toUpperCase()
+    .replace(/SDN\.?\s*BHD\.?/g, "")
+    .replace(/\(.*?\)/g, "")
+    .replace(/[.,'-]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+}
 
 export default function NetworkMarketplacePage() {
   const [stats, setStats] = useState<NetworkStats | null>(null)
@@ -385,7 +403,6 @@ export default function NetworkMarketplacePage() {
 
   const fetchData = useCallback(
     async (tab: ActiveTab, q: string, spec: string, cnt: string, hospId: string | null, pg: number) => {
-      if (tab === "generali") return
       setLoading(true)
       try {
         const params = new URLSearchParams()
@@ -432,11 +449,16 @@ export default function NetworkMarketplacePage() {
     }
   }, [query, specialization, country, hospitalFilter, activeTab, fetchData])
 
-  const generaliFiltered = useMemo(() => {
-    if (activeTab !== "generali") return []
+  // Generali providers that don't already exist in the DB hospitals tab.
+  // Filtered by the same query / country controls so the merged list feels
+  // like one continuous directory.
+  const generaliExtra = useMemo(() => {
+    if (activeTab !== "hospitals") return []
+    const dbNames = new Set(hospitals.map((h) => normalizeName(h.name)))
     const q = query.toLowerCase().trim()
     const cnt = country ? country.toUpperCase() : ""
     return GENERALI_PROVIDERS.filter((p) => {
+      if (dbNames.has(normalizeName(p.name))) return false
       if (cnt && p.country !== cnt) return false
       if (!q) return true
       return (
@@ -446,7 +468,7 @@ export default function NetworkMarketplacePage() {
         p.network.toLowerCase().includes(q)
       )
     })
-  }, [activeTab, query, country])
+  }, [activeTab, hospitals, query, country])
 
   const loadMore = () => {
     const next = page + 1
@@ -463,12 +485,12 @@ export default function NetworkMarketplacePage() {
     setPage(1)
   }
 
-  const totalItems =
-    activeTab === "hospitals" ? totalHospitals : activeTab === "generali" ? generaliFiltered.length : totalDoctors
+  const totalHospitalRows = totalHospitals + generaliExtra.length
+  const totalItems = activeTab === "hospitals" ? totalHospitalRows : totalDoctors
 
   return (
     <div className="animate-in fade-in duration-500">
-      <PageHeader stats={stats} />
+      <PageHeader stats={stats} hospitalCount={totalHospitalRows || stats?.total_hospitals || 0} />
 
       {/* Hospital logo filter strip (only for doctors tab) */}
       {activeTab === "doctors" && (
@@ -478,8 +500,7 @@ export default function NetworkMarketplacePage() {
       {/* Tabs */}
       <div className="border-b border-gray-200 flex gap-6 sm:gap-10 mt-6 -mx-4 px-4 sm:-mx-6 sm:px-6">
         <TabButton active={activeTab === "doctors"} onClick={() => setActiveTab("doctors")} icon={Stethoscope} label="Dokter" count={totalDoctors} />
-        <TabButton active={activeTab === "hospitals"} onClick={() => setActiveTab("hospitals")} icon={Hospital} label="Rumah Sakit" count={totalHospitals} />
-        <TabButton active={activeTab === "generali"} onClick={() => setActiveTab("generali")} icon={ShieldCheck} label="Generali Network" count={GENERALI_PROVIDERS.length} />
+        <TabButton active={activeTab === "hospitals"} onClick={() => setActiveTab("hospitals")} icon={Hospital} label="Rumah Sakit" count={totalHospitalRows} />
       </div>
 
       {/* Search */}
@@ -491,9 +512,9 @@ export default function NetworkMarketplacePage() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder={
-              activeTab === "hospitals" ? "Cari rumah sakit, kota..." :
-              activeTab === "generali" ? "Cari provider Generali, kota, jaringan..." :
-              "Cari dokter, spesialisasi, kondisi..."
+              activeTab === "hospitals"
+                ? "Cari rumah sakit, kota, jaringan Generali..."
+                : "Cari dokter, spesialisasi, kondisi..."
             }
             className="w-full pl-7 pr-10 py-3.5 text-[15px] text-slate-900 bg-transparent border-0 border-b border-slate-200 focus:outline-none focus:border-slate-900 transition-colors placeholder:text-slate-400"
           />
@@ -561,7 +582,7 @@ export default function NetworkMarketplacePage() {
 
       {/* Results — flat list, no card wrapper */}
       <div className="mt-2 sm:mt-4">
-        {loading && (activeTab !== "generali") && (activeTab === "doctors" ? doctors : hospitals).length === 0 ? (
+        {loading && (activeTab === "doctors" ? doctors : hospitals).length === 0 ? (
           <div>
             {Array.from({ length: 6 }).map((_, i) => <RowSkeleton key={i} />)}
           </div>
@@ -580,23 +601,16 @@ export default function NetworkMarketplacePage() {
           <div>
             {doctors.map((d) => <DoctorRow key={d.id} doctor={d} />)}
           </div>
-        ) : activeTab === "hospitals" ? (
-          <div>
-            {hospitals.map((h) => <HospitalRow key={h.hospital_id} hospital={h} />)}
-          </div>
         ) : (
           <div>
-            {generaliFiltered.slice(0, 200).map((p) => <GeneraliRow key={p.no} provider={p} />)}
-            {generaliFiltered.length > 200 && (
-              <p className="text-[12px] text-slate-400 text-center py-6">+{generaliFiltered.length - 200} provider lainnya — perhalus pencarian.</p>
-            )}
+            {hospitals.map((h) => <HospitalRow key={h.hospital_id} hospital={h} />)}
+            {generaliExtra.map((p) => <GeneraliRow key={`g-${p.no}`} provider={p} />)}
           </div>
         )}
 
-        {/* Load more — doctors / hospitals only */}
-        {!loading && activeTab !== "generali" &&
-          (activeTab === "doctors" ? doctors.length : hospitals.length) <
-          (activeTab === "doctors" ? totalDoctors : totalHospitals) && (
+        {/* Load more — only when DB hospitals/doctors have more pages */}
+        {!loading &&
+          (activeTab === "doctors" ? doctors.length < totalDoctors : hospitals.length < totalHospitals) && (
             <div className="flex justify-center py-8">
               <button
                 onClick={loadMore}
