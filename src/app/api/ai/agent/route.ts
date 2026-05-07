@@ -2,6 +2,7 @@ import { createAnthropic } from "@ai-sdk/anthropic";
 import { openai } from "@ai-sdk/openai";
 import { convertToModelMessages, stepCountIs, streamText, tool, type LanguageModel } from "ai";
 import { z } from "zod";
+import type { PoolClient } from "pg";
 import { getSession } from "@/lib/auth";
 import { dbPool } from "@/lib/db";
 import { findUserWithProfile } from "@/lib/auth-queries";
@@ -27,11 +28,18 @@ function resolveAgentLanguageModel(): LanguageModel {
 function buildTools(userId: string) {
     return {
         get_daily_briefing: tool({
-            description: "Ringkasan harian: klaim pending, premi jatuh tempo, permintaan RS. Panggil saat agen minta 'briefing', 'hari ini', atau 'prioritas'.",
+            description:
+                "Ringkasan harian: klaim belum selesai, premi jatuh tempo 14 hari ke depan, permintaan RS pending. Hasil punya field ok (boolean): ok=false = database tidak bisa diakses; ok=true + daftar kosong = tidak ada item (bukan error).",
             inputSchema: z.object({}),
             execute: async () => {
-                const db = await dbPool.connect();
+                const dateStr = new Date().toLocaleDateString("id-ID", {
+                    weekday: "long",
+                    day: "numeric",
+                    month: "long",
+                });
+                let db: PoolClient | undefined;
                 try {
+                    db = await dbPool.connect();
                     const [claimsRes, premiumRes, requestsRes] = await Promise.all([
                         db.query<{
                             claim_number: string; stage: string;
@@ -69,10 +77,12 @@ function buildTools(userId: string) {
                         `, [userId]),
                     ]);
 
-                    const staleDays = (d: string) => Math.floor((Date.now() - new Date(d).getTime()) / 86400000);
+                    const staleDays = (d: string) =>
+                        Math.floor((Date.now() - new Date(d).getTime()) / 86400000);
 
                     return {
-                        date: new Date().toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long" }),
+                        ok: true as const,
+                        date: dateStr,
                         active_claims: claimsRes.rows.map(r => ({
                             no: r.claim_number,
                             client: r.client_name,
@@ -87,8 +97,17 @@ function buildTools(userId: string) {
                         })),
                         pending_requests: Number(requestsRes.rows[0]?.count ?? 0),
                     };
+                } catch (e) {
+                    console.error("[get_daily_briefing]", e);
+                    return {
+                        ok: false as const,
+                        date: dateStr,
+                        active_claims: [],
+                        premiums_due: [],
+                        pending_requests: 0,
+                    };
                 } finally {
-                    db.release();
+                    db?.release();
                 }
             },
         }),
@@ -390,6 +409,9 @@ function buildSystemPrompt(agentName: string, page: string): string {
     return `Kamu Natalie, asisten AI agen asuransi ${agentName}. Halaman: ${ctx}.
 
 Gunakan tools untuk data real — jangan mengarang. Prioritas: klaim macet · premi jatuh tempo · dokumen kurang.
+
+Briefing harian (tool get_daily_briefing): hasil punya field ok. ok=true + semua daftar kosong = memang tidak ada klaim aktif / premi jatuh tempo (14 hari) / permintaan RS pending — ringkas dengan positif (bukan error teknis). ok=false = sesaat tidak bisa baca database; jelaskan singkat, tawarkan bantu lewat cari klien atau nomor klaim, tanpa angka fiksi.
+
 Draf WA/pesan: keluarkan teks langsung tanpa pengantar. Data: bullet point, ringkas. Jangan ungkap NIK/KTP.`;
 }
 
