@@ -1,5 +1,6 @@
 import { createAnthropic } from "@ai-sdk/anthropic";
-import { streamText, tool } from "ai";
+import { openai } from "@ai-sdk/openai";
+import { streamText, tool, type LanguageModel } from "ai";
 import { z } from "zod";
 import { getSession } from "@/lib/auth";
 import { dbPool } from "@/lib/db";
@@ -7,12 +8,22 @@ import { findUserWithProfile } from "@/lib/auth-queries";
 
 export const maxDuration = 60;
 
-// Cached provider instance (created once, reused across requests)
-const anthropic = createAnthropic({
-    apiKey: process.env.ANTHROPIC_API_KEY,
-    // Enables Anthropic's prompt caching beta — system prompt cached after first request
-    // Cache read: $0.30/1M tokens (90% cheaper than normal $3.00)
-});
+function resolveAgentLanguageModel(): LanguageModel {
+    const anthropicKey = process.env.ANTHROPIC_API_KEY?.trim();
+    if (anthropicKey) {
+        const anthropic = createAnthropic({
+            apiKey: anthropicKey,
+            // Enables Anthropic's prompt caching beta — system prompt cached after first request
+            // Cache read: $0.30/1M tokens (90% cheaper than normal $3.00)
+        });
+        return anthropic("claude-haiku-4-5-20251001", { cacheControl: true }) as LanguageModel;
+    }
+    const openaiKey = process.env.OPENAI_API_KEY?.trim();
+    if (openaiKey) {
+        return openai("gpt-4o-mini");
+    }
+    throw new Error("AI_CREDENTIALS_MISSING");
+}
 
 // ─── Tools ────────────────────────────────────────────────────────────────────
 
@@ -391,6 +402,19 @@ export async function POST(req: Request) {
     const session = await getSession();
     if (!session?.userId) return new Response("Unauthorized", { status: 401 });
 
+    let model: LanguageModel;
+    try {
+        model = resolveAgentLanguageModel();
+    } catch {
+        return new Response(
+            JSON.stringify({
+                error: "AI_NOT_CONFIGURED",
+                message: "Set ANTHROPIC_API_KEY or OPENAI_API_KEY in the server environment.",
+            }),
+            { status: 503, headers: { "Content-Type": "application/json" } },
+        );
+    }
+
     const body = await req.json();
     const { messages } = body;
     const page: string = body.pageContext ?? body.data?.pageContext ?? "";
@@ -399,9 +423,8 @@ export async function POST(req: Request) {
     const profile = await findUserWithProfile(userId).catch(() => null);
     const agentName = profile?.full_name ?? "Agen";
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const result = await streamText({
-        model: anthropic("claude-haiku-4-5-20251001", { cacheControl: true }) as any,
+        model,
         system: buildSystemPrompt(agentName, page),
         messages,
         tools: buildTools(userId),

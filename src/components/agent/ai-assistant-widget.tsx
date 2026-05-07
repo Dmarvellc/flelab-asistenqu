@@ -297,7 +297,12 @@ export function AIAssistantWidget() {
                                         className="flex items-center gap-2 rounded-xl bg-red-50 border border-red-200 px-3 py-2.5 text-[12px] text-red-700"
                                     >
                                         <AlertCircle className="h-3.5 w-3.5 shrink-0" />
-                                        <span>Gagal menghubungi AI. Pastikan <strong>ANTHROPIC_API_KEY</strong> sudah diisi di <code>.env.local</code>.</span>
+                                        <span>
+                                            Gagal menghubungi AI. Untuk lokal: isi{" "}
+                                            <strong>ANTHROPIC_API_KEY</strong> atau <strong>OPENAI_API_KEY</strong> di{" "}
+                                            <code>.env.local</code>. Untuk produksi (mis. Vercel): set salah satu variabel
+                                            tersebut di Environment Variables lalu redeploy.
+                                        </span>
                                     </motion.div>
                                 )}
                             </AnimatePresence>
