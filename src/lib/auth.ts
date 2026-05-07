@@ -28,8 +28,11 @@ export const ALL_PORTAL_COOKIE_NAMES = Object.values(PORTAL_COOKIE_NAMES);
 const SESSION_CACHE_PREFIX = "auth:session";
 const DEFAULT_SESSION_TTL_SECONDS = 12 * 60 * 60;
 const REMEMBER_ME_TTL_SECONDS = 30 * 24 * 60 * 60;
-const SESSION_REVALIDATE_SECONDS = 60;
+const SESSION_REVALIDATE_SECONDS = 300; // 5 minutes instead of 60 seconds
 const SESSION_MEMORY_CACHE_LIMIT = 2_000;
+
+// Query deduplication cache — prevent thundering herd on cache miss
+const inFlightQueries = new Map<string, Promise<AppSession | null>>();
 
 const LEGACY_COOKIE_PREFIXES = [
   "session_agent",
@@ -256,14 +259,17 @@ async function loadSessionFromDatabase(sessionId: string): Promise<AppSession | 
   };
 
   // Non-blocking touch; never hold API response for this write.
-  void dbPool
-    .query(
-      `UPDATE public.auth_session
-       SET last_seen_at = NOW(), updated_at = NOW()
-       WHERE session_id = $1`,
-      [sessionId]
-    )
-    .catch(() => {});
+  // Use setTimeout to prevent blocking and ensure connection cleanup
+  setTimeout(() => {
+    dbPool
+      .query(
+        `UPDATE public.auth_session
+         SET last_seen_at = NOW(), updated_at = NOW()
+         WHERE session_id = $1`,
+        [sessionId]
+      )
+      .catch(() => {});
+  }, 0);
 
   if (inMemorySessions.size >= SESSION_MEMORY_CACHE_LIMIT) {
     // FIFO-ish cleanup to avoid unbounded growth in long-running processes.
@@ -288,7 +294,21 @@ async function loadAndValidateSession(
   ) {
     return cached;
   }
-  return loadSessionFromDatabase(sessionId);
+
+  // Deduplicate concurrent queries for same sessionId to prevent connection pool exhaustion
+  const inFlightKey = `session:${sessionId}`;
+  if (inFlightQueries.has(inFlightKey)) {
+    return inFlightQueries.get(inFlightKey)!;
+  }
+
+  const queryPromise = loadSessionFromDatabase(sessionId);
+  inFlightQueries.set(inFlightKey, queryPromise);
+
+  try {
+    return await queryPromise;
+  } finally {
+    inFlightQueries.delete(inFlightKey);
+  }
 }
 
 /**
@@ -346,7 +366,8 @@ export async function getSession(options?: {
   // 4. Backward-compat: legacy single-cookie session
   const legacySid = cookieStore.get(AUTH_SESSION_COOKIE)?.value;
   if (legacySid) {
-    return loadAndValidateSession(legacySid, options?.forceRevalidate);
+    const s = await loadAndValidateSession(legacySid, options?.forceRevalidate);
+    if (s) return s;
   }
 
   return null;

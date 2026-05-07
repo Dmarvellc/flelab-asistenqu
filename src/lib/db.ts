@@ -13,7 +13,7 @@ function createPool() {
 
   return new Pool({
     connectionString,
-    max: 20,
+    max: 12,
     idleTimeoutMillis: 30_000,
     connectionTimeoutMillis: 10_000,
   });
