@@ -3,9 +3,9 @@
 import { useState, useEffect, useCallback, useRef } from "react"
 import Link from "next/link"
 import {
-  Search, Building2, MapPin, Star, Shield, Globe2, Stethoscope, ChevronRight,
+  Search, Building2, MapPin, Star, Globe2, Stethoscope, ChevronRight,
   X, Heart, Brain, Bone, Microscope, Eye, Baby, Activity, Droplets,
-  Award, Users, Zap, Clock, Hospital, Video
+  Award, Users, Zap, Hospital, Video
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
@@ -33,6 +33,8 @@ interface NetworkHospital {
   accreditations: string[]
   languages_supported: string[]
   technologies: string[]
+  logo_url: string | null
+  cover_image_url: string | null
   doctor_count?: number
 }
 
@@ -65,6 +67,7 @@ interface MarketplaceDoctor {
   patients_treated?: number
   total_reviews?: number
   gender?: string | null
+  photo_url?: string | null
 }
 
 interface NetworkStats {
@@ -134,63 +137,55 @@ function StatCard({ icon: Icon, label, value, sub, accent }: {
 
 // ─── Hospital Card ──────────────────────────────────────────
 function HospitalCard({ hospital }: { hospital: NetworkHospital }) {
-  const flag = COUNTRY_FLAG[hospital.country] || ""
+  const isJci = hospital.accreditations?.some(a => a?.toUpperCase().includes("JCI"))
+  const tierLabel = hospital.tier === "PREMIUM" ? "Premium" : isJci ? "JCI" : null
+
   return (
     <Link
       href={`/agent/network/hospitals/${hospital.hospital_id}`}
-      className="group bg-white border border-gray-100 rounded-2xl p-5 flex flex-col gap-4 hover:border-gray-300 hover:shadow-md transition-all duration-200"
+      className="group bg-white border border-gray-100 rounded-2xl overflow-hidden flex flex-col hover:border-gray-300 hover:shadow-md transition-all duration-200"
     >
-      <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2 mb-1 flex-wrap">
-            {hospital.tier === "PREMIUM" && (
-              <span className="text-[9px] font-bold tracking-wider uppercase text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">Premium</span>
-            )}
-            {hospital.accreditations?.includes("JCI Accredited") && (
-              <span className="text-[9px] font-bold tracking-wider uppercase text-blue-700 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-full">JCI</span>
-            )}
+      <div className="flex items-start gap-3 p-5">
+        {hospital.logo_url ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={hospital.logo_url}
+            alt=""
+            className="h-11 w-11 rounded-xl object-contain bg-gray-50 border border-gray-100 shrink-0 p-1.5"
+          />
+        ) : (
+          <div className="h-11 w-11 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center shrink-0">
+            <Building2 className="h-5 w-5 text-gray-300" />
           </div>
-          <h3 className="font-semibold text-gray-900 text-sm leading-snug group-hover:text-gray-700 transition-colors">{hospital.name}</h3>
+        )}
+
+        <div className="min-w-0 flex-1">
+          <h3 className="font-semibold text-gray-900 text-sm leading-snug group-hover:text-gray-700 transition-colors line-clamp-2">{hospital.name}</h3>
           <p className="text-[11px] text-gray-400 mt-1 flex items-center gap-1">
             <MapPin className="h-3 w-3 shrink-0" />
-            {hospital.city}, {hospital.country} {flag}
+            {hospital.city}, {hospital.country}
           </p>
         </div>
-        <ChevronRight className="h-4 w-4 text-gray-300 group-hover:text-gray-500 group-hover:translate-x-0.5 transition-all shrink-0 mt-1" />
+
+        {tierLabel && (
+          <span className="shrink-0 text-[9px] font-bold tracking-wider uppercase text-gray-500 bg-gray-50 border border-gray-100 px-2 py-0.5 rounded-full">{tierLabel}</span>
+        )}
       </div>
 
       {hospital.description && (
-        <p className="text-[11px] text-gray-500 leading-relaxed line-clamp-2">{hospital.description}</p>
+        <p className="text-[12px] text-gray-500 leading-relaxed line-clamp-2 px-5">{hospital.description}</p>
       )}
 
-      {hospital.specializations && hospital.specializations.length > 0 && (
-        <div className="flex gap-1 flex-wrap">
-          {hospital.specializations.slice(0, 4).map(s => (
-            <span key={s} className="text-[10px] text-gray-500 bg-gray-50 border border-gray-100 px-2 py-0.5 rounded-md">{s}</span>
-          ))}
-          {hospital.specializations.length > 4 && (
-            <span className="text-[10px] text-gray-400 px-1">+{hospital.specializations.length - 4}</span>
-          )}
+      <div className="flex items-center justify-between mt-auto px-5 py-3.5 border-t border-gray-50 bg-gray-50/30">
+        <div className="flex items-center gap-1">
+          <Star className="h-3.5 w-3.5 fill-gray-900 text-gray-900" />
+          <span className="text-[13px] font-bold text-gray-900">{parseFloat(String(hospital.avg_rating)).toFixed(1)}</span>
         </div>
-      )}
-
-      <div className="flex items-center justify-between pt-3 border-t border-gray-50 mt-auto">
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1">
-            <Star className="h-3 w-3 fill-gray-900 text-gray-900" />
-            <span className="text-xs font-bold text-gray-900">{parseFloat(String(hospital.avg_rating)).toFixed(1)}</span>
-          </div>
-          {hospital.bed_count > 0 && (
-            <span className="text-[11px] text-gray-400">{hospital.bed_count} beds</span>
-          )}
+        <div className="flex items-center gap-3 text-[11px] text-gray-500">
           {hospital.doctor_count != null && hospital.doctor_count > 0 && (
-            <span className="text-[11px] text-gray-400">{hospital.doctor_count} dokter</span>
+            <span>{hospital.doctor_count} dokter</span>
           )}
-        </div>
-        <div className="flex items-center gap-1.5">
-          {hospital.emergency_24h && <Clock className="h-3 w-3 text-green-500" />}
-          {hospital.international_patients && <Globe2 className="h-3 w-3 text-blue-500" />}
-          {hospital.insurance_panel && <Shield className="h-3 w-3 text-purple-500" />}
+          {hospital.bed_count > 0 && <span>{hospital.bed_count} bed</span>}
         </div>
       </div>
     </Link>
@@ -205,16 +200,30 @@ function DoctorCard({ doctor }: { doctor: MarketplaceDoctor }) {
   const primaryName = doctor.primary_hospital_name || doctor.hospital
   const primaryCity = doctor.primary_hospital_city || doctor.hospital_location
 
+  const initials = doctor.name.replace(/^(dr\.|Dr\.|Dato'|Datin|Prof\.|Prof|Sri)\s*/gi, "").trim().split(/\s+/).slice(0, 2).map(s => s[0] || "").join("").toUpperCase()
+
   return (
     <Link
       href={`/agent/network/doctors/${doctor.id}`}
       className="group bg-white border border-gray-100 rounded-2xl p-5 flex flex-col gap-3 hover:border-gray-300 hover:shadow-md transition-all duration-200"
     >
       {/* Header */}
-      <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0">
+      <div className="flex items-start gap-3">
+        {doctor.photo_url ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={doctor.photo_url}
+            alt=""
+            className="h-12 w-12 rounded-full object-cover bg-gray-100 border border-gray-100 shrink-0"
+          />
+        ) : (
+          <div className="h-12 w-12 rounded-full bg-gray-100 border border-gray-100 flex items-center justify-center shrink-0 text-[11px] font-semibold text-gray-500">
+            {initials || "DR"}
+          </div>
+        )}
+        <div className="min-w-0 flex-1">
           <p className="text-[11px] font-medium text-gray-400 truncate">{doctor.title}</p>
-          <h3 className="font-semibold text-gray-900 text-sm leading-snug mt-0.5 group-hover:text-gray-700 transition-colors">{doctor.name}</h3>
+          <h3 className="font-semibold text-gray-900 text-sm leading-snug mt-0.5 group-hover:text-gray-700 transition-colors line-clamp-2">{doctor.name}</h3>
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
           {doctor.is_featured && (
