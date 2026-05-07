@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
     Bot, X, Send, Copy, Check, Sparkles,
@@ -8,9 +8,13 @@ import {
     Loader2, ChevronDown, Zap, AlertCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useChat, type Message } from "ai/react";
+import { useChat } from "@ai-sdk/react";
+import { DefaultChatTransport, type UIMessage } from "ai";
 import { useFabVisibility } from "@/hooks/use-fab-visibility";
 import { usePathname } from "next/navigation";
+
+const WELCOME_TEXT =
+    "Halo! Saya Natalie, asisten AI Anda yang terhubung ke data klaim, klien, dan jaringan RS.\n\nSaya bisa bantu briefing harian, analisis klaim, cari klien, rekomendasi RS, atau buatkan draf pesan WhatsApp — cukup tanya saja.";
 
 // ─── Tool call display names ───────────────────────────────────────────────────
 
@@ -33,7 +37,33 @@ const QUICK_PROMPTS = [
     { label: "Draf WA premi", prompt: "Buatkan draf WhatsApp pengingat premi yang hangat dan persuasif.", icon: Sparkles },
 ];
 
-// ─── Helpers ───────────────────────────────────────────────────────────────────
+// ─── UIMessage helpers ─────────────────────────────────────────────────────────
+
+function textFromMessage(msg: UIMessage): string {
+    return msg.parts
+        .filter((p): p is { type: "text"; text: string } => p.type === "text")
+        .map(p => p.text)
+        .join("");
+}
+
+type ToolBadgeItem = { toolName: string; state: "call" | "result" };
+
+function toolBadgesFromMessage(msg: UIMessage): ToolBadgeItem[] {
+    const out: ToolBadgeItem[] = [];
+    for (const p of msg.parts) {
+        if (typeof p.type === "string" && p.type.startsWith("tool-")) {
+            const toolName = p.type.slice("tool-".length);
+            const st = (p as { state?: string }).state;
+            out.push({
+                toolName,
+                state: st === "output-available" || st === "output-error" ? "result" : "call",
+            });
+        }
+    }
+    return out;
+}
+
+// ─── UI pieces ────────────────────────────────────────────────────────────────
 
 function ToolCallBadge({ toolName, state }: { toolName: string; state: "call" | "result" }) {
     const meta = TOOL_LABELS[toolName] ?? { label: toolName, icon: Zap };
@@ -67,32 +97,29 @@ function MessageBubble({
     onCopy,
     copiedId,
 }: {
-    msg: Message;
+    msg: UIMessage;
     onCopy: (text: string, id: string) => void;
     copiedId: string | null;
 }) {
     const isUser = msg.role === "user";
-
-    // Render tool invocations above the text content
-    const toolInvocations = msg.toolInvocations ?? [];
+    const content = textFromMessage(msg);
+    const toolInvocations = toolBadgesFromMessage(msg);
 
     return (
         <div className={cn("flex flex-col gap-1.5", isUser ? "items-end" : "items-start")}>
-            {/* Tool call badges (only for assistant messages) */}
             {!isUser && toolInvocations.length > 0 && (
                 <div className="flex flex-col gap-1.5 w-full">
                     {toolInvocations.map((inv, idx) => (
                         <ToolCallBadge
-                            key={idx}
+                            key={`${inv.toolName}-${idx}`}
                             toolName={inv.toolName}
-                            state={"state" in inv && inv.state === "result" ? "result" : "call"}
+                            state={inv.state}
                         />
                     ))}
                 </div>
             )}
 
-            {/* Message text */}
-            {msg.content && (
+            {content ? (
                 <div
                     className={cn(
                         "max-w-[88%] rounded-2xl px-4 py-2.5 text-[13.5px] leading-relaxed whitespace-pre-wrap select-text",
@@ -101,14 +128,14 @@ function MessageBubble({
                             : "bg-white border border-gray-100 text-gray-800 shadow-sm rounded-bl-sm"
                     )}
                 >
-                    {msg.content}
+                    {content}
                 </div>
-            )}
+            ) : null}
 
-            {/* Copy button */}
-            {!isUser && msg.content && (
+            {!isUser && content ? (
                 <button
-                    onClick={() => onCopy(msg.content, msg.id)}
+                    type="button"
+                    onClick={() => onCopy(content, msg.id)}
                     className="flex items-center gap-1 text-[11px] font-medium text-gray-400 hover:text-gray-700 transition-colors w-max ml-1"
                 >
                     {copiedId === msg.id ? (
@@ -117,7 +144,7 @@ function MessageBubble({
                         <><Copy className="h-3 w-3" /> Salin</>
                     )}
                 </button>
-            )}
+            ) : null}
         </div>
     );
 }
@@ -136,25 +163,50 @@ export function AIAssistantWidget() {
     const [copiedId, setCopiedId] = useState<string | null>(null);
     const [isExpanded, setIsExpanded] = useState(false);
     const [hasError, setHasError] = useState(false);
+    const [input, setInput] = useState("");
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLTextAreaElement>(null);
     const pathname = usePathname();
     const fabVisible = useFabVisibility({ enabled: !isOpen });
 
-    const { messages, input, handleInputChange, handleSubmit, isLoading, append } = useChat({
-        api: "/api/ai/agent",
-        initialMessages: [
+    const initialMessages = useMemo<UIMessage[]>(
+        () => [
             {
                 id: "welcome",
                 role: "assistant",
-                content: "Halo! Saya Natalie, asisten AI Anda yang terhubung ke data klaim, klien, dan jaringan RS.\n\nSaya bisa bantu briefing harian, analisis klaim, cari klien, rekomendasi RS, atau buatkan draf pesan WhatsApp — cukup tanya saja.",
+                parts: [{ type: "text", text: WELCOME_TEXT }],
             },
         ],
+        [],
+    );
+
+    const transport = useMemo(
+        () =>
+            new DefaultChatTransport({
+                api: "/api/ai/agent",
+                credentials: "include",
+                prepareSendMessagesRequest: ({ messages: reqMessages, body }) => ({
+                    body: {
+                        ...(typeof body === "object" && body !== null ? body : {}),
+                        messages: reqMessages,
+                        pageContext: pathname,
+                    },
+                }),
+            }),
+        [pathname],
+    );
+
+    const { messages, sendMessage, status } = useChat({
+        id: "asistenqu-natalie-agent",
+        messages: initialMessages,
+        transport,
         onError: () => {
             setHasError(true);
             setTimeout(() => setHasError(false), 5000);
         },
     });
+
+    const isBusy = status === "submitted" || status === "streaming";
 
     const handleCopy = useCallback((text: string, id: string) => {
         navigator.clipboard.writeText(text);
@@ -168,15 +220,14 @@ export function AIAssistantWidget() {
     };
 
     const handleBriefing = () => {
-        append(
-            { role: "user", content: "Berikan briefing harian saya sekarang — klaim prioritas, premi jatuh tempo, dan hal yang perlu saya selesaikan hari ini." },
-            { data: { pageContext: pathname } }
-        );
+        void sendMessage({
+            text: "Berikan briefing harian saya sekarang — klaim prioritas, premi jatuh tempo, dan hal yang perlu saya selesaikan hari ini.",
+        });
     };
 
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    }, [messages, isLoading]);
+    }, [messages, isBusy]);
 
     const hasMessages = messages.length > 1;
 
@@ -244,8 +295,8 @@ export function AIAssistantWidget() {
                                 </div>
                             </div>
                             <div className="relative flex items-center gap-1">
-                                {/* Expand/collapse toggle */}
                                 <button
+                                    type="button"
                                     onClick={() => setIsExpanded(v => !v)}
                                     className="rounded-full p-2 text-gray-400 hover:bg-white/10 hover:text-white transition-colors"
                                     title={isExpanded ? "Perkecil" : "Perbesar"}
@@ -253,6 +304,7 @@ export function AIAssistantWidget() {
                                     <ChevronDown className={cn("h-4 w-4 transition-transform", isExpanded && "rotate-180")} />
                                 </button>
                                 <button
+                                    type="button"
                                     onClick={() => setIsOpen(false)}
                                     className="rounded-full p-2 text-gray-400 hover:bg-white/10 hover:text-white transition-colors"
                                 >
@@ -261,12 +313,12 @@ export function AIAssistantWidget() {
                             </div>
                         </div>
 
-                        {/* ── Briefing CTA (only when no messages yet) ── */}
                         {!hasMessages && (
                             <div className="px-4 py-3 bg-gradient-to-r from-violet-50 to-blue-50 border-b border-gray-100 shrink-0">
                                 <button
+                                    type="button"
                                     onClick={handleBriefing}
-                                    disabled={isLoading}
+                                    disabled={isBusy}
                                     className="w-full flex items-center gap-3 rounded-xl bg-white border border-violet-200 px-4 py-2.5 text-[13px] font-medium text-violet-800 hover:bg-violet-50 transition-colors shadow-sm disabled:opacity-50"
                                 >
                                     <Sparkles className="h-4 w-4 text-violet-500 shrink-0" />
@@ -276,9 +328,8 @@ export function AIAssistantWidget() {
                             </div>
                         )}
 
-                        {/* ── Messages ── */}
                         <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 bg-gray-50/40">
-                            {messages.map(msg => (
+                            {messages.map((msg) => (
                                 <MessageBubble
                                     key={msg.id}
                                     msg={msg}
@@ -287,7 +338,6 @@ export function AIAssistantWidget() {
                                 />
                             ))}
 
-                            {/* Error banner */}
                             <AnimatePresence>
                                 {hasError && (
                                     <motion.div
@@ -305,8 +355,7 @@ export function AIAssistantWidget() {
                                 )}
                             </AnimatePresence>
 
-                            {/* Typing indicator */}
-                            {isLoading && (
+                            {isBusy && (
                                 <div className="flex items-start gap-2">
                                     <div className="rounded-2xl px-4 py-3 bg-white border border-gray-100 shadow-sm rounded-bl-sm flex items-center gap-2">
                                         <div className="flex gap-1">
@@ -322,13 +371,13 @@ export function AIAssistantWidget() {
                             <div ref={messagesEndRef} />
                         </div>
 
-                        {/* ── Quick Prompts (shown only at first message) ── */}
-                        {!hasMessages && !isLoading && (
+                        {!hasMessages && !isBusy && (
                             <div className="px-4 py-2.5 flex flex-wrap gap-2 bg-white border-t border-gray-50 shrink-0">
                                 {QUICK_PROMPTS.map(({ label, prompt, icon: Icon }) => (
                                     <button
                                         key={label}
-                                        onClick={() => append({ role: "user", content: prompt }, { data: { pageContext: pathname } })}
+                                        type="button"
+                                        onClick={() => void sendMessage({ text: prompt })}
                                         className="inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-gray-50 px-3 py-1.5 text-[12px] font-medium text-gray-700 hover:bg-gray-100 hover:border-gray-300 hover:text-black transition-colors"
                                     >
                                         <Icon className="h-3 w-3 text-gray-400 shrink-0" />
@@ -338,18 +387,21 @@ export function AIAssistantWidget() {
                             </div>
                         )}
 
-                        {/* ── Input ── */}
                         <div className="border-t border-gray-100 bg-white p-4 shrink-0">
                             <form
                                 onSubmit={(e) => {
-                                    handleSubmit(e, { data: { pageContext: pathname } });
+                                    e.preventDefault();
+                                    const t = input.trim();
+                                    if (!t || isBusy) return;
+                                    void sendMessage({ text: t });
+                                    setInput("");
                                 }}
                                 className="relative flex items-end gap-2"
                             >
                                 <textarea
                                     ref={inputRef}
                                     value={input}
-                                    onChange={handleInputChange}
+                                    onChange={e => setInput(e.target.value)}
                                     onKeyDown={(e) => {
                                         if (e.key === "Enter" && !e.shiftKey) {
                                             e.preventDefault();
@@ -359,15 +411,15 @@ export function AIAssistantWidget() {
                                     placeholder="Tanya Natalie apa saja..."
                                     className="flex-1 bg-gray-50 rounded-2xl border border-gray-200 px-4 py-3 text-[13.5px] text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-black/5 resize-none min-h-[48px] max-h-[120px] leading-relaxed pr-12"
                                     rows={1}
-                                    disabled={isLoading}
+                                    disabled={isBusy}
                                     autoComplete="off"
                                 />
                                 <button
                                     type="submit"
-                                    disabled={!input.trim() || isLoading}
+                                    disabled={!input.trim() || isBusy}
                                     className="absolute bottom-1.5 right-1.5 flex h-9 w-9 items-center justify-center rounded-full bg-black text-white hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                                 >
-                                    {isLoading ? (
+                                    {isBusy ? (
                                         <Loader2 className="h-4 w-4 animate-spin" />
                                     ) : (
                                         <Send className="h-4 w-4" />

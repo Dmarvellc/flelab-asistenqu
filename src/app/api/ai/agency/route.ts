@@ -1,16 +1,23 @@
 import { getAdminAgencyUserIdFromCookies } from "@/lib/auth-cookies";
 import { openai } from "@ai-sdk/openai";
-import { streamText } from "ai";
-import { cookies } from "next/headers";
+import { convertToModelMessages, streamText } from "ai";
 import { dbPool } from "@/lib/db";
 import { findUserWithProfile } from "@/lib/auth-queries";
 
 export const maxDuration = 30;
 
 export async function POST(req: Request) {
-    const { messages } = await req.json();
+    let body: { messages?: unknown[] };
+    try {
+        body = await req.json();
+    } catch {
+        return new Response(JSON.stringify({ error: "bad_request" }), {
+            status: 400,
+            headers: { "Content-Type": "application/json" },
+        });
+    }
+    const rawMessages = body.messages;
 
-    const cookieStore = await cookies();
     const userId = await getAdminAgencyUserIdFromCookies();
 
     let systemContext = `Anda adalah "AI Commander" untuk dashboard Admin Agensi Asuransi di platform AsistenQu. 
@@ -51,8 +58,17 @@ Tugas Anda: Mendampingi Pimpinan/Admin Agensi mengambil keputusan, menganalisis 
                             LIMIT 50
                         `;
                         const agentListRes = await clientDb.query(agentListQuery, [agencyId]);
+                        type AgentListRow = {
+                            full_name: string;
+                            phone_number: string | null;
+                            email: string;
+                            nik: string | null;
+                            status: string;
+                            home_address: string | null;
+                            total_clients: string;
+                        };
                         if (agentListRes.rows.length > 0) {
-                            systemContext += `\n\n=== Daftar Agen Bawahan Anda (Top 50) ===\n` + agentListRes.rows.map((r: any) => `- ${r.full_name} (Status: ${r.status}, Klien: ${r.total_clients}, Telp: ${r.phone_number || 'N/A'}, Email: ${r.email}, NIK: ${r.nik || 'N/A'}, Alamat: ${r.home_address || 'N/A'})`).join("\n");
+                            systemContext += `\n\n=== Daftar Agen Bawahan Anda (Top 50) ===\n` + agentListRes.rows.map((r: AgentListRow) => `- ${r.full_name} (Status: ${r.status}, Klien: ${r.total_clients}, Telp: ${r.phone_number || 'N/A'}, Email: ${r.email}, NIK: ${r.nik || 'N/A'}, Alamat: ${r.home_address || 'N/A'})`).join("\n");
                             systemContext += `\n\nJika pimpinan bertanya nomor HP agen tertentu atau performanya, lihat daftar ini dan sebutkan selengkapnya tanpa basa-basi penolakan privasi!`;
                         }
 
@@ -68,11 +84,23 @@ Tugas Anda: Mendampingi Pimpinan/Admin Agensi mengambil keputusan, menganalisis 
 
     systemContext += `\n\nIngat Aturan Mutlak: JANGAN MEMBERIKAN KATA PENGANTAR (seperti "Tentu" atau "Bisa"). JIKA DIMINTA TEXT WA/Email, HANYA BERIKAN ISINYA SAJA LANGSUNG. Jadilah komandan konsultan eksekutif cerdas (jangan menggunakan format markdown yang terlalu panjang kalau tidak diminta).`;
 
-    const result = await streamText({
-        model: openai("gpt-4o-mini"),
-        system: systemContext,
-        messages,
-    });
+    const messages = await convertToModelMessages(
+        (Array.isArray(rawMessages) ? rawMessages : []) as Parameters<typeof convertToModelMessages>[0],
+    );
 
-    return result.toAIStreamResponse();
+    try {
+        const result = await streamText({
+            model: openai("gpt-4o-mini"),
+            system: systemContext,
+            messages,
+        });
+
+        return result.toUIMessageStreamResponse();
+    } catch (e) {
+        console.error("[api/ai/agency] streamText failed", e);
+        return new Response(JSON.stringify({ error: "unavailable" }), {
+            status: 502,
+            headers: { "Content-Type": "application/json" },
+        });
+    }
 }

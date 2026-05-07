@@ -15,14 +15,14 @@
     "malaysia:seed": "node scripts/seed-malaysia.js"
   },
   "dependencies": {
-    "@ai-sdk/anthropic": "^0.0.56",
-    "@ai-sdk/openai": "^0.0.14",
+    "@ai-sdk/anthropic": "^3.0.75",
+    "@ai-sdk/openai": "^3.0.62",
     "@ai-sdk/react": "^3.0.99",
     "@sentry/nextjs": "^10.49.0",
     "@supabase/supabase-js": "^2.97.0",
     "@vercel/analytics": "^2.0.1",
     "@vercel/speed-insights": "^2.0.0",
-    "ai": "^3.1.33",
+    "ai": "^6.0.97",
     "bcryptjs": "^3.0.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -43,7 +43,7 @@
     "redis": "^5.10.0",
     "tailwind-merge": "^3.4.0",
     "uuid": "^13.0.0",
-    "zod": "^3.23.8"
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

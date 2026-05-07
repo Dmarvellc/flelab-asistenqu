@@ -1,6 +1,6 @@
 import { createAnthropic } from "@ai-sdk/anthropic";
 import { openai } from "@ai-sdk/openai";
-import { streamText, tool, type LanguageModel } from "ai";
+import { convertToModelMessages, stepCountIs, streamText, tool, type LanguageModel } from "ai";
 import { z } from "zod";
 import { getSession } from "@/lib/auth";
 import { dbPool } from "@/lib/db";
@@ -28,7 +28,7 @@ function buildTools(userId: string) {
     return {
         get_daily_briefing: tool({
             description: "Ringkasan harian: klaim pending, premi jatuh tempo, permintaan RS. Panggil saat agen minta 'briefing', 'hari ini', atau 'prioritas'.",
-            parameters: z.object({}),
+            inputSchema: z.object({}),
             execute: async () => {
                 const db = await dbPool.connect();
                 try {
@@ -95,7 +95,7 @@ function buildTools(userId: string) {
 
         search_clients: tool({
             description: "Cari klien berdasarkan nama. Kembalikan max 6 hasil.",
-            parameters: z.object({
+            inputSchema: z.object({
                 query: z.string().describe("Nama atau sebagian nama klien"),
             }),
             execute: async ({ query }) => {
@@ -135,7 +135,7 @@ function buildTools(userId: string) {
 
         get_client_details: tool({
             description: "Profil lengkap klien: data pribadi, polis, dan 3 klaim terakhir. Gunakan client_id dari search_clients.",
-            parameters: z.object({
+            inputSchema: z.object({
                 client_id: z.string(),
             }),
             execute: async ({ client_id }) => {
@@ -201,7 +201,7 @@ function buildTools(userId: string) {
 
         get_claim_details: tool({
             description: "Detail klaim: status, stage, tindakan selanjutnya, timeline terbaru. Input: nomor klaim (CLM-XXXX-XXXXX).",
-            parameters: z.object({
+            inputSchema: z.object({
                 claim_number: z.string(),
             }),
             execute: async ({ claim_number }) => {
@@ -275,7 +275,7 @@ function buildTools(userId: string) {
 
         find_hospitals: tool({
             description: "Cari rumah sakit mitra berdasarkan kota, nama RS, atau spesialisasi.",
-            parameters: z.object({
+            inputSchema: z.object({
                 query: z.string().describe("Kota, nama RS, atau spesialisasi"),
                 country: z.string().optional().describe("Indonesia / Malaysia / Singapore"),
             }),
@@ -318,7 +318,7 @@ function buildTools(userId: string) {
 
         draft_whatsapp: tool({
             description: "Scaffold draf WA untuk klien. Panggil ini lalu tulis pesannya langsung.",
-            parameters: z.object({
+            inputSchema: z.object({
                 client_name: z.string(),
                 type: z.enum(["PREMIUM_REMINDER", "BIRTHDAY", "CLAIM_UPDATE", "DOCUMENT_REQUEST", "FOLLOW_UP"]),
                 context: z.string().optional().describe("Info tambahan: nomor polis, jumlah premi, nama penyakit, dll"),
@@ -330,7 +330,7 @@ function buildTools(userId: string) {
 
         analyze_claim_risk: tool({
             description: "Analisis risiko klaim: dokumen kurang, field kosong, potensi penolakan.",
-            parameters: z.object({
+            inputSchema: z.object({
                 claim_number: z.string(),
             }),
             execute: async ({ claim_number }) => {
@@ -410,21 +410,43 @@ export async function POST(req: Request) {
         });
     }
 
-    const body = await req.json();
-    const { messages } = body;
+    let body: { messages?: unknown[]; pageContext?: string; data?: { pageContext?: string } };
+    try {
+        body = await req.json();
+    } catch {
+        return new Response(JSON.stringify({ error: "bad_request" }), {
+            status: 400,
+            headers: { "Content-Type": "application/json" },
+        });
+    }
+
+    const rawMessages = body.messages;
     const page: string = body.pageContext ?? body.data?.pageContext ?? "";
     const userId = session.userId;
 
     const profile = await findUserWithProfile(userId).catch(() => null);
     const agentName = profile?.full_name ?? "Agen";
 
-    const result = await streamText({
-        model,
-        system: buildSystemPrompt(agentName, page),
-        messages,
-        tools: buildTools(userId),
-        maxTokens: 800,
-    });
+    const messages = await convertToModelMessages(
+        (Array.isArray(rawMessages) ? rawMessages : []) as Parameters<typeof convertToModelMessages>[0],
+    );
 
-    return result.toAIStreamResponse();
+    try {
+        const result = await streamText({
+            model,
+            system: buildSystemPrompt(agentName, page),
+            messages,
+            tools: buildTools(userId),
+            maxOutputTokens: 800,
+            stopWhen: stepCountIs(15),
+        });
+
+        return result.toUIMessageStreamResponse();
+    } catch (e) {
+        console.error("[api/ai/agent] streamText failed", e);
+        return new Response(JSON.stringify({ error: "unavailable" }), {
+            status: 502,
+            headers: { "Content-Type": "application/json" },
+        });
+    }
 }
