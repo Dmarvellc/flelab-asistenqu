@@ -130,7 +130,16 @@ const SPECIALIZATIONS = [
 ]
 
 // ─── Header (no separate background, sits flat on the page) ──
-function PageHeader({ stats, hospitalCount }: { stats: NetworkStats | null; hospitalCount: number }) {
+// Header counts use the live API total when we already have it (so they
+// stay in sync with the visible list). Falls back to the cached
+// /api/network/stats values until the first list request resolves.
+function PageHeader({
+  stats, doctorCount, hospitalCount,
+}: {
+  stats: NetworkStats | null
+  doctorCount: number
+  hospitalCount: number
+}) {
   return (
     <header className="pt-2 pb-6 sm:pb-8">
       <h1 className="text-2xl sm:text-4xl font-semibold text-slate-900 tracking-tight max-w-2xl leading-tight">
@@ -139,13 +148,11 @@ function PageHeader({ stats, hospitalCount }: { stats: NetworkStats | null; hosp
       <p className="mt-2 text-sm sm:text-[15px] text-slate-500 max-w-xl leading-relaxed">
         Direktori spesialis dan provider yang terverifikasi di Asia Tenggara, termasuk jaringan Generali.
       </p>
-      {stats && (
-        <div className="mt-6 sm:mt-8 grid grid-cols-3 gap-y-4 gap-x-8 max-w-2xl">
-          <HeaderStat value={stats.total_doctors} label="Dokter terdaftar" />
-          <HeaderStat value={hospitalCount} label="Rumah sakit" />
-          <HeaderStat value={stats.partner_hospitals} label="Mitra aktif" />
-        </div>
-      )}
+      <div className="mt-6 sm:mt-8 grid grid-cols-3 gap-y-4 gap-x-8 max-w-2xl">
+        <HeaderStat value={doctorCount} label="Dokter terdaftar" />
+        <HeaderStat value={hospitalCount} label="Rumah sakit" />
+        <HeaderStat value={stats?.partner_hospitals} label="Mitra aktif" />
+      </div>
     </header>
   )
 }
@@ -491,7 +498,11 @@ export default function NetworkMarketplacePage() {
 
   return (
     <div className="animate-in fade-in duration-500">
-      <PageHeader stats={stats} hospitalCount={totalHospitalRows || stats?.total_hospitals || 0} />
+      <PageHeader
+        stats={stats}
+        doctorCount={totalDoctors || stats?.total_doctors || 0}
+        hospitalCount={totalHospitalRows || stats?.total_hospitals || 0}
+      />
 
       {/* Hospital logo filter strip (only for doctors tab) */}
       {activeTab === "doctors" && (
