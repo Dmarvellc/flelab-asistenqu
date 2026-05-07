@@ -39,21 +39,20 @@ const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 // ─── HELPERS ──────────────────────────────────────────────────────
 const slug = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
-function avatarUrl(name, gender) {
-  const seed = encodeURIComponent(`${gender || "X"}-${name}`);
-  return `https://api.dicebear.com/9.x/notionists/svg?seed=${seed}&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc,ffdfbf`;
-}
-
+// Real brand logo via Clearbit. Returns null if no website (UI falls back
+// to a neutral icon, never a fabricated logo).
 function logoFromWebsite(website) {
   if (!website) return null;
   try {
-    const u = new URL(website);
-    return `https://www.google.com/s2/favicons?domain=${u.hostname}&sz=128`;
+    const host = new URL(website).hostname.replace(/^www\./, "");
+    return `https://logo.clearbit.com/${host}`;
   } catch { return null; }
 }
 
-function coverFromName(name) {
-  return `https://picsum.photos/seed/${slug(name)}/1200/600`;
+// We don't fabricate hospital cover photos. Real exterior photos must be
+// supplied by the partner hospital post-MOU.
+function coverFromName(_name) {
+  return null;
 }
 
 function pick(arr, idx) { return arr[idx % arr.length]; }
@@ -525,20 +524,13 @@ function generateDoctorsForHospital(hospital, count, startIdx) {
   return doctors;
 }
 
+// Real-only mode: marketplace contains only hand-curated NAMED_DOCTORS
+// (publicly verifiable senior consultants from KKI registry, hospital
+// staff pages, and professional society leadership). Synthesised junior
+// consultants are intentionally excluded so every entry is a real,
+// identifiable physician.
 function buildDoctorPool() {
-  const list = [...NAMED_DOCTORS];
-  let idx = 0;
-  for (const h of HOSPITALS) {
-    let count;
-    if (h.type === "GOVERNMENT" && h.tier === "QUATERNARY") count = 12;
-    else if (h.type === "GOVERNMENT") count = 8;
-    else if (h.tier === "PREMIUM") count = 8;
-    else count = 6;
-    const generated = generateDoctorsForHospital(h, count, idx);
-    list.push(...generated);
-    idx += count;
-  }
-  return list;
+  return [...NAMED_DOCTORS];
 }
 
 // ─── MULTI-HOSPITAL LINKS ─────────────────────────────────────────
@@ -659,7 +651,8 @@ async function main() {
       if (ex.rowCount > 0) {
         hospitalIdMap[h.name] = ex.rows[0].hospital_id;
         hospitalCityMap[h.name] = h.city;
-        if (!ex.rows[0].logo_url) {
+        const stale = !ex.rows[0].logo_url || /google\.com\/s2\/favicons|picsum/i.test(ex.rows[0].logo_url || "");
+        if (stale) {
           await c.query(
             "UPDATE public.hospital SET logo_url=$1, cover_image_url=$2 WHERE hospital_id=$3",
             [logo, cover, ex.rows[0].hospital_id]
@@ -698,14 +691,15 @@ async function main() {
     for (const d of ALL_DOCTORS) {
       const hospId = hospitalIdMap[d.hospital];
       if (!hospId) { console.warn(`Hospital not found for: ${d.hospital}`); continue; }
-      const photo = avatarUrl(d.name, d.gender);
+      // photo_url left NULL — we do not fabricate doctor portraits.
+      const photo = null;
 
       const ex = await c.query("SELECT id, photo_url FROM public.doctors WHERE lower(name) = lower($1)", [d.name]);
       let docId;
       if (ex.rowCount > 0) {
         docId = ex.rows[0].id;
-        if (!ex.rows[0].photo_url) {
-          await c.query("UPDATE public.doctors SET photo_url=$1 WHERE id=$2", [photo, docId]);
+        if (ex.rows[0].photo_url && /dicebear|robohash|ui-avatars|gravatar/i.test(ex.rows[0].photo_url)) {
+          await c.query("UPDATE public.doctors SET photo_url=NULL WHERE id=$1", [docId]);
         }
         docSkipped++;
       } else {

@@ -45,23 +45,21 @@ const slug = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g
 
 // DiceBear deterministic avatar — always loads, gender-aware seed prefix.
 // Style "notionists" looks clean & professional for a healthcare marketplace.
-function avatarUrl(name, gender) {
-  const seed = encodeURIComponent(`${gender || "X"}-${name}`);
-  return `https://api.dicebear.com/9.x/notionists/svg?seed=${seed}&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc,ffdfbf`;
-}
-
-// Hospital logo via Google's favicon proxy from the official domain.
+// Hospital logo via Clearbit — fetches the actual brand logo from the
+// hospital's domain. Returns null if no website (UI falls back to a
+// neutral icon, never a fabricated logo).
 function logoFromWebsite(website) {
   if (!website) return null;
   try {
-    const u = new URL(website);
-    return `https://www.google.com/s2/favicons?domain=${u.hostname}&sz=128`;
+    const host = new URL(website).hostname.replace(/^www\./, "");
+    return `https://logo.clearbit.com/${host}`;
   } catch { return null; }
 }
 
-// Deterministic hospital cover (Picsum seeded by hospital slug).
-function coverFromName(name) {
-  return `https://picsum.photos/seed/${slug(name)}/1200/600`;
+// We don't fabricate hospital cover photos. Real exterior photos must be
+// supplied by the partner hospital post-MOU.
+function coverFromName(_name) {
+  return null;
 }
 
 // Random helper with deterministic seeding via hospital+specialty.
@@ -494,23 +492,13 @@ function generateDoctorsForHospital(hospital, count, startIdx) {
   return doctors;
 }
 
-// Build the synthesised pool: ~5 doctors per hospital on top of named anchors.
+// Real-only mode: marketplace contains only the hand-curated NAMED_DOCTORS
+// (publicly verifiable senior consultants from KKM/MMC registry, hospital
+// staff pages, and professional society leadership). Synthesised junior
+// consultants are intentionally excluded so every entry is a real,
+// identifiable physician — fewer rows but higher integrity.
 function buildDoctorPool() {
-  const list = [...NAMED_DOCTORS];
-  let idx = 0;
-  for (const h of HOSPITALS) {
-    // Government hospitals (HKL, UMMC, Selayang etc.) get more bulk staff;
-    // smaller specialist centres get fewer.
-    let count;
-    if (h.type === "GOVERNMENT" && h.tier === "QUATERNARY") count = 10;
-    else if (h.type === "GOVERNMENT") count = 7;
-    else if (h.tier === "PREMIUM") count = 7;
-    else count = 5;
-    const generated = generateDoctorsForHospital(h, count, idx);
-    list.push(...generated);
-    idx += count;
-  }
-  return list;
+  return [...NAMED_DOCTORS];
 }
 
 // ─── MULTI-HOSPITAL LINKS ─────────────────────────────────────────
@@ -631,8 +619,10 @@ async function main() {
       if (ex.rowCount > 0) {
         hospitalIdMap[h.name] = ex.rows[0].hospital_id;
         hospitalCityMap[h.name] = h.city;
-        // Backfill logo/cover on existing rows if missing.
-        if (!ex.rows[0].logo_url) {
+        // Backfill or replace stale (Google-favicon) logos with the real
+        // brand logo from Clearbit.
+        const stale = !ex.rows[0].logo_url || /google\.com\/s2\/favicons|picsum/i.test(ex.rows[0].logo_url || "");
+        if (stale) {
           await c.query(
             "UPDATE public.hospital SET logo_url=$1, cover_image_url=$2 WHERE hospital_id=$3",
             [logo, cover, ex.rows[0].hospital_id]
@@ -672,14 +662,19 @@ async function main() {
     for (const d of ALL_DOCTORS) {
       const hospId = hospitalIdMap[d.hospital];
       if (!hospId) { console.warn(`Hospital not found for: ${d.hospital}`); continue; }
-      const photo = avatarUrl(d.name, d.gender);
+      // photo_url intentionally left NULL — we do not fabricate doctor
+      // portraits. Real photos must be supplied by the partner hospital
+      // post-MOU. UI falls back to a clean text monogram.
+      const photo = null;
 
       const ex = await c.query("SELECT id, photo_url FROM public.doctors WHERE lower(name) = lower($1)", [d.name]);
       let docId;
       if (ex.rowCount > 0) {
         docId = ex.rows[0].id;
-        if (!ex.rows[0].photo_url) {
-          await c.query("UPDATE public.doctors SET photo_url=$1 WHERE id=$2", [photo, docId]);
+        // If a previous run inserted a synthesised avatar, clear it so the
+        // marketplace UI shows the monogram fallback instead.
+        if (ex.rows[0].photo_url && /dicebear|robohash|ui-avatars|gravatar/i.test(ex.rows[0].photo_url)) {
+          await c.query("UPDATE public.doctors SET photo_url=NULL WHERE id=$1", [docId]);
         }
         docSkipped++;
       } else {

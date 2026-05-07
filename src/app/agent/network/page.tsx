@@ -1,13 +1,13 @@
 "use client"
 
-import { useState, useEffect, useCallback, useRef } from "react"
+import { useState, useEffect, useCallback, useRef, useMemo } from "react"
 import Link from "next/link"
 import {
-  Search, Building2, MapPin, Star, Globe2, Stethoscope, ChevronRight,
-  X, Heart, Brain, Bone, Microscope, Eye, Baby, Activity, Droplets,
-  Award, Users, Zap, Hospital, Video
+  Search, Building2, MapPin, Star, Stethoscope, X, Filter, Video,
+  Heart, Brain, Bone, Microscope, Eye, Baby, Activity, Droplets,
+  Users, Hospital, Award, ChevronRight, ShieldCheck,
 } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { GENERALI_PROVIDERS, type GeneraliProvider } from "@/lib/generali-providers"
 
 // ─── Types ──────────────────────────────────────────────────
 interface NetworkHospital {
@@ -80,13 +80,41 @@ interface NetworkStats {
   jci_accredited: number
 }
 
-// ─── Constants ──────────────────────────────────────────────
-const COUNTRY_FLAG: Record<string, string> = {
-  Singapore: "🇸🇬", Malaysia: "🇲🇾", Indonesia: "🇮🇩", Thailand: "🇹🇭", India: "🇮🇳",
+// ─── Helpers ────────────────────────────────────────────────
+const CURRENCY_SYMBOL: Record<string, string> = { IDR: "Rp", MYR: "RM", SGD: "S$", THB: "฿", INR: "₹" }
+const COUNTRY_CODE: Record<string, string> = { Malaysia: "MY", Indonesia: "ID", Singapore: "SG", Thailand: "TH", India: "IN" }
+
+function clearbitLogo(website: string | null | undefined): string | null {
+  if (!website) return null
+  try {
+    const host = new URL(website).hostname.replace(/^www\./, "")
+    return `https://logo.clearbit.com/${host}`
+  } catch { return null }
 }
 
-const CURRENCY_SYMBOL: Record<string, string> = {
-  IDR: "Rp", MYR: "RM", SGD: "S$", THB: "฿", INR: "₹",
+// Treat auto-generated avatars as missing so we fall back to a clean monogram.
+function isFakeAvatar(url: string | null | undefined): boolean {
+  return !!url && /dicebear|robohash|gravatar|ui-avatars|picsum/i.test(url)
+}
+
+function initialsOf(name: string): string {
+  return (
+    name
+      .replace(/^(dr\.|Dr\.|Dato'|Datin|Dato|Datuk|Tan Sri|Prof\.|Prof|Sri)\s*/gi, "")
+      .trim()
+      .split(/\s+/)
+      .slice(0, 2)
+      .map((s) => s[0] || "")
+      .join("")
+      .toUpperCase() || "DR"
+  )
+}
+
+function formatFee(min?: number, max?: number, currency?: string): string {
+  if (!min || !max || !currency) return ""
+  const sym = CURRENCY_SYMBOL[currency] || currency
+  if (currency === "IDR") return `${sym}${Math.round(min / 1000)}–${Math.round(max / 1000)}rb`
+  return `${sym}${min}–${max}`
 }
 
 const SPECIALIZATIONS = [
@@ -99,506 +127,511 @@ const SPECIALIZATIONS = [
   { key: "Pediatri", label: "Anak", icon: Baby },
   { key: "Gastroenterologi", label: "Pencernaan", icon: Activity },
   { key: "Urologi", label: "Urologi", icon: Droplets },
-  { key: "Dermatologi", label: "Kulit", icon: Activity },
-  { key: "Penyakit Infeksi", label: "Infeksi", icon: Activity },
 ]
 
-const COUNTRIES = [
-  { key: "", label: "Semua Negara" },
-  { key: "Singapore", label: "🇸🇬 Singapura" },
-  { key: "Malaysia", label: "🇲🇾 Malaysia" },
-  { key: "Indonesia", label: "🇮🇩 Indonesia" },
-]
-
-function formatFee(min?: number, max?: number, currency?: string): string {
-  if (!min || !max || !currency) return ""
-  const sym = CURRENCY_SYMBOL[currency] || currency
-  if (currency === "IDR") return `${sym}${(min / 1000).toFixed(0)}–${(max / 1000).toFixed(0)}rb`
-  return `${sym}${min}–${max}`
+// ─── Header ─────────────────────────────────────────────────
+function PageHeader({ stats }: { stats: NetworkStats | null }) {
+  return (
+    <header className="bg-slate-900 -mx-4 sm:-mx-6 -mt-4 sm:-mt-6 px-5 sm:px-12 pt-10 sm:pt-14 pb-8 sm:pb-10 mb-8 sm:mb-12">
+      <div className="max-w-7xl mx-auto">
+        <p className="text-[11px] font-semibold tracking-[0.25em] uppercase text-teal-300/80">Network</p>
+        <h1 className="mt-3 text-2xl sm:text-4xl font-semibold text-white tracking-tight max-w-2xl leading-tight">
+          Marketplace Dokter & Rumah Sakit
+        </h1>
+        <p className="mt-3 text-sm sm:text-[15px] text-white/60 max-w-xl leading-relaxed">
+          Direktori spesialis dan provider yang terverifikasi di Asia Tenggara, termasuk jaringan Generali.
+        </p>
+        {stats && (
+          <div className="mt-8 sm:mt-10 grid grid-cols-2 sm:grid-cols-4 gap-y-4 gap-x-8 max-w-3xl">
+            <HeaderStat value={stats.total_doctors} label="Dokter terdaftar" />
+            <HeaderStat value={stats.total_hospitals} label="Rumah sakit" />
+            <HeaderStat value={GENERALI_PROVIDERS.length} label="Generali Network" />
+            <HeaderStat value={stats.partner_hospitals} label="Mitra aktif" />
+          </div>
+        )}
+      </div>
+    </header>
+  )
 }
 
-// ─── Stat Card ──────────────────────────────────────────────
-function StatCard({ icon: Icon, label, value, sub, accent }: {
-  icon: React.ElementType; label: string; value: string | number; sub?: string; accent?: string
-}) {
+function HeaderStat({ value, label }: { value: number; label: string }) {
   return (
-    <div className="flex items-center gap-4 bg-white border border-gray-100 rounded-2xl p-4 sm:p-5 hover:shadow-sm transition-shadow">
-      <div className={`h-10 w-10 sm:h-12 sm:w-12 rounded-xl flex items-center justify-center shrink-0 ${accent || "bg-gray-50 text-gray-600"}`}>
-        <Icon className="h-4 w-4 sm:h-5 sm:w-5" />
-      </div>
-      <div className="min-w-0">
-        <p className="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight">{value}</p>
-        <p className="text-[10px] sm:text-xs text-gray-500 mt-0.5">{label}</p>
-        {sub && <p className="text-[10px] text-gray-400 mt-0.5 hidden sm:block">{sub}</p>}
+    <div>
+      <p className="text-2xl sm:text-3xl font-semibold text-white tracking-tight">{value.toLocaleString("id-ID")}</p>
+      <p className="text-[11px] sm:text-xs text-white/50 mt-1 tracking-wide">{label}</p>
+    </div>
+  )
+}
+
+// ─── Hospital Logo Strip Filter ─────────────────────────────
+function LogoStrip({
+  hospitals, selected, onSelect,
+}: {
+  hospitals: NetworkHospital[]
+  selected: string | null
+  onSelect: (id: string | null) => void
+}) {
+  if (hospitals.length === 0) return null
+  return (
+    <div className="border-b border-gray-100 -mx-4 px-4 sm:-mx-6 sm:px-6">
+      <div className="flex items-center gap-1 overflow-x-auto py-4 scrollbar-hide">
+        {hospitals.slice(0, 30).map((h) => {
+          const logo = h.logo_url && !isFakeAvatar(h.logo_url) ? h.logo_url : clearbitLogo(h.website)
+          const active = selected === h.hospital_id
+          return (
+            <button
+              key={h.hospital_id}
+              onClick={() => onSelect(active ? null : h.hospital_id)}
+              title={h.name}
+              className={`group shrink-0 px-3 py-2 transition-all ${active ? "" : "opacity-50 hover:opacity-100"}`}
+            >
+              <div className={`h-10 w-24 sm:h-12 sm:w-28 flex items-center justify-center transition-all ${active ? "" : "grayscale group-hover:grayscale-0"}`}>
+                {logo ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={logo} alt={h.name} className="max-h-full max-w-full object-contain" />
+                ) : (
+                  <span className="text-[10px] font-medium text-gray-400 line-clamp-2 text-center px-1">{h.name.split("(")[0].trim()}</span>
+                )}
+              </div>
+            </button>
+          )
+        })}
       </div>
     </div>
   )
 }
 
-// ─── Hospital Card ──────────────────────────────────────────
-function HospitalCard({ hospital }: { hospital: NetworkHospital }) {
-  const isJci = hospital.accreditations?.some(a => a?.toUpperCase().includes("JCI"))
-  const tierLabel = hospital.tier === "PREMIUM" ? "Premium" : isJci ? "JCI" : null
-
-  return (
-    <Link
-      href={`/agent/network/hospitals/${hospital.hospital_id}`}
-      className="group bg-white border border-gray-100 rounded-2xl overflow-hidden flex flex-col hover:border-gray-300 hover:shadow-md transition-all duration-200"
-    >
-      <div className="flex items-start gap-3 p-5">
-        {hospital.logo_url ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={hospital.logo_url}
-            alt=""
-            className="h-11 w-11 rounded-xl object-contain bg-gray-50 border border-gray-100 shrink-0 p-1.5"
-          />
-        ) : (
-          <div className="h-11 w-11 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center shrink-0">
-            <Building2 className="h-5 w-5 text-gray-300" />
-          </div>
-        )}
-
-        <div className="min-w-0 flex-1">
-          <h3 className="font-semibold text-gray-900 text-sm leading-snug group-hover:text-gray-700 transition-colors line-clamp-2">{hospital.name}</h3>
-          <p className="text-[11px] text-gray-400 mt-1 flex items-center gap-1">
-            <MapPin className="h-3 w-3 shrink-0" />
-            {hospital.city}, {hospital.country}
-          </p>
-        </div>
-
-        {tierLabel && (
-          <span className="shrink-0 text-[9px] font-bold tracking-wider uppercase text-gray-500 bg-gray-50 border border-gray-100 px-2 py-0.5 rounded-full">{tierLabel}</span>
-        )}
-      </div>
-
-      {hospital.description && (
-        <p className="text-[12px] text-gray-500 leading-relaxed line-clamp-2 px-5">{hospital.description}</p>
-      )}
-
-      <div className="flex items-center justify-between mt-auto px-5 py-3.5 border-t border-gray-50 bg-gray-50/30">
-        <div className="flex items-center gap-1">
-          <Star className="h-3.5 w-3.5 fill-gray-900 text-gray-900" />
-          <span className="text-[13px] font-bold text-gray-900">{parseFloat(String(hospital.avg_rating)).toFixed(1)}</span>
-        </div>
-        <div className="flex items-center gap-3 text-[11px] text-gray-500">
-          {hospital.doctor_count != null && hospital.doctor_count > 0 && (
-            <span>{hospital.doctor_count} dokter</span>
-          )}
-          {hospital.bed_count > 0 && <span>{hospital.bed_count} bed</span>}
-        </div>
-      </div>
-    </Link>
-  )
-}
-
-// ─── Doctor Marketplace Card ────────────────────────────────
-function DoctorCard({ doctor }: { doctor: MarketplaceDoctor }) {
+// ─── Doctor Row (flat, no card) ─────────────────────────────
+function DoctorRow({ doctor }: { doctor: MarketplaceDoctor }) {
+  const photo = isFakeAvatar(doctor.photo_url) ? null : doctor.photo_url
   const fee = formatFee(doctor.consultation_fee_min, doctor.consultation_fee_max, doctor.currency)
-  const flag = COUNTRY_FLAG[doctor.country] || ""
-  const hospitalCount = doctor.hospital_count || 0
-  const primaryName = doctor.primary_hospital_name || doctor.hospital
+  const cc = COUNTRY_CODE[doctor.country] || doctor.country
+  const primaryHospital = doctor.primary_hospital_name || doctor.hospital
   const primaryCity = doctor.primary_hospital_city || doctor.hospital_location
-
-  const initials = doctor.name.replace(/^(dr\.|Dr\.|Dato'|Datin|Prof\.|Prof|Sri)\s*/gi, "").trim().split(/\s+/).slice(0, 2).map(s => s[0] || "").join("").toUpperCase()
 
   return (
     <Link
       href={`/agent/network/doctors/${doctor.id}`}
-      className="group bg-white border border-gray-100 rounded-2xl p-5 flex flex-col gap-3 hover:border-gray-300 hover:shadow-md transition-all duration-200"
+      className="group flex items-start gap-4 sm:gap-6 py-5 sm:py-6 border-b border-gray-100 hover:bg-slate-50/60 transition-colors -mx-4 px-4 sm:-mx-6 sm:px-6"
     >
-      {/* Header */}
-      <div className="flex items-start gap-3">
-        {doctor.photo_url ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={doctor.photo_url}
-            alt=""
-            className="h-12 w-12 rounded-full object-cover bg-gray-100 border border-gray-100 shrink-0"
-          />
-        ) : (
-          <div className="h-12 w-12 rounded-full bg-gray-100 border border-gray-100 flex items-center justify-center shrink-0 text-[11px] font-semibold text-gray-500">
-            {initials || "DR"}
-          </div>
-        )}
-        <div className="min-w-0 flex-1">
-          <p className="text-[11px] font-medium text-gray-400 truncate">{doctor.title}</p>
-          <h3 className="font-semibold text-gray-900 text-sm leading-snug mt-0.5 group-hover:text-gray-700 transition-colors line-clamp-2">{doctor.name}</h3>
+      {photo ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={photo} alt={doctor.name} className="h-14 w-14 sm:h-16 sm:w-16 rounded-full object-cover bg-slate-100 shrink-0" />
+      ) : (
+        <div className="h-14 w-14 sm:h-16 sm:w-16 rounded-full bg-slate-100 flex items-center justify-center shrink-0 text-[13px] sm:text-sm font-medium text-slate-500 tracking-wide">
+          {initialsOf(doctor.name)}
         </div>
-        <div className="flex items-center gap-1.5 shrink-0">
-          {doctor.is_featured && (
-            <span className="text-[9px] font-bold tracking-wider uppercase text-white bg-gray-900 px-2 py-0.5 rounded-full">Top</span>
-          )}
+      )}
+
+      <div className="flex-1 min-w-0">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-[11px] text-slate-400 uppercase tracking-wider font-medium">{doctor.title}</p>
+            <h3 className="mt-1 font-semibold text-slate-900 text-[15px] sm:text-base leading-snug group-hover:text-slate-700 transition-colors">
+              {doctor.name}
+            </h3>
+            <p className="mt-1 text-[13px] text-slate-600">
+              {doctor.specialization}
+              {doctor.subspecialization && <span className="text-slate-400"> · {doctor.subspecialization}</span>}
+            </p>
+          </div>
+          <div className="text-right shrink-0">
+            <div className="flex items-center gap-1 justify-end">
+              <Star className="h-3.5 w-3.5 fill-slate-900 text-slate-900" />
+              <span className="text-sm font-semibold text-slate-900">{parseFloat(String(doctor.rating)).toFixed(1)}</span>
+            </div>
+            {fee && <p className="mt-1 text-[12px] text-slate-500">{fee}</p>}
+          </div>
+        </div>
+
+        <div className="mt-3 flex items-center gap-x-4 gap-y-1 text-[12px] text-slate-500 flex-wrap">
+          <span className="inline-flex items-center gap-1.5">
+            <Building2 className="h-3.5 w-3.5 text-slate-300" />
+            <span className="text-slate-700 font-medium">{primaryHospital}</span>
+            <span className="text-slate-400">· {primaryCity}</span>
+          </span>
+          {doctor.experience_years > 0 && <span>{doctor.experience_years} thn pengalaman</span>}
           {doctor.telemedicine_available && (
-            <Video className="h-3.5 w-3.5 text-blue-500" />
+            <span className="inline-flex items-center gap-1 text-teal-700">
+              <Video className="h-3 w-3" /> Telemedicine
+            </span>
           )}
-        </div>
-      </div>
-
-      {/* Specialization badge */}
-      <span className="inline-flex items-center w-fit text-[11px] font-medium text-gray-600 bg-gray-50 border border-gray-100 px-2.5 py-1 rounded-lg">
-        {doctor.specialization}
-        {doctor.subspecialization && <span className="text-gray-400 ml-1">· {doctor.subspecialization}</span>}
-      </span>
-
-      {/* Notable for */}
-      {doctor.notable_for && (
-        <p className="text-[11px] text-gray-500 leading-relaxed line-clamp-2">{doctor.notable_for}</p>
-      )}
-
-      {/* Conditions */}
-      {doctor.conditions_treated && doctor.conditions_treated.length > 0 && (
-        <div className="flex gap-1 flex-wrap">
-          {doctor.conditions_treated.slice(0, 3).map(c => (
-            <span key={c} className="text-[10px] text-emerald-600 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded-md">{c}</span>
-          ))}
-          {doctor.conditions_treated.length > 3 && (
-            <span className="text-[10px] text-gray-400 px-1">+{doctor.conditions_treated.length - 3}</span>
-          )}
-        </div>
-      )}
-
-      {/* Hospital info — now shows multi-hospital */}
-      <div className="flex items-start gap-2 mt-auto">
-        <Building2 className="h-3.5 w-3.5 text-gray-300 shrink-0 mt-0.5" />
-        <div className="min-w-0">
-          <p className="text-[12px] text-gray-700 font-medium leading-tight truncate">{primaryName}</p>
-          <p className="text-[11px] text-gray-400 mt-0.5">
-            {primaryCity}
-            {hospitalCount > 1 && (
-              <span className="ml-1 text-blue-500 font-medium">+{hospitalCount - 1} RS lainnya</span>
-            )}
-          </p>
-        </div>
-      </div>
-
-      {/* Footer */}
-      <div className="flex items-center justify-between pt-3 border-t border-gray-50">
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1">
-            <Star className="h-3 w-3 fill-gray-900 text-gray-900" />
-            <span className="text-xs font-bold text-gray-900">{parseFloat(String(doctor.rating)).toFixed(1)}</span>
-          </div>
-          {doctor.experience_years && <span className="text-[11px] text-gray-400">{doctor.experience_years} thn</span>}
-          {doctor.patients_treated && doctor.patients_treated > 0 && (
-            <span className="text-[11px] text-gray-400 hidden sm:inline">{(doctor.patients_treated / 1000).toFixed(0)}k pasien</span>
-          )}
-        </div>
-        <div className="flex items-center gap-2">
-          {fee && <span className="text-[11px] text-gray-500 font-medium">{fee}</span>}
-          <span className="text-sm">{flag}</span>
+          <span className="text-slate-300 text-[11px] font-mono tracking-wider ml-auto">{cc}</span>
         </div>
       </div>
     </Link>
   )
 }
 
-// ─── Skeleton Loaders ───────────────────────────────────────
-function StatSkeleton() {
-  return <div className="bg-white border border-gray-100 rounded-2xl p-5 animate-pulse h-[88px]"><div className="flex items-center gap-4"><div className="h-12 w-12 bg-gray-100 rounded-xl" /><div className="space-y-2"><div className="h-6 bg-gray-100 rounded w-16" /><div className="h-3 bg-gray-100 rounded w-24" /></div></div></div>
+// ─── Hospital Row (flat) ────────────────────────────────────
+function HospitalRow({ hospital }: { hospital: NetworkHospital }) {
+  const logo = hospital.logo_url && !isFakeAvatar(hospital.logo_url) ? hospital.logo_url : clearbitLogo(hospital.website)
+  const cc = COUNTRY_CODE[hospital.country] || hospital.country
+  const isJci = hospital.accreditations?.some((a) => a?.toUpperCase().includes("JCI"))
+
+  return (
+    <Link
+      href={`/agent/network/hospitals/${hospital.hospital_id}`}
+      className="group flex items-center gap-4 sm:gap-6 py-5 border-b border-gray-100 hover:bg-slate-50/60 transition-colors -mx-4 px-4 sm:-mx-6 sm:px-6"
+    >
+      <div className="h-12 w-12 sm:h-14 sm:w-14 flex items-center justify-center bg-white border border-gray-100 rounded-md shrink-0 p-1.5">
+        {logo ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={logo} alt="" className="max-h-full max-w-full object-contain" />
+        ) : (
+          <Building2 className="h-5 w-5 text-gray-300" />
+        )}
+      </div>
+
+      <div className="flex-1 min-w-0">
+        <h3 className="font-semibold text-slate-900 text-[15px] leading-snug group-hover:text-slate-700 transition-colors line-clamp-1">
+          {hospital.name}
+        </h3>
+        <p className="mt-1 text-[12px] text-slate-500 flex items-center gap-1.5">
+          <MapPin className="h-3 w-3 shrink-0 text-slate-300" />
+          {hospital.city}, {hospital.country}
+          {hospital.bed_count > 0 && <span className="text-slate-300">·</span>}
+          {hospital.bed_count > 0 && <span>{hospital.bed_count} bed</span>}
+          {hospital.doctor_count != null && hospital.doctor_count > 0 && <span className="text-slate-300">·</span>}
+          {hospital.doctor_count != null && hospital.doctor_count > 0 && <span>{hospital.doctor_count} dokter</span>}
+        </p>
+      </div>
+
+      <div className="hidden sm:flex items-center gap-3 shrink-0">
+        {hospital.tier === "PREMIUM" && (
+          <span className="text-[10px] font-semibold tracking-wider uppercase text-slate-500">Premium</span>
+        )}
+        {isJci && (
+          <span className="inline-flex items-center gap-1 text-[10px] font-semibold tracking-wider uppercase text-slate-500">
+            <ShieldCheck className="h-3 w-3" /> JCI
+          </span>
+        )}
+      </div>
+
+      <div className="flex items-center gap-3 shrink-0">
+        <div className="flex items-center gap-1">
+          <Star className="h-3.5 w-3.5 fill-slate-900 text-slate-900" />
+          <span className="text-[13px] font-semibold text-slate-900">{parseFloat(String(hospital.avg_rating)).toFixed(1)}</span>
+        </div>
+        <span className="text-slate-300 text-[11px] font-mono tracking-wider w-6 text-right">{cc}</span>
+      </div>
+    </Link>
+  )
 }
 
-function CardSkeleton() {
+// ─── Generali Provider Row ──────────────────────────────────
+function GeneraliRow({ provider }: { provider: GeneraliProvider }) {
+  const cc = provider.country === "MALAYSIA" ? "MY" : "SG"
   return (
-    <div className="bg-white border border-gray-100 rounded-2xl p-5 animate-pulse space-y-3">
-      <div className="space-y-1.5"><div className="h-3 bg-gray-100 rounded w-1/3" /><div className="h-4 bg-gray-100 rounded w-2/3" /></div>
-      <div className="h-3 bg-gray-100 rounded w-full" />
-      <div className="h-3 bg-gray-100 rounded w-3/4" />
-      <div className="h-px bg-gray-50 mt-3" />
-      <div className="flex items-center gap-3 pt-1"><div className="h-3 bg-gray-100 rounded w-8" /><div className="h-3 bg-gray-100 rounded w-16" /></div>
+    <div className="flex items-center gap-4 sm:gap-6 py-4 border-b border-gray-100 -mx-4 px-4 sm:-mx-6 sm:px-6">
+      <div className="h-10 w-10 flex items-center justify-center bg-slate-100 rounded-md shrink-0">
+        <Building2 className="h-4 w-4 text-slate-400" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <h3 className="font-medium text-slate-900 text-[14px] leading-snug line-clamp-1">{provider.name}</h3>
+        <p className="mt-0.5 text-[12px] text-slate-500 line-clamp-1">{provider.address}</p>
+      </div>
+      <span className="hidden sm:inline text-[11px] text-slate-400 shrink-0 font-medium">{provider.network}</span>
+      <span className="text-slate-300 text-[11px] font-mono tracking-wider w-6 text-right">{cc}</span>
     </div>
   )
 }
 
-// ─── Tab type ───────────────────────────────────────────────
-type ActiveTab = "doctors" | "hospitals"
+// ─── Skeletons ──────────────────────────────────────────────
+function RowSkeleton() {
+  return (
+    <div className="flex items-center gap-4 py-5 border-b border-gray-100 -mx-4 px-4 sm:-mx-6 sm:px-6 animate-pulse">
+      <div className="h-14 w-14 rounded-full bg-slate-100 shrink-0" />
+      <div className="flex-1 space-y-2">
+        <div className="h-3 bg-slate-100 rounded w-1/4" />
+        <div className="h-4 bg-slate-100 rounded w-1/2" />
+        <div className="h-3 bg-slate-100 rounded w-1/3" />
+      </div>
+    </div>
+  )
+}
 
 // ─── Main Page ──────────────────────────────────────────────
+type ActiveTab = "doctors" | "hospitals" | "generali"
+
 export default function NetworkMarketplacePage() {
   const [stats, setStats] = useState<NetworkStats | null>(null)
   const [activeTab, setActiveTab] = useState<ActiveTab>("doctors")
   const [query, setQuery] = useState("")
   const [specialization, setSpecialization] = useState("")
   const [country, setCountry] = useState("")
+  const [hospitalFilter, setHospitalFilter] = useState<string | null>(null)
   const [hospitals, setHospitals] = useState<NetworkHospital[]>([])
   const [doctors, setDoctors] = useState<MarketplaceDoctor[]>([])
   const [totalHospitals, setTotalHospitals] = useState(0)
   const [totalDoctors, setTotalDoctors] = useState(0)
   const [page, setPage] = useState(1)
   const [loading, setLoading] = useState(true)
-  const [statsLoading, setStatsLoading] = useState(true)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  // Fetch stats
+  // Fetch stats once
   useEffect(() => {
-    fetch("/api/network/stats")
-      .then(r => r.json())
-      .then(d => setStats(d))
+    fetch("/api/network/stats").then((r) => r.json()).then(setStats).catch(console.error)
+  }, [])
+
+  // Fetch top hospitals once for the logo strip
+  const [logoStripHospitals, setLogoStripHospitals] = useState<NetworkHospital[]>([])
+  useEffect(() => {
+    fetch("/api/network/hospitals?limit=30")
+      .then((r) => r.json())
+      .then((d) => setLogoStripHospitals(d.hospitals || []))
       .catch(console.error)
-      .finally(() => setStatsLoading(false))
   }, [])
 
-  // Fetch data
-  const fetchData = useCallback(async (tab: ActiveTab, q: string, spec: string, cnt: string, pg: number) => {
-    setLoading(true)
-    try {
-      const params = new URLSearchParams()
-      if (q) params.set("q", q)
-      if (spec) params.set("specialization", spec)
-      if (cnt) params.set("country", cnt)
-      params.set("page", pg.toString())
-      params.set("limit", "24")
+  const fetchData = useCallback(
+    async (tab: ActiveTab, q: string, spec: string, cnt: string, hospId: string | null, pg: number) => {
+      if (tab === "generali") return
+      setLoading(true)
+      try {
+        const params = new URLSearchParams()
+        if (q) params.set("q", q)
+        if (spec) params.set("specialization", spec)
+        if (cnt) params.set("country", cnt)
+        if (hospId && tab === "doctors") {
+          const h = logoStripHospitals.find((x) => x.hospital_id === hospId)
+          if (h) params.set("hospital", h.name)
+        }
+        params.set("page", pg.toString())
+        params.set("limit", "20")
 
-      if (tab === "hospitals") {
-        const res = await fetch(`/api/network/hospitals?${params}`)
-        const data = await res.json()
-        if (pg === 1) setHospitals(data.hospitals || [])
-        else setHospitals(prev => [...prev, ...(data.hospitals || [])])
-        setTotalHospitals(data.total || 0)
-      } else {
-        const res = await fetch(`/api/doctors?${params}`)
-        const data = await res.json()
-        if (pg === 1) setDoctors(data.doctors || [])
-        else setDoctors(prev => [...prev, ...(data.doctors || [])])
-        setTotalDoctors(data.total || 0)
+        if (tab === "hospitals") {
+          const res = await fetch(`/api/network/hospitals?${params}`)
+          const data = await res.json()
+          if (pg === 1) setHospitals(data.hospitals || [])
+          else setHospitals((prev) => [...prev, ...(data.hospitals || [])])
+          setTotalHospitals(data.total || 0)
+        } else {
+          const res = await fetch(`/api/doctors?${params}`)
+          const data = await res.json()
+          if (pg === 1) setDoctors(data.doctors || [])
+          else setDoctors((prev) => [...prev, ...(data.doctors || [])])
+          setTotalDoctors(data.total || 0)
+        }
+      } catch (e) {
+        console.error(e)
+      } finally {
+        setLoading(false)
       }
-    } catch (e) {
-      console.error(e)
-    } finally {
-      setLoading(false)
-    }
-  }, [])
+    },
+    [logoStripHospitals]
+  )
 
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current)
     debounceRef.current = setTimeout(() => {
       setPage(1)
-      fetchData(activeTab, query, specialization, country, 1)
+      fetchData(activeTab, query, specialization, country, hospitalFilter, 1)
     }, 300)
-    return () => { if (debounceRef.current) clearTimeout(debounceRef.current) }
-  }, [query, specialization, country, activeTab, fetchData])
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current)
+    }
+  }, [query, specialization, country, hospitalFilter, activeTab, fetchData])
+
+  const generaliFiltered = useMemo(() => {
+    if (activeTab !== "generali") return []
+    const q = query.toLowerCase().trim()
+    const cnt = country ? country.toUpperCase() : ""
+    return GENERALI_PROVIDERS.filter((p) => {
+      if (cnt && p.country !== cnt) return false
+      if (!q) return true
+      return (
+        p.name.toLowerCase().includes(q) ||
+        p.address.toLowerCase().includes(q) ||
+        p.city.toLowerCase().includes(q) ||
+        p.network.toLowerCase().includes(q)
+      )
+    })
+  }, [activeTab, query, country])
 
   const loadMore = () => {
     const next = page + 1
     setPage(next)
-    fetchData(activeTab, query, specialization, country, next)
+    fetchData(activeTab, query, specialization, country, hospitalFilter, next)
   }
 
-  const hasFilters = !!(specialization || country || query)
-  const clearFilters = () => { setSpecialization(""); setCountry(""); setQuery(""); setPage(1) }
+  const hasFilters = !!(specialization || country || query || hospitalFilter)
+  const clearFilters = () => {
+    setSpecialization("")
+    setCountry("")
+    setQuery("")
+    setHospitalFilter(null)
+    setPage(1)
+  }
 
-  const totalItems = activeTab === "hospitals" ? totalHospitals : totalDoctors
-  const currentItems = activeTab === "hospitals" ? hospitals : doctors
+  const totalItems =
+    activeTab === "hospitals" ? totalHospitals : activeTab === "generali" ? generaliFiltered.length : totalDoctors
 
   return (
-    <div className="flex flex-col gap-6 sm:gap-8 animate-in fade-in duration-500">
+    <div className="animate-in fade-in duration-500">
+      <PageHeader stats={stats} />
 
-      {/* ── Hero Header ── */}
-      <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl bg-gray-900 p-5 sm:p-10">
-        <div className="relative z-10 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-          <div>
-            <h1 className="text-xl sm:text-4xl font-bold text-white tracking-tight">
-              Marketplace Dokter & Rumah Sakit
-            </h1>
-            <p className="text-xs sm:text-base text-white/60 mt-2 max-w-xl">
-              Temukan dokter spesialis terbaik, jadwal praktik, rumah sakit, dan teknologi medis terkini di Asia Tenggara.
-            </p>
-          </div>
-          <Link
-            href="/agent/network/overseas"
-            className="inline-flex items-center gap-2 bg-white/10 hover:bg-white/20 border border-white/20 text-white text-xs sm:text-sm font-semibold px-4 py-2.5 rounded-xl transition-all shrink-0 backdrop-blur-sm"
-          >
-            <Globe2 className="h-4 w-4" />
-            Provider Overseas (MY & SG)
-          </Link>
-        </div>
-      </div>
-
-      {/* ── Stats Grid ── */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-        {statsLoading ? (
-          Array.from({ length: 4 }).map((_, i) => <StatSkeleton key={i} />)
-        ) : stats ? (
-          <>
-            <StatCard icon={Users} label="Total Dokter" value={stats.total_doctors} sub="Spesialis terverifikasi" accent="bg-emerald-50 text-emerald-600" />
-            <StatCard icon={Hospital} label="Total Rumah Sakit" value={stats.total_hospitals} sub={`${stats.partner_hospitals} mitra aktif`} accent="bg-blue-50 text-blue-600" />
-            <StatCard icon={Award} label="JCI Accredited" value={stats.jci_accredited} sub="Standar internasional" accent="bg-amber-50 text-amber-600" />
-            <StatCard icon={Zap} label="Premium Tier" value={stats.premium_hospitals} sub="Teknologi terdepan" accent="bg-purple-50 text-purple-600" />
-          </>
-        ) : null}
-      </div>
-
-      {/* ── Country breakdown ── */}
-      {stats && stats.countries.length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          {stats.countries.map(c => (
-            <button
-              key={c.country}
-              onClick={() => { setCountry(prev => prev === c.country ? "" : c.country) }}
-              className={`flex items-center gap-4 p-4 rounded-2xl border transition-all duration-200 ${
-                country === c.country
-                  ? "bg-gray-900 text-white border-gray-900"
-                  : "bg-white border-gray-100 hover:border-gray-300 hover:shadow-sm"
-              }`}
-            >
-              <span className="text-2xl">{COUNTRY_FLAG[c.country] || "🌏"}</span>
-              <div className="text-left">
-                <p className={`text-sm font-semibold ${country === c.country ? "text-white" : "text-gray-900"}`}>{c.country}</p>
-                <p className={`text-[11px] ${country === c.country ? "text-white/60" : "text-gray-400"}`}>
-                  {c.hospital_count} RS · {c.doctor_count} Dokter
-                </p>
-              </div>
-            </button>
-          ))}
-        </div>
+      {/* Hospital logo filter strip (only for doctors tab) */}
+      {activeTab === "doctors" && (
+        <LogoStrip hospitals={logoStripHospitals} selected={hospitalFilter} onSelect={setHospitalFilter} />
       )}
 
-      {/* ── Toolbar: Tabs + Search + Filters ── */}
-      <div className="bg-white rounded-2xl sm:rounded-3xl border border-gray-100 overflow-hidden shadow-sm">
-        {/* Tab switcher */}
-        <div className="flex border-b border-gray-100">
-          <button
-            onClick={() => setActiveTab("doctors")}
-            className={`flex-1 flex items-center justify-center gap-2 py-3.5 sm:py-4 text-sm font-semibold transition-all border-b-2 ${
-              activeTab === "doctors"
-                ? "text-gray-900 border-gray-900"
-                : "text-gray-400 border-transparent hover:text-gray-600"
-            }`}
-          >
-            <Stethoscope className="h-4 w-4" />
-            <span className="hidden sm:inline">Dokter Spesialis</span>
-            <span className="sm:hidden">Dokter</span>
-            {totalDoctors > 0 && activeTab === "doctors" && (
-              <span className="text-[10px] bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full font-bold">{totalDoctors}</span>
-            )}
-          </button>
-          <button
-            onClick={() => setActiveTab("hospitals")}
-            className={`flex-1 flex items-center justify-center gap-2 py-3.5 sm:py-4 text-sm font-semibold transition-all border-b-2 ${
-              activeTab === "hospitals"
-                ? "text-gray-900 border-gray-900"
-                : "text-gray-400 border-transparent hover:text-gray-600"
-            }`}
-          >
-            <Building2 className="h-4 w-4" />
-            <span className="hidden sm:inline">Rumah Sakit</span>
-            <span className="sm:hidden">RS</span>
-            {totalHospitals > 0 && activeTab === "hospitals" && (
-              <span className="text-[10px] bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full font-bold">{totalHospitals}</span>
-            )}
-          </button>
-        </div>
+      {/* Tabs */}
+      <div className="border-b border-gray-200 flex gap-6 sm:gap-10 mt-6 -mx-4 px-4 sm:-mx-6 sm:px-6">
+        <TabButton active={activeTab === "doctors"} onClick={() => setActiveTab("doctors")} icon={Stethoscope} label="Dokter" count={totalDoctors} />
+        <TabButton active={activeTab === "hospitals"} onClick={() => setActiveTab("hospitals")} icon={Hospital} label="Rumah Sakit" count={totalHospitals} />
+        <TabButton active={activeTab === "generali"} onClick={() => setActiveTab("generali")} icon={ShieldCheck} label="Generali Network" count={GENERALI_PROVIDERS.length} />
+      </div>
 
-        {/* Search + Filters */}
-        <div className="flex flex-col gap-3 sm:gap-4 p-4 sm:p-8 border-b border-gray-50 bg-gray-50/30">
-          <div className="relative w-full max-w-2xl">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 pointer-events-none" />
-            <input
-              type="text"
-              value={query}
-              onChange={e => setQuery(e.target.value)}
-              placeholder={activeTab === "hospitals" ? "Cari nama rumah sakit, kota, atau teknologi..." : "Cari nama dokter, spesialisasi, kondisi, atau rumah sakit..."}
-              className="w-full pl-12 pr-10 py-3 sm:py-3.5 bg-white border border-gray-200 text-gray-900 text-sm sm:text-[15px] rounded-xl focus:outline-none focus:border-gray-300 focus:ring-4 focus:ring-gray-900/5 transition-all shadow-sm"
-            />
-            {query && (
-              <button onClick={() => setQuery("")} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-300 hover:text-gray-500 transition-colors">
-                <X className="h-5 w-5" />
-              </button>
-            )}
-          </div>
-
-          {/* Specialization chips (doctors tab) */}
-          {activeTab === "doctors" && (
-            <div className="flex gap-2 overflow-x-auto pb-0.5 scrollbar-hide -mx-1 px-1">
-              {SPECIALIZATIONS.map(spec => {
-                const Icon = spec.icon
-                const active = specialization === spec.key
-                return (
-                  <button
-                    key={spec.key}
-                    onClick={() => setSpecialization(prev => prev === spec.key ? "" : spec.key)}
-                    className={`flex items-center gap-1.5 sm:gap-2 whitespace-nowrap text-[12px] sm:text-[13px] px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl border shadow-sm font-semibold shrink-0 transition-all duration-200 ${
-                      active ? "bg-gray-900 text-white border-transparent" : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50 hover:text-gray-900"
-                    }`}
-                  >
-                    <Icon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                    {spec.label}
-                  </button>
-                )
-              })}
-            </div>
+      {/* Search */}
+      <div className="mt-6 -mx-4 px-4 sm:-mx-6 sm:px-6">
+        <div className="relative">
+          <Search className="absolute left-0 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+          <input
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder={
+              activeTab === "hospitals" ? "Cari rumah sakit, kota..." :
+              activeTab === "generali" ? "Cari provider Generali, kota, jaringan..." :
+              "Cari dokter, spesialisasi, kondisi..."
+            }
+            className="w-full pl-7 pr-10 py-3.5 text-[15px] text-slate-900 bg-transparent border-0 border-b border-slate-200 focus:outline-none focus:border-slate-900 transition-colors placeholder:text-slate-400"
+          />
+          {query && (
+            <button onClick={() => setQuery("")} className="absolute right-0 top-1/2 -translate-y-1/2 text-slate-300 hover:text-slate-600">
+              <X className="h-4 w-4" />
+            </button>
           )}
+        </div>
+      </div>
 
-          {/* Country chips */}
-          <div className="flex items-center gap-2 flex-wrap">
-            {COUNTRIES.map(c => {
-              const active = country === c.key
+      {/* Filter pills */}
+      <div className="mt-5 flex flex-col gap-3 -mx-4 px-4 sm:-mx-6 sm:px-6">
+        {activeTab === "doctors" && (
+          <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
+            {SPECIALIZATIONS.map((spec) => {
+              const Icon = spec.icon
+              const active = specialization === spec.key
               return (
                 <button
-                  key={c.key}
-                  onClick={() => setCountry(prev => prev === c.key ? "" : c.key)}
-                  className={`whitespace-nowrap text-[12px] sm:text-[13px] px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl border shadow-sm font-semibold shrink-0 transition-all duration-200 ${
-                    active ? "bg-gray-900 text-white border-transparent" : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"
+                  key={spec.key}
+                  onClick={() => setSpecialization((prev) => (prev === spec.key ? "" : spec.key))}
+                  className={`inline-flex items-center gap-1.5 whitespace-nowrap text-[12px] sm:text-[13px] px-3 py-1.5 rounded-full transition-colors shrink-0 ${
+                    active ? "bg-slate-900 text-white" : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
                   }`}
                 >
-                  {c.label}
+                  <Icon className="h-3.5 w-3.5" />
+                  {spec.label}
                 </button>
               )
             })}
-            {hasFilters && (
+          </div>
+        )}
+
+        <div className="flex items-center gap-2 flex-wrap">
+          {[
+            { key: "", label: "Semua Negara" },
+            { key: "Malaysia", label: "Malaysia" },
+            { key: "Indonesia", label: "Indonesia" },
+            { key: "Singapore", label: "Singapura" },
+          ].map((c) => {
+            const active = country === c.key
+            return (
               <button
-                onClick={clearFilters}
-                className="shrink-0 flex items-center gap-1.5 text-[12px] bg-red-50 text-red-600 px-3 py-2 rounded-xl hover:bg-red-100 font-semibold transition-colors"
+                key={c.key}
+                onClick={() => setCountry((prev) => (prev === c.key ? "" : c.key))}
+                className={`text-[12px] sm:text-[13px] px-3 py-1.5 rounded-full transition-colors ${
+                  active ? "bg-slate-900 text-white" : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+                }`}
               >
-                <X className="h-3.5 w-3.5" /> Reset
+                {c.label}
+              </button>
+            )
+          })}
+          {hasFilters && (
+            <button
+              onClick={clearFilters}
+              className="inline-flex items-center gap-1 text-[12px] text-slate-400 hover:text-slate-700 ml-auto"
+            >
+              <X className="h-3 w-3" /> Reset
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Results — flat list, no card wrapper */}
+      <div className="mt-2 sm:mt-4">
+        {loading && (activeTab !== "generali") && (activeTab === "doctors" ? doctors : hospitals).length === 0 ? (
+          <div>
+            {Array.from({ length: 6 }).map((_, i) => <RowSkeleton key={i} />)}
+          </div>
+        ) : totalItems === 0 ? (
+          <div className="flex flex-col items-center justify-center py-20 text-center -mx-4 px-4 sm:-mx-6 sm:px-6">
+            <Search className="h-8 w-8 text-slate-200 mb-4" />
+            <p className="text-[15px] font-medium text-slate-700">Tidak ditemukan</p>
+            <p className="text-[13px] text-slate-400 mt-1 max-w-sm">Coba ubah kata kunci atau hapus filter.</p>
+            {hasFilters && (
+              <button onClick={clearFilters} className="mt-4 text-[13px] text-slate-700 underline underline-offset-4">
+                Hapus semua filter
               </button>
             )}
           </div>
-        </div>
-
-        {/* ── Results ── */}
-        <div className="p-4 sm:p-8">
-          {loading && currentItems.length === 0 ? (
-            <div className={`grid gap-3 sm:gap-6 ${activeTab === "hospitals" ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3" : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"}`}>
-              {Array.from({ length: 8 }).map((_, i) => <CardSkeleton key={i} />)}
-            </div>
-          ) : currentItems.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 sm:py-20 text-center bg-gray-50/50 rounded-2xl border border-gray-100/50 min-h-[250px] sm:min-h-[300px]">
-              <div className="h-14 w-14 sm:h-16 sm:w-16 rounded-2xl bg-white border border-gray-100 flex items-center justify-center mb-4 sm:mb-5 shadow-sm">
-                <Search className="h-6 w-6 sm:h-7 sm:w-7 text-gray-300" />
-              </div>
-              <p className="font-bold text-gray-900 text-base sm:text-lg mb-2">Tidak ditemukan</p>
-              <p className="text-xs sm:text-sm text-gray-500 max-w-sm px-4">Coba ubah kata kunci atau filter untuk menemukan data yang sesuai.</p>
-              {hasFilters && (
-                <button onClick={clearFilters} className="mt-4 sm:mt-5 text-[13px] bg-white border border-gray-200 text-gray-700 px-5 py-2.5 rounded-xl font-semibold hover:bg-gray-50 transition-all shadow-sm">
-                  Hapus semua filter
-                </button>
-              )}
-            </div>
-          ) : activeTab === "hospitals" ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
-              {hospitals.map(h => <HospitalCard key={h.hospital_id} hospital={h} />)}
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-6">
-              {doctors.map(d => <DoctorCard key={d.id} doctor={d} />)}
-            </div>
-          )}
-        </div>
-
-        {/* Load More */}
-        {!loading && currentItems.length < totalItems && (
-          <div className="flex justify-center py-5 sm:py-6 px-4 sm:px-8 border-t border-gray-50 bg-gray-50/30">
-            <Button
-              variant="outline"
-              onClick={loadMore}
-              className="gap-2 text-[13px] sm:text-[14px] font-semibold border-gray-200 text-gray-700 hover:bg-white hover:text-gray-900 bg-white h-11 sm:h-12 px-6 sm:px-8 rounded-xl shadow-sm transition-all"
-            >
-              Tampilkan lebih banyak <ChevronRight className="h-4 w-4" />
-            </Button>
+        ) : activeTab === "doctors" ? (
+          <div>
+            {doctors.map((d) => <DoctorRow key={d.id} doctor={d} />)}
+          </div>
+        ) : activeTab === "hospitals" ? (
+          <div>
+            {hospitals.map((h) => <HospitalRow key={h.hospital_id} hospital={h} />)}
+          </div>
+        ) : (
+          <div>
+            {generaliFiltered.slice(0, 200).map((p) => <GeneraliRow key={p.no} provider={p} />)}
+            {generaliFiltered.length > 200 && (
+              <p className="text-[12px] text-slate-400 text-center py-6">+{generaliFiltered.length - 200} provider lainnya — perhalus pencarian.</p>
+            )}
           </div>
         )}
+
+        {/* Load more — doctors / hospitals only */}
+        {!loading && activeTab !== "generali" &&
+          (activeTab === "doctors" ? doctors.length : hospitals.length) <
+          (activeTab === "doctors" ? totalDoctors : totalHospitals) && (
+            <div className="flex justify-center py-8">
+              <button
+                onClick={loadMore}
+                className="inline-flex items-center gap-2 text-[13px] font-medium text-slate-700 hover:text-slate-900 transition-colors"
+              >
+                Tampilkan lebih banyak <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
+          )}
       </div>
     </div>
+  )
+}
+
+function TabButton({
+  active, onClick, icon: Icon, label, count,
+}: {
+  active: boolean
+  onClick: () => void
+  icon: React.ElementType
+  label: string
+  count?: number
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`inline-flex items-center gap-2 py-3 -mb-px border-b-2 transition-colors text-[14px] sm:text-[15px] ${
+        active ? "border-slate-900 text-slate-900 font-semibold" : "border-transparent text-slate-400 hover:text-slate-700"
+      }`}
+    >
+      <Icon className="h-4 w-4" />
+      {label}
+      {count != null && count > 0 && (
+        <span className={`text-[11px] font-medium ${active ? "text-slate-500" : "text-slate-300"}`}>{count.toLocaleString("id-ID")}</span>
+      )}
+    </button>
   )
 }
