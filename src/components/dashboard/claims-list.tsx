@@ -1,9 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { claims, ClaimStatus, Claim as BaseClaim } from "@/lib/claims-data";
+import { ClaimStatus, Claim as BaseClaim } from "@/lib/claims-data";
 import { AlertCircle, CheckCircle2, XCircle, ArrowRight, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -17,7 +15,7 @@ interface ClaimsListProps {
 }
 
 export function ClaimsList({ role, claims: propClaims }: ClaimsListProps) {
-  const displayClaims = (propClaims || claims) as Claim[];
+  const displayClaims = propClaims ?? [];
 
   const getStatusConfig = (status: ClaimStatus) => {
     switch (status) {

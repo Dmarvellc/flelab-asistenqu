@@ -203,13 +203,12 @@ export default function NewClientPage() {
                 setDraftRestored(true);
             }
         } catch { /* ignore */ }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     // Draft: auto-save on every change (omit large base64 file)
     useEffect(() => {
         try {
-            const { policyFileBase64: _, ...rest } = formData;
+            const rest = { ...formData, policyFileBase64: "" };
             localStorage.setItem(CLIENT_DRAFT_KEY, JSON.stringify({
                 formData: rest, step: currentStep, riders, beneficiaries, insuredSameAsPolicyholder,
             }));
@@ -279,10 +278,10 @@ export default function NewClientPage() {
             toast({ title: "File terlalu besar", description: `Maksimum ${MAX_FILE_MB}MB.`, variant: "destructive" });
             return;
         }
-        const okType = f.type.startsWith("image/") || f.type === "application/pdf";
+        const okType = f.type.startsWith("image/");
         if (!okType) {
-            setAiError("Format tidak didukung. Gunakan JPG, PNG, atau PDF.");
-            toast({ title: "Format tidak didukung", description: "Gunakan JPG, PNG, atau PDF.", variant: "destructive" });
+            setAiError("Format tidak didukung. Gunakan JPG atau PNG.");
+            toast({ title: "Format tidak didukung", description: "Gunakan JPG atau PNG.", variant: "destructive" });
             return;
         }
         setFile(f);
@@ -580,7 +579,7 @@ export default function NewClientPage() {
                                             aiError ? "border-red-500 bg-red-50/10" : "border-muted-foreground/25 hover:border-black/50"
                                         )}
                                     >
-                                        <input type="file" ref={fileInputRef} className="hidden" accept="image/*,application/pdf" onChange={handleFileChange} />
+                                        <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileChange} />
 
                                         {!file ? (
                                             <>
@@ -596,7 +595,6 @@ export default function NewClientPage() {
                                                     </p>
                                                 </div>
                                                 <div className="flex flex-wrap items-center justify-center gap-2 text-[11px] font-medium text-muted-foreground">
-                                                    <span className="px-2 py-1 rounded-md bg-muted/50 border">PDF</span>
                                                     <span className="px-2 py-1 rounded-md bg-muted/50 border">JPG</span>
                                                     <span className="px-2 py-1 rounded-md bg-muted/50 border">PNG</span>
                                                     <span>•</span>

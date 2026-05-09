@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 import { dbPool } from "@/lib/db";
-import { mkdir, writeFile } from "fs/promises";
-import path from "path";
 import { getSession } from "@/lib/auth";
+import { uploadPolicyFile, ensureAgentRecord } from "@/lib/storage";
 
 const toNum = (v: unknown): number | null => {
   if (v === null || v === undefined || v === "") return null;
@@ -17,111 +16,179 @@ const toInt = (v: unknown): number | null => {
 const toDate = (v: unknown): string | null => (v ? String(v) : null);
 
 export async function POST(req: Request) {
-  const client = await dbPool.connect();
+  const dbClient = await dbPool.connect();
 
   try {
     const session = await getSession();
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-    const userId = session.userId;
 
+    // Izinkan: agent, agent_manager, admin_agency, insurance_admin, super_admin
+    const allowedRoles = ["agent", "agent_manager", "admin_agency", "insurance_admin", "super_admin"];
+    if (!allowedRoles.includes(session.role)) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    const userId = session.userId;
     const body = await req.json();
 
-    /* ── Save uploaded policy file ────────────────────────────── */
+    // ── Upload file polis ke cloud storage ──────────────────────
     let policyUrl: string | null = null;
     if (body.policyFileBase64) {
-      try {
-        const matches = String(body.policyFileBase64).match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
-        if (matches && matches.length === 3) {
-          const type = matches[1];
-          const buffer = Buffer.from(matches[2], "base64");
-          let ext = ".bin";
-          if (type.includes("jpeg") || type.includes("jpg")) ext = ".jpg";
-          else if (type.includes("png")) ext = ".png";
-          else if (type.includes("pdf")) ext = ".pdf";
-          const uploadsDir = path.join(process.cwd(), "public", "uploads", "policies");
-          await mkdir(uploadsDir, { recursive: true });
-          const fileName = `${Date.now()}-${crypto.randomUUID()}${ext}`;
-          await writeFile(path.join(uploadsDir, fileName), buffer);
-          policyUrl = `/uploads/policies/${fileName}`;
-        }
-      } catch (e) {
-        console.error("Failed to save policy file", e);
-      }
+      policyUrl = await uploadPolicyFile(String(body.policyFileBase64));
     }
 
-    await client.query("BEGIN");
+    await dbClient.query("BEGIN");
 
-    /* ── Ensure agent + insurance exist ───────────────────────── */
-    let insuranceId;
-    const insuranceRes = await client.query("SELECT insurance_id FROM public.insurance LIMIT 1");
-    if (insuranceRes.rows.length > 0) {
-      insuranceId = insuranceRes.rows[0].insurance_id;
-    } else {
-      const newIns = await client.query(
-        "INSERT INTO public.insurance (insurance_name) VALUES ($1) RETURNING insurance_id",
-        ["Default Insurance"]
-      );
-      insuranceId = newIns.rows[0].insurance_id;
-    }
-
-    const agentRes = await client.query("SELECT agent_id FROM public.agent WHERE agent_id = $1", [userId]);
-    const agentId = userId;
-    if (agentRes.rows.length === 0) {
-      const userPersonRes = await client.query(
-        `SELECT p.full_name FROM public.user_person_link upl
-         JOIN public.person p ON upl.person_id = p.person_id
-         WHERE upl.user_id = $1`,
-        [userId]
-      );
-      const agentName = userPersonRes.rows[0]?.full_name || "Agent " + String(userId).substring(0, 8);
-      await client.query(
-        `INSERT INTO public.agent (agent_id, agent_name, insurance_id, status)
-         VALUES ($1, $2, $3, 'ACTIVE')`,
-        [agentId, agentName, insuranceId]
-      );
-    }
-
-    /* ── Person (policy holder) ───────────────────────────────── */
-    const personRes = await client.query(
-      `INSERT INTO public.person (full_name, id_card, passport_number, phone_number, address, birth_date, gender, email, occupation, marital_status)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
-       RETURNING person_id`,
-      [
-        body.fullName,
-        body.nik,
-        body.passportNumber ? String(body.passportNumber).trim().toUpperCase() : null,
-        body.phoneNumber,
-        body.address,
-        toDate(body.birthDate),
-        body.gender,
-        body.email,
-        body.occupation || null,
-        body.maritalStatus || null,
-      ]
+    // ── Pastikan agent record ada ────────────────────────────────
+    // Admin agency yang bertindak sebagai agent juga perlu agent record
+    const userPersonRes = await dbClient.query(
+      `SELECT p.full_name FROM public.user_person_link upl
+       JOIN public.person p ON upl.person_id = p.person_id
+       WHERE upl.user_id = $1`,
+      [userId],
     );
-    const personId = personRes.rows[0].person_id;
+    const callerName = userPersonRes.rows[0]?.full_name ?? `User-${String(userId).slice(0, 8)}`;
+    await ensureAgentRecord(dbClient, userId, callerName);
 
-    const clientRes = await client.query(
-      `INSERT INTO public.client (agent_id, person_id, status)
-       VALUES ($1,$2,'ACTIVE')
+    // ── Deduplication NIK ────────────────────────────────────────
+    // Jika NIK sudah ada, pakai person yang sudah ada (tidak buat duplikat)
+    let personId: string;
+    const nikValue = body.nik ? String(body.nik).trim() : null;
+
+    if (nikValue) {
+      const existingPerson = await dbClient.query(
+        "SELECT person_id FROM public.person WHERE id_card = $1 LIMIT 1",
+        [nikValue],
+      );
+
+      if (existingPerson.rows.length > 0) {
+        personId = existingPerson.rows[0].person_id;
+
+        // Cek apakah person ini sudah punya client record yang aktif di agency yang sama
+        const existingClient = await dbClient.query(
+          `SELECT c.client_id, u.agency_id
+           FROM public.client c
+           JOIN public.app_user u ON c.agent_id = u.user_id
+           WHERE c.person_id = $1
+           LIMIT 1`,
+          [personId],
+        );
+
+        // Tolak jika sudah terdaftar sebagai klien di agency yang sama
+        if (existingClient.rows.length > 0) {
+          const existingAgencyId = existingClient.rows[0].agency_id;
+          if (existingAgencyId === session.agencyId) {
+            await dbClient.query("ROLLBACK");
+            return NextResponse.json(
+              { error: "Klien dengan NIK ini sudah terdaftar di agensi Anda." },
+              { status: 409 },
+            );
+          }
+        }
+
+        // Update data person yang ada (mungkin ada data baru yang lebih lengkap)
+        await dbClient.query(
+          `UPDATE public.person SET
+             full_name = COALESCE($1, full_name),
+             phone_number = COALESCE($2, phone_number),
+             address = COALESCE($3, address),
+             birth_date = COALESCE($4, birth_date),
+             gender = COALESCE($5, gender),
+             email = COALESCE($6, email),
+             occupation = COALESCE($7, occupation),
+             marital_status = COALESCE($8, marital_status)
+           WHERE person_id = $9`,
+          [
+            body.fullName || null,
+            body.phoneNumber || null,
+            body.address || null,
+            toDate(body.birthDate),
+            body.gender || null,
+            body.email || null,
+            body.occupation || null,
+            body.maritalStatus || null,
+            personId,
+          ],
+        );
+      } else {
+        // NIK baru — buat person baru
+        const personRes = await dbClient.query(
+          `INSERT INTO public.person
+             (full_name, id_card, passport_number, phone_number, address,
+              birth_date, gender, email, occupation, marital_status)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+           RETURNING person_id`,
+          [
+            body.fullName,
+            nikValue,
+            body.passportNumber ? String(body.passportNumber).trim().toUpperCase() : null,
+            body.phoneNumber,
+            body.address,
+            toDate(body.birthDate),
+            body.gender,
+            body.email,
+            body.occupation || null,
+            body.maritalStatus || null,
+          ],
+        );
+        personId = personRes.rows[0].person_id;
+      }
+    } else {
+      // Tanpa NIK — selalu buat person baru
+      const personRes = await dbClient.query(
+        `INSERT INTO public.person
+           (full_name, id_card, passport_number, phone_number, address,
+            birth_date, gender, email, occupation, marital_status)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+         RETURNING person_id`,
+        [
+          body.fullName,
+          null,
+          body.passportNumber ? String(body.passportNumber).trim().toUpperCase() : null,
+          body.phoneNumber,
+          body.address,
+          toDate(body.birthDate),
+          body.gender,
+          body.email,
+          body.occupation || null,
+          body.maritalStatus || null,
+        ],
+      );
+      personId = personRes.rows[0].person_id;
+    }
+
+    // ── Tentukan source berdasarkan role ─────────────────────────
+    const isAdmin = session.role === "admin_agency" || session.role === "insurance_admin";
+    const source = isAdmin ? "ADMIN_ONBOARDED" : "MANUAL";
+
+    // ── Buat client record ───────────────────────────────────────
+    const clientRes = await dbClient.query(
+      `INSERT INTO public.client
+         (agent_id, person_id, status, created_by_user_id, assigned_at, source)
+       VALUES ($1, $2, 'ACTIVE', $3, NOW(), $4)
        RETURNING client_id`,
-      [agentId, personId]
+      [userId, personId, userId, source],
     );
     const clientId = clientRes.rows[0].client_id;
 
-    /* ── Contract ─────────────────────────────────────────────── */
-    const existingContract = await client.query(
-      "SELECT contract_id FROM public.contract WHERE contract_number = $1",
-      [body.policyNumber]
-    );
-    if (existingContract.rows.length > 0) {
-      await client.query("ROLLBACK");
-      return NextResponse.json({ error: "Nomor polis sudah terdaftar dalam sistem." }, { status: 409 });
+    // ── Contract ─────────────────────────────────────────────────
+    if (body.policyNumber) {
+      const existingContract = await dbClient.query(
+        "SELECT contract_id FROM public.contract WHERE contract_number = $1",
+        [body.policyNumber],
+      );
+      if (existingContract.rows.length > 0) {
+        await dbClient.query("ROLLBACK");
+        return NextResponse.json(
+          { error: "Nomor polis sudah terdaftar dalam sistem." },
+          { status: 409 },
+        );
+      }
     }
 
-    const contractRes = await client.query(
+    const contractRes = await dbClient.query(
       `INSERT INTO public.contract (
          client_id, contract_number, contract_product,
          contract_startdate, contract_duedate, status,
@@ -152,12 +219,12 @@ export async function POST(req: Request) {
         toInt(body.policyTerm),
         toInt(body.premiumPaymentTerm),
         body.currency || "IDR",
-      ]
+      ],
     );
     const contractId = contractRes.rows[0].contract_id;
 
-    /* ── Contract Detail ──────────────────────────────────────── */
-    await client.query(
+    // ── Contract Detail ──────────────────────────────────────────
+    await dbClient.query(
       `INSERT INTO public.contract_detail (
          contract_id, sum_insured, payment_type, premium_amount,
          premium_frequency, coverage_area, room_plan,
@@ -215,36 +282,36 @@ export async function POST(req: Request) {
         toDate(body.autodebetEndDate),
         body.autodebetMandateRef || null,
         toInt(body.billingCycleDay),
-      ]
+      ],
     );
 
-    /* ── Beneficiaries ────────────────────────────────────────── */
+    // ── Beneficiaries ────────────────────────────────────────────
     if (Array.isArray(body.beneficiaries)) {
       for (const b of body.beneficiaries) {
         if (!b?.name) continue;
-        await client.query(
+        await dbClient.query(
           `INSERT INTO public.beneficiary (contract_id, full_name, relationship, percentage, nik)
            VALUES ($1,$2,$3,$4,$5)`,
-          [contractId, b.name, b.relationship || "LAINNYA", toNum(b.percentage) ?? 100, b.nik || null]
+          [contractId, b.name, b.relationship || "LAINNYA", toNum(b.percentage) ?? 100, b.nik || null],
         );
       }
     }
 
-    /* ── Riders ───────────────────────────────────────────────── */
+    // ── Riders ───────────────────────────────────────────────────
     if (Array.isArray(body.riders)) {
       for (const r of body.riders) {
         if (!r?.name) continue;
-        await client.query(
+        await dbClient.query(
           `INSERT INTO public.rider (contract_id, rider_name, coverage)
            VALUES ($1,$2,$3)`,
-          [contractId, r.name, toNum(r.coverage)]
+          [contractId, r.name, toNum(r.coverage)],
         );
       }
     }
 
-    /* ── Insured (bila berbeda dari pemegang polis) ──────────── */
+    // ── Insured Person (bila berbeda dari pemegang polis) ────────
     if (body.insuredSameAsPolicyholder === false && body.insuredName) {
-      await client.query(
+      await dbClient.query(
         `INSERT INTO public.insured_person (contract_id, full_name, nik, birth_date, gender, relationship)
          VALUES ($1,$2,$3,$4,$5,$6)`,
         [
@@ -254,17 +321,33 @@ export async function POST(req: Request) {
           toDate(body.insuredBirthDate),
           body.insuredGender || null,
           body.insuredRelationship || null,
-        ]
+        ],
       );
     }
 
-    await client.query("COMMIT");
+    // ── Audit log ────────────────────────────────────────────────
+    await dbClient.query(
+      `INSERT INTO public.client_audit
+         (client_id, event_type, to_agent_id, by_user_id, metadata)
+       VALUES ($1, 'created', $2, $3, $4)`,
+      [
+        clientId,
+        userId,
+        userId,
+        JSON.stringify({ source, role: session.role, contract_number: body.policyNumber }),
+      ],
+    );
+
+    await dbClient.query("COMMIT");
     return NextResponse.json({ success: true, clientId, contractId });
   } catch (error) {
-    await client.query("ROLLBACK");
+    await dbClient.query("ROLLBACK");
     console.error("Create client failed", error);
-    return NextResponse.json({ error: "Gagal membuat data klien. Silakan coba lagi." }, { status: 500 });
+    return NextResponse.json(
+      { error: "Gagal membuat data klien. Silakan coba lagi." },
+      { status: 500 },
+    );
   } finally {
-    client.release();
+    dbClient.release();
   }
 }

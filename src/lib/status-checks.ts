@@ -123,20 +123,23 @@ async function checkAI(): Promise<Omit<ServiceCheck, "history" | "uptimePct">> {
   const t = Date.now()
   let ok = false
   try {
-    const key = process.env.OPENAI_API_KEY
+    const key = process.env.ANTHROPIC_API_KEY
     if (!key) throw new Error("No key")
     const res = await withTimeout(
-      fetch("https://api.openai.com/v1/models", {
-        headers: { Authorization: `Bearer ${key}` },
+      fetch("https://api.anthropic.com/v1/models", {
+        headers: {
+          "x-api-key": key,
+          "anthropic-version": "2023-06-01",
+        },
         cache: "no-store",
       }),
       3000,
     )
-    ok = res.status < 500
+    ok = res.ok
   } catch { /* silent */ }
   return {
     id: "ai", name: "AI Assistant", group: "External Services",
-    description: "OpenAI — contextual AI assistant engine",
+    description: "Anthropic — contextual AI assistant engine",
     status: toStatus(Date.now() - t, ok),
     latencyMs: Date.now() - t,
   }

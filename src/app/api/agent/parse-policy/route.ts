@@ -1,41 +1,23 @@
 import { NextResponse } from "next/server";
 
-export async function POST(req: Request) {
-  try {
-    const formData = await req.formData();
-    const file = formData.get("file") as File;
+type AnthropicTextBlock = {
+  type: "text";
+  text: string;
+};
 
-    if (!file) {
-      return NextResponse.json({ error: "Tidak ada file yang diunggah." }, { status: 400 });
-    }
+type AnthropicError = {
+  error?: {
+    message?: string;
+  };
+};
 
-    // Convert file to base64
-    const buffer = await file.arrayBuffer();
-    const base64Image = Buffer.from(buffer).toString("base64");
-    const dataUrl = `data:${file.type};base64,${base64Image}`;
+type AnthropicResponse = AnthropicError & {
+  content?: AnthropicTextBlock[];
+};
 
-    // Use environment variable for API Key
-    const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+const SYSTEM_PROMPT = `You are an AI assistant specialized in analyzing Indonesian insurance policy document images.
 
-    if (!OPENAI_API_KEY) {
-      console.error("Missing OPENAI_API_KEY");
-      return NextResponse.json({ error: "Konfigurasi server belum lengkap." }, { status: 500 });
-    }
-
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${OPENAI_API_KEY}`,
-      },
-      body: JSON.stringify({
-        model: "gpt-4o",
-        messages: [
-          {
-            role: "system",
-            content: `You are an AI assistant specialized in analyzing Indonesian insurance policy documents.
-
-First, determine if the image/PDF is a valid insurance policy. If it is NOT
+First, determine if the image is a valid insurance policy. If it is NOT
 (e.g. random photo, receipt, selfie, ID card), return { "is_valid_policy": false }.
 
 If it IS a valid insurance policy, return is_valid_policy: true plus any of these
@@ -106,8 +88,52 @@ PAYMENT
 - autodebet_start_date, autodebet_end_date (YYYY-MM-DD)
 - autodebet_mandate_ref (string)
 
-Return ONLY raw JSON (no markdown code fences).`,
-          },
+Return ONLY raw JSON (no markdown code fences).`;
+
+function extractJson(text: string) {
+  const cleaned = text.replace(/```json\n?|\n?```/g, "").trim();
+  const match = cleaned.match(/\{[\s\S]*\}/);
+  return JSON.parse(match?.[0] ?? cleaned) as unknown;
+}
+
+export async function POST(req: Request) {
+  try {
+    const formData = await req.formData();
+    const file = formData.get("file") as File | null;
+
+    if (!file) {
+      return NextResponse.json({ error: "Tidak ada file yang diunggah." }, { status: 400 });
+    }
+
+    if (!file.type.startsWith("image/")) {
+      return NextResponse.json(
+        { error: "Format tidak didukung. Gunakan gambar polis JPG atau PNG." },
+        { status: 415 },
+      );
+    }
+
+    const anthropicKey = process.env.ANTHROPIC_API_KEY?.trim();
+    if (!anthropicKey) {
+      console.error("Missing ANTHROPIC_API_KEY");
+      return NextResponse.json({ error: "Konfigurasi server belum lengkap." }, { status: 500 });
+    }
+
+    const buffer = await file.arrayBuffer();
+    const base64Image = Buffer.from(buffer).toString("base64");
+    const model = process.env.AI_ANTHROPIC_MODEL?.trim() || "claude-haiku-4-5-20251001";
+
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": anthropicKey,
+        "anthropic-version": "2023-06-01",
+      },
+      body: JSON.stringify({
+        model,
+        max_tokens: 2500,
+        system: SYSTEM_PROMPT,
+        messages: [
           {
             role: "user",
             content: [
@@ -116,33 +142,32 @@ Return ONLY raw JSON (no markdown code fences).`,
                 text: "Extract data from this insurance policy image.",
               },
               {
-                type: "image_url",
-                image_url: {
-                  url: dataUrl,
+                type: "image",
+                source: {
+                  type: "base64",
+                  media_type: file.type,
+                  data: base64Image,
                 },
               },
             ],
           },
         ],
-        max_tokens: 2500,
-        response_format: { type: "json_object" },
       }),
     });
 
-    const data = await response.json();
+    const data = (await response.json()) as AnthropicResponse;
 
     if (!response.ok) {
-      console.error("OpenAI API Error:", data);
+      console.error("Anthropic policy parse error:", data.error?.message ?? data);
       return NextResponse.json({ error: "Gagal memproses dokumen polis." }, { status: 500 });
     }
 
-    const content = data.choices[0].message.content;
+    const content = data.content?.find((block) => block.type === "text")?.text;
+    if (!content) {
+      return NextResponse.json({ error: "AI tidak mengembalikan hasil yang bisa dibaca." }, { status: 502 });
+    }
 
-    // Clean up markdown code blocks if present
-    const jsonString = content.replace(/```json\n?|\n?```/g, "").trim();
-    const parsedData = JSON.parse(jsonString);
-
-    return NextResponse.json({ data: parsedData });
+    return NextResponse.json({ data: extractJson(content) });
   } catch (error) {
     console.error("Error parsing policy:", error);
     return NextResponse.json({ error: "Terjadi kesalahan sistem saat memproses dokumen." }, { status: 500 });

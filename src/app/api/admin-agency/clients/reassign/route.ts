@@ -1,60 +1,61 @@
-import { getAdminAgencyUserIdFromCookies } from "@/lib/auth-cookies";
 import { NextResponse } from "next/server";
 import { reassignClient } from "@/services/admin-agency";
-import { cookies } from "next/headers";
+import { getSession } from "@/lib/auth";
 import { dbPool } from "@/lib/db";
 
 export async function POST(req: Request) {
-    const cookieStore = await cookies();
-    const userId = await getAdminAgencyUserIdFromCookies();
+  const session = await getSession();
+  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    if (!userId) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const adminRoles = ["admin_agency", "insurance_admin", "super_admin"];
+  if (!adminRoles.includes(session.role)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  const userId = session.userId;
+  const agencyId = session.agencyId;
+  if (!agencyId) return NextResponse.json({ error: "Akun tidak terhubung ke agensi" }, { status: 403 });
+
+  const { clientId, newAgentId } = await req.json();
+  if (!clientId || !newAgentId) {
+    return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+  }
+
+  const dbClient = await dbPool.connect();
+  try {
+    // Verifikasi agent target ada di agensi yang sama
+    const agentRes = await dbClient.query(
+      "SELECT agency_id FROM public.app_user WHERE user_id = $1",
+      [newAgentId],
+    );
+    if (agentRes.rows.length === 0 || agentRes.rows[0].agency_id !== agencyId) {
+      return NextResponse.json({ error: "Target agent is not in your agency" }, { status: 400 });
     }
 
-    try {
-        const { clientId, newAgentId } = await req.json();
+    // Verifikasi client milik agensi ini — handle unassigned (agent_id NULL) via created_by_user_id
+    const clientRes = await dbClient.query(
+      `SELECT
+         COALESCE(au.agency_id, ac.agency_id) AS agency_id
+       FROM public.client c
+       LEFT JOIN public.app_user au ON c.agent_id = au.user_id
+       LEFT JOIN public.app_user ac ON c.created_by_user_id = ac.user_id
+       WHERE c.client_id = $1`,
+      [clientId],
+    );
 
-        if (!clientId || !newAgentId) {
-            return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
-        }
-
-        // Validate that the admin has permission (e.g., both client and new agent belong to the admin's agency)
-        const client = await dbPool.connect();
-        try {
-            const adminRes = await client.query("SELECT agency_id FROM app_user WHERE user_id = $1", [userId]);
-            const agencyId = adminRes.rows[0]?.agency_id;
-
-            if (!agencyId) {
-                return NextResponse.json({ error: "Unauthorized Agency" }, { status: 403 });
-            }
-
-            // Check if New Agent is in the same agency
-            const agentRes = await client.query("SELECT agency_id FROM app_user WHERE user_id = $1", [newAgentId]);
-            if (agentRes.rows.length === 0 || agentRes.rows[0].agency_id !== agencyId) {
-                return NextResponse.json({ error: "Target agent is not in your agency" }, { status: 400 });
-            }
-
-            // Check if Client currently belongs to an agent in the admin's agency
-            const clientOwnerRes = await client.query(`
-                SELECT au.agency_id 
-                FROM client c
-                JOIN app_user au ON c.agent_id = au.user_id
-                WHERE c.client_id = $1
-            `, [clientId]);
-
-            if (clientOwnerRes.rows.length === 0 || clientOwnerRes.rows[0].agency_id !== agencyId) {
-                return NextResponse.json({ error: "Client does not belong to your agency" }, { status: 403 });
-            }
-        } finally {
-            client.release();
-        }
-
-        await reassignClient(clientId, newAgentId);
-
-        return NextResponse.json({ success: true });
-    } catch (error) {
-        console.error("Reassign Client Error:", error);
-        return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    if (clientRes.rows.length === 0 || clientRes.rows[0].agency_id !== agencyId) {
+      return NextResponse.json({ error: "Client does not belong to your agency" }, { status: 403 });
     }
+  } finally {
+    dbClient.release();
+  }
+
+  try {
+    // Pass userId agar audit log tercatat
+    await reassignClient(clientId, newAgentId, userId);
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Reassign Client Error:", error);
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+  }
 }

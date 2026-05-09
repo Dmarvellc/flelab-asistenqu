@@ -9,7 +9,6 @@ import { dbPool } from "@/lib/db";
 import { deleteCacheByPattern, getJsonCache, setJsonCache } from "@/lib/redis";
 import {
   getSupabaseAdmin,
-  getSupabaseAdminConfigError,
   hasSupabaseAdminConfig,
 } from "@/lib/supabase-admin";
 
@@ -258,17 +257,10 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
     let publicUrl = "";
     let storageFileName: string | null = null;
     if (!hasSupabaseAdminConfig()) {
-      if (process.env.NODE_ENV === "production") {
-        // Never accept claim documents without real storage in production.
-        throw new AgentClaimDocumentError(
-          503,
-          "Document storage is not configured. Upload temporarily unavailable."
-        );
-      }
-      console.warn("Supabase not configured, faking document upload for", file.name, "(DEV ONLY)");
-      publicUrl = "https://placehold.co/800x1200?text=Mock+Document";
-      uploadedStoragePath = `claims/${claimId}/documents/mock-${Date.now()}`;
-      storageFileName = file.name;
+      throw new AgentClaimDocumentError(
+        503,
+        "Document storage is not configured. Upload temporarily unavailable."
+      );
     } else {
       const buffer = Buffer.from(await file.arrayBuffer());
       storageFileName = `${Date.now()}-${crypto.randomUUID()}-${validatedFile.sanitizedBaseName}.${validatedFile.safeExtension}`;

@@ -44,9 +44,11 @@ export type AgentPerf = {
 export interface AgencyClient {
     client_id: string;
     full_name: string;
-    agent_id: string;
-    agent_name: string;
+    agent_id: string | null;
+    agent_name: string | null;
     total_policies: number;
+    source: string | null;
+    created_at: string;
 }
 
 export async function getPendingTransfers(agencyId: string): Promise<AgencyTransferRequest[]> {
@@ -121,23 +123,26 @@ export async function getAgencyPerformance(agencyId: string): Promise<AgentPerf[
 export async function getAgencyAgents(agencyId: string): Promise<AgencyAgent[]> {
     const client = await dbPool.connect();
     try {
+        // Sertakan admin_agency yang juga bertindak sebagai agent
         const res = await client.query(`
-            SELECT 
+            SELECT
                 u.user_id,
-                p.full_name,
+                COALESCE(p.full_name, u.email) as full_name,
                 u.email,
                 p.phone_number,
                 u.status,
                 u.approved_at as joined_at,
                 (SELECT COUNT(*) FROM public.client c WHERE c.agent_id = u.user_id) as total_policies,
-                (SELECT COUNT(*) FROM public.claim cl 
-                 JOIN public.client c ON cl.client_id = c.client_id 
+                (SELECT COUNT(*) FROM public.claim cl
+                 JOIN public.client c ON cl.client_id = c.client_id
                  WHERE c.agent_id = u.user_id) as total_claims
             FROM app_user u
-            JOIN user_person_link upl ON u.user_id = upl.user_id
-            JOIN person p ON upl.person_id = p.person_id
-            WHERE u.agency_id = $1 AND u.role = 'agent'
-            ORDER BY p.full_name ASC
+            LEFT JOIN user_person_link upl ON u.user_id = upl.user_id
+            LEFT JOIN person p ON upl.person_id = p.person_id
+            WHERE u.agency_id = $1
+              AND u.role IN ('agent', 'agent_manager', 'admin_agency', 'insurance_admin')
+              AND u.status = 'ACTIVE'
+            ORDER BY p.full_name ASC NULLS LAST
         `, [agencyId]);
         return res.rows.map(row => ({
             ...row,
@@ -152,39 +157,109 @@ export async function getAgencyAgents(agencyId: string): Promise<AgencyAgent[]> 
 export async function getAgencyClients(agencyId: string): Promise<AgencyClient[]> {
     const client = await dbPool.connect();
     try {
+        // LEFT JOIN agar unassigned clients (agent_id NULL) tetap muncul
         const res = await client.query(`
-            SELECT 
+            SELECT
                 c.client_id,
                 p.full_name,
                 c.agent_id,
-                ap.full_name as agent_name,
-                (SELECT COUNT(*) FROM contract ct WHERE ct.client_id = c.client_id) as total_policies
-            FROM client c
-            JOIN person p ON c.person_id = p.person_id
-            JOIN app_user au ON c.agent_id = au.user_id
-            JOIN user_person_link upl ON au.user_id = upl.user_id
-            JOIN person ap ON upl.person_id = ap.person_id
-            WHERE au.agency_id = $1
-            ORDER BY p.full_name ASC
+                COALESCE(ap.full_name, au.email) as agent_name,
+                c.source,
+                c.created_at,
+                (SELECT COUNT(*) FROM public.contract ct WHERE ct.client_id = c.client_id) as total_policies
+            FROM public.client c
+            JOIN public.person p ON c.person_id = p.person_id
+            LEFT JOIN public.app_user au ON c.agent_id = au.user_id
+            LEFT JOIN public.user_person_link upl ON au.user_id = upl.user_id
+            LEFT JOIN public.person ap ON upl.person_id = ap.person_id
+            WHERE
+              -- Klien assigned ke agent di agensi ini
+              au.agency_id = $1
+              OR
+              -- Klien belum assigned, dibuat oleh user di agensi ini
+              (c.agent_id IS NULL AND c.created_by_user_id IN (
+                SELECT user_id FROM public.app_user WHERE agency_id = $1
+              ))
+            ORDER BY c.created_at DESC
         `, [agencyId]);
 
         return res.rows.map(row => ({
             ...row,
-            total_policies: parseInt(row.total_policies)
+            total_policies: parseInt(row.total_policies),
+            created_at: row.created_at?.toISOString?.() ?? row.created_at,
         }));
     } finally {
         client.release();
     }
 }
 
-export async function reassignClient(clientId: string, newAgentId: string): Promise<void> {
+export async function getUnassignedClients(agencyId: string): Promise<AgencyClient[]> {
     const client = await dbPool.connect();
     try {
-        await client.query(`
-            UPDATE client
-            SET agent_id = $1, updated_at = NOW()
-            WHERE client_id = $2
-        `, [newAgentId, clientId]);
+        const res = await client.query(`
+            SELECT
+                c.client_id,
+                p.full_name,
+                c.agent_id,
+                NULL::text as agent_name,
+                c.source,
+                c.created_at,
+                (SELECT COUNT(*) FROM public.contract ct WHERE ct.client_id = c.client_id) as total_policies
+            FROM public.client c
+            JOIN public.person p ON c.person_id = p.person_id
+            WHERE c.agent_id IS NULL
+              AND c.created_by_user_id IN (
+                SELECT user_id FROM public.app_user WHERE agency_id = $1
+              )
+            ORDER BY c.created_at DESC
+        `, [agencyId]);
+
+        return res.rows.map(row => ({
+            ...row,
+            total_policies: parseInt(row.total_policies),
+            created_at: row.created_at?.toISOString?.() ?? row.created_at,
+        }));
+    } finally {
+        client.release();
+    }
+}
+
+export async function reassignClient(
+    clientId: string,
+    newAgentId: string,
+    byUserId?: string,
+): Promise<void> {
+    const client = await dbPool.connect();
+    try {
+        await client.query("BEGIN");
+
+        const oldRes = await client.query(
+            "SELECT agent_id FROM public.client WHERE client_id = $1 FOR UPDATE",
+            [clientId],
+        );
+        const oldAgentId = oldRes.rows[0]?.agent_id ?? null;
+
+        await client.query(
+            `UPDATE public.client
+             SET agent_id = $1, assigned_at = NOW()
+             WHERE client_id = $2`,
+            [newAgentId, clientId],
+        );
+
+        if (byUserId) {
+            const eventType = oldAgentId ? "reassigned" : "assigned";
+            await client.query(
+                `INSERT INTO public.client_audit
+                   (client_id, event_type, from_agent_id, to_agent_id, by_user_id, metadata)
+                 VALUES ($1, $2, $3, $4, $5, $6)`,
+                [clientId, eventType, oldAgentId, newAgentId, byUserId, JSON.stringify({ source: "manual_reassign" })],
+            );
+        }
+
+        await client.query("COMMIT");
+    } catch (e) {
+        await client.query("ROLLBACK");
+        throw e;
     } finally {
         client.release();
     }

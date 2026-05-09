@@ -395,9 +395,23 @@ export default function NetworkMarketplacePage() {
   const [loading, setLoading] = useState(true)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
+  // All DB hospital names fetched once for stable Generali dedup (independent of pagination/tab state)
+  const [allDbHospitalNames, setAllDbHospitalNames] = useState<Set<string>>(new Set())
+
   // Fetch stats once
   useEffect(() => {
     fetch("/api/network/stats").then((r) => r.json()).then(setStats).catch(console.error)
+  }, [])
+
+  // Fetch all hospital names once for Generali dedup — keeps count stable across tab switches
+  useEffect(() => {
+    fetch("/api/network/hospitals?limit=500")
+      .then((r) => r.json())
+      .then((d) => {
+        const names = new Set<string>((d.hospitals || []).map((h: NetworkHospital) => normalizeName(h.name)))
+        setAllDbHospitalNames(names)
+      })
+      .catch(console.error)
   }, [])
 
   // Fetch top hospitals once for the logo strip
@@ -457,16 +471,14 @@ export default function NetworkMarketplacePage() {
     }
   }, [query, specialization, country, hospitalFilter, activeTab, fetchData])
 
-  // Generali providers that don't already exist in the DB hospitals tab.
-  // Filtered by the same query / country controls so the merged list feels
-  // like one continuous directory.
+  // Generali providers not already in the DB — deduped against the full DB name list
+  // (not the paginated page), so the count stays stable regardless of tab or scroll position.
   const generaliExtra = useMemo(() => {
-    if (activeTab !== "hospitals") return []
-    const dbNames = new Set(hospitals.map((h) => normalizeName(h.name)))
+    if (allDbHospitalNames.size === 0) return []
     const q = query.toLowerCase().trim()
     const cnt = country ? country.toUpperCase() : ""
     return GENERALI_PROVIDERS.filter((p) => {
-      if (dbNames.has(normalizeName(p.name))) return false
+      if (allDbHospitalNames.has(normalizeName(p.name))) return false
       if (cnt && p.country !== cnt) return false
       if (!q) return true
       return (
@@ -476,7 +488,7 @@ export default function NetworkMarketplacePage() {
         p.network.toLowerCase().includes(q)
       )
     })
-  }, [activeTab, hospitals, query, country])
+  }, [allDbHospitalNames, query, country])
 
   const loadMore = () => {
     const next = page + 1
@@ -493,15 +505,16 @@ export default function NetworkMarketplacePage() {
     setPage(1)
   }
 
-  const totalHospitalRows = totalHospitals + generaliExtra.length
-  const totalItems = activeTab === "hospitals" ? totalHospitalRows : totalDoctors
+  // Stable total visible in both tabs: full DB count (from stats, loaded once) + Generali-only extras
+  const stableHospitalTotal = (stats?.total_hospitals ?? 0) + generaliExtra.length
+  const totalItems = activeTab === "hospitals" ? totalHospitals + generaliExtra.length : totalDoctors
 
   return (
     <div className="animate-in fade-in duration-500">
       <PageHeader
         stats={stats}
         doctorCount={totalDoctors || stats?.total_doctors || 0}
-        hospitalCount={totalHospitalRows || stats?.total_hospitals || 0}
+        hospitalCount={stableHospitalTotal}
       />
 
       {/* Hospital logo filter strip (only for doctors tab) */}
@@ -512,7 +525,7 @@ export default function NetworkMarketplacePage() {
       {/* Tabs */}
       <div className="border-b border-gray-200 flex gap-6 sm:gap-10 mt-6 -mx-4 px-4 sm:-mx-6 sm:px-6">
         <TabButton active={activeTab === "doctors"} onClick={() => setActiveTab("doctors")} icon={Stethoscope} label="Dokter" count={totalDoctors} />
-        <TabButton active={activeTab === "hospitals"} onClick={() => setActiveTab("hospitals")} icon={Hospital} label="Rumah Sakit" count={totalHospitalRows} />
+        <TabButton active={activeTab === "hospitals"} onClick={() => setActiveTab("hospitals")} icon={Hospital} label="Rumah Sakit" count={stableHospitalTotal} />
       </div>
 
       {/* Search */}
@@ -616,7 +629,18 @@ export default function NetworkMarketplacePage() {
         ) : (
           <div>
             {hospitals.map((h) => <HospitalRow key={h.hospital_id} hospital={h} />)}
-            {generaliExtra.map((p) => <GeneraliRow key={`g-${p.no}`} provider={p} />)}
+            {generaliExtra.length > 0 && (
+              <>
+                <div className="flex items-center gap-3 py-4 -mx-4 px-4 sm:-mx-6 sm:px-6">
+                  <div className="h-px flex-1 bg-gray-100" />
+                  <span className="text-[11px] font-semibold tracking-wider uppercase text-slate-400">
+                    Jaringan Generali ({generaliExtra.length})
+                  </span>
+                  <div className="h-px flex-1 bg-gray-100" />
+                </div>
+                {generaliExtra.map((p) => <GeneraliRow key={`g-${p.no}`} provider={p} />)}
+              </>
+            )}
           </div>
         )}
 
