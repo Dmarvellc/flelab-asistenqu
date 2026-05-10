@@ -13,7 +13,7 @@ export async function getUserIdFromCookies(): Promise<string | null> {
 
 export async function getHospitalUserIdFromCookies(): Promise<string | null> {
   const session = await getSession({ portal: "hospital" });
-  return session?.role === "hospital_admin" ? session.userId : null;
+  return (session?.role === "hospital_admin" || session?.role === "super_admin") ? session.userId : null;
 }
 
 export async function getAgentUserIdFromCookies(): Promise<string | null> {
