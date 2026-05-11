@@ -1,5 +1,6 @@
 import { dbPool } from "@/lib/db";
-import { Claim } from "@/lib/claims-data"; // Use shared type
+import { Claim } from "@/lib/claims-data";
+import { cached, CacheKeys, TTL } from "@/lib/cache";
 
 export interface AgencyTransferRequest {
     request_id: string;
@@ -81,116 +82,118 @@ export async function getPendingTransfers(agencyId: string): Promise<AgencyTrans
 }
 
 export async function getAgencyPerformance(agencyId: string): Promise<AgentPerf[]> {
-    const client = await dbPool.connect();
-    try {
-        const result = await client.query(`
-          SELECT
-            u.user_id,
-            u.email,
-            COALESCE(p.full_name, u.email)            AS agent_name,
-            COALESCE(ag.points_balance, 0)            AS total_points,
-            COALESCE(t.name, 'Bronze')                AS rank_label,
-            COALESCE(t.commission_multiplier, 1.00)   AS commission_multiplier,
-            COUNT(DISTINCT cl.client_id)              AS total_clients,
-            COUNT(DISTINCT c.claim_id)                AS total_claims,
-            COUNT(DISTINCT c.claim_id) FILTER (WHERE c.status = 'APPROVED')  AS approved_claims,
-            COUNT(DISTINCT c.claim_id) FILTER (WHERE c.status = 'REJECTED')  AS rejected_claims,
-            COUNT(DISTINCT c.claim_id) FILTER (WHERE c.status IN ('DRAFT','SUBMITTED')) AS pending_claims,
-            COALESCE(SUM(c.total_amount) FILTER (WHERE c.status = 'APPROVED'), 0) AS total_approved_value,
-            COALESCE(u.referral_points, 0)            AS referral_points,
-            u.referral_code
-          FROM public.app_user u
-          LEFT JOIN public.user_person_link upl ON u.user_id = upl.user_id
-          LEFT JOIN public.person p ON upl.person_id = p.person_id
-          LEFT JOIN public.agent ag ON ag.agent_id = u.user_id
-          LEFT JOIN public.tier t ON ag.current_tier_id = t.tier_id
-          LEFT JOIN public.client cl ON cl.agent_id = u.user_id
-          LEFT JOIN public.claim c ON c.assigned_agent_id = u.user_id
-          WHERE u.role = 'agent' AND u.agency_id = $1
-          GROUP BY
-            u.user_id, u.email, p.full_name,
-            ag.points_balance, t.name, t.commission_multiplier,
-            u.referral_points, u.referral_code
-          ORDER BY ag.points_balance DESC NULLS LAST, total_approved_value DESC
-        `, [agencyId]);
+    return cached(CacheKeys.agencyPerformance(agencyId), TTL.MEDIUM, async () => {
+        const client = await dbPool.connect();
+        try {
+            const result = await client.query(`
+              SELECT
+                u.user_id,
+                u.email,
+                COALESCE(p.full_name, u.email)            AS agent_name,
+                COALESCE(ag.points_balance, 0)            AS total_points,
+                COALESCE(t.name, 'Bronze')                AS rank_label,
+                COALESCE(t.commission_multiplier, 1.00)   AS commission_multiplier,
+                COUNT(DISTINCT cl.client_id)              AS total_clients,
+                COUNT(DISTINCT c.claim_id)                AS total_claims,
+                COUNT(DISTINCT c.claim_id) FILTER (WHERE c.status = 'APPROVED')  AS approved_claims,
+                COUNT(DISTINCT c.claim_id) FILTER (WHERE c.status = 'REJECTED')  AS rejected_claims,
+                COUNT(DISTINCT c.claim_id) FILTER (WHERE c.status IN ('DRAFT','SUBMITTED')) AS pending_claims,
+                COALESCE(SUM(c.total_amount) FILTER (WHERE c.status = 'APPROVED'), 0) AS total_approved_value,
+                COALESCE(u.referral_points, 0)            AS referral_points,
+                u.referral_code
+              FROM public.app_user u
+              LEFT JOIN public.user_person_link upl ON u.user_id = upl.user_id
+              LEFT JOIN public.person p ON upl.person_id = p.person_id
+              LEFT JOIN public.agent ag ON ag.agent_id = u.user_id
+              LEFT JOIN public.tier t ON ag.current_tier_id = t.tier_id
+              LEFT JOIN public.client cl ON cl.agent_id = u.user_id
+              LEFT JOIN public.claim c ON c.assigned_agent_id = u.user_id
+              WHERE u.role = 'agent' AND u.agency_id = $1
+              GROUP BY
+                u.user_id, u.email, p.full_name,
+                ag.points_balance, t.name, t.commission_multiplier,
+                u.referral_points, u.referral_code
+              ORDER BY ag.points_balance DESC NULLS LAST, total_approved_value DESC
+            `, [agencyId]);
 
-        return result.rows;
-    } finally {
-        client.release();
-    }
+            return result.rows;
+        } finally {
+            client.release();
+        }
+    });
 }
 
 export async function getAgencyAgents(agencyId: string): Promise<AgencyAgent[]> {
-    const client = await dbPool.connect();
-    try {
-        // Sertakan admin_agency yang juga bertindak sebagai agent
-        const res = await client.query(`
-            SELECT
-                u.user_id,
-                COALESCE(p.full_name, u.email) as full_name,
-                u.email,
-                p.phone_number,
-                u.status,
-                u.approved_at as joined_at,
-                (SELECT COUNT(*) FROM public.client c WHERE c.agent_id = u.user_id) as total_policies,
-                (SELECT COUNT(*) FROM public.claim cl
-                 JOIN public.client c ON cl.client_id = c.client_id
-                 WHERE c.agent_id = u.user_id) as total_claims
-            FROM app_user u
-            LEFT JOIN user_person_link upl ON u.user_id = upl.user_id
-            LEFT JOIN person p ON upl.person_id = p.person_id
-            WHERE u.agency_id = $1
-              AND u.role IN ('agent', 'agent_manager', 'admin_agency', 'insurance_admin')
-              AND u.status = 'ACTIVE'
-            ORDER BY p.full_name ASC NULLS LAST
-        `, [agencyId]);
-        return res.rows.map(row => ({
-            ...row,
-            total_policies: parseInt(row.total_policies),
-            total_claims: parseInt(row.total_claims)
-        }));
-    } finally {
-        client.release();
-    }
+    return cached(CacheKeys.agencyAgents(agencyId), TTL.SHORT, async () => {
+        const client = await dbPool.connect();
+        try {
+            const res = await client.query(`
+                SELECT
+                    u.user_id,
+                    COALESCE(p.full_name, u.email) as full_name,
+                    u.email,
+                    p.phone_number,
+                    u.status,
+                    u.approved_at as joined_at,
+                    (SELECT COUNT(*) FROM public.client c WHERE c.agent_id = u.user_id) as total_policies,
+                    (SELECT COUNT(*) FROM public.claim cl
+                     JOIN public.client c ON cl.client_id = c.client_id
+                     WHERE c.agent_id = u.user_id) as total_claims
+                FROM app_user u
+                LEFT JOIN user_person_link upl ON u.user_id = upl.user_id
+                LEFT JOIN person p ON upl.person_id = p.person_id
+                WHERE u.agency_id = $1
+                  AND u.role IN ('agent', 'agent_manager', 'admin_agency', 'insurance_admin')
+                  AND u.status = 'ACTIVE'
+                ORDER BY p.full_name ASC NULLS LAST
+            `, [agencyId]);
+            return res.rows.map(row => ({
+                ...row,
+                total_policies: parseInt(row.total_policies),
+                total_claims: parseInt(row.total_claims)
+            }));
+        } finally {
+            client.release();
+        }
+    });
 }
 
 export async function getAgencyClients(agencyId: string): Promise<AgencyClient[]> {
-    const client = await dbPool.connect();
-    try {
-        // LEFT JOIN agar unassigned clients (agent_id NULL) tetap muncul
-        const res = await client.query(`
-            SELECT
-                c.client_id,
-                p.full_name,
-                c.agent_id,
-                COALESCE(ap.full_name, au.email) as agent_name,
-                c.source,
-                c.created_at,
-                (SELECT COUNT(*) FROM public.contract ct WHERE ct.client_id = c.client_id) as total_policies
-            FROM public.client c
-            JOIN public.person p ON c.person_id = p.person_id
-            LEFT JOIN public.app_user au ON c.agent_id = au.user_id
-            LEFT JOIN public.user_person_link upl ON au.user_id = upl.user_id
-            LEFT JOIN public.person ap ON upl.person_id = ap.person_id
-            WHERE
-              -- Klien assigned ke agent di agensi ini
-              au.agency_id = $1
-              OR
-              -- Klien belum assigned, dibuat oleh user di agensi ini
-              (c.agent_id IS NULL AND c.created_by_user_id IN (
-                SELECT user_id FROM public.app_user WHERE agency_id = $1
-              ))
-            ORDER BY c.created_at DESC
-        `, [agencyId]);
+    return cached(CacheKeys.agencyClients(agencyId), TTL.SHORT, async () => {
+        const client = await dbPool.connect();
+        try {
+            const res = await client.query(`
+                SELECT
+                    c.client_id,
+                    p.full_name,
+                    c.agent_id,
+                    COALESCE(ap.full_name, au.email) as agent_name,
+                    c.source,
+                    c.created_at,
+                    (SELECT COUNT(*) FROM public.contract ct WHERE ct.client_id = c.client_id) as total_policies
+                FROM public.client c
+                JOIN public.person p ON c.person_id = p.person_id
+                LEFT JOIN public.app_user au ON c.agent_id = au.user_id
+                LEFT JOIN public.user_person_link upl ON au.user_id = upl.user_id
+                LEFT JOIN public.person ap ON upl.person_id = ap.person_id
+                WHERE
+                  au.agency_id = $1
+                  OR
+                  (c.agent_id IS NULL AND c.created_by_user_id IN (
+                    SELECT user_id FROM public.app_user WHERE agency_id = $1
+                  ))
+                ORDER BY c.created_at DESC
+            `, [agencyId]);
 
-        return res.rows.map(row => ({
-            ...row,
-            total_policies: parseInt(row.total_policies),
-            created_at: row.created_at?.toISOString?.() ?? row.created_at,
-        }));
-    } finally {
-        client.release();
-    }
+            return res.rows.map(row => ({
+                ...row,
+                total_policies: parseInt(row.total_policies),
+                created_at: row.created_at?.toISOString?.() ?? row.created_at,
+            }));
+        } finally {
+            client.release();
+        }
+    });
 }
 
 export async function getUnassignedClients(agencyId: string): Promise<AgencyClient[]> {
@@ -266,39 +269,41 @@ export async function reassignClient(
 }
 
 export async function getAgencyClaims(agencyId: string): Promise<Claim[]> {
-    const client = await dbPool.connect();
-    try {
-        const res = await client.query(`
-            SELECT 
-                c.claim_id,
-                p.full_name as client_name,
-                ct.contract_number as policy_number,
-                c.claim_date,
-                c.status,
-                c.stage,
-                c.total_amount,
-                h.name as hospital_name,
-                d.name as disease_name,
-                c.notes
-            FROM claim c
-            JOIN client cl ON c.client_id = cl.client_id
-            JOIN app_user u ON cl.agent_id = u.user_id
-            JOIN person p ON cl.person_id = p.person_id
-            LEFT JOIN contract ct ON c.contract_id = ct.contract_id
-            LEFT JOIN hospital h ON c.hospital_id = h.hospital_id
-            LEFT JOIN disease d ON c.disease_id = d.disease_id
-            WHERE u.agency_id = $1
-            ORDER BY c.updated_at DESC
-        `, [agencyId]);
+    return cached(CacheKeys.agencyClaims(agencyId), TTL.SHORT, async () => {
+        const client = await dbPool.connect();
+        try {
+            const res = await client.query(`
+                SELECT
+                    c.claim_id,
+                    p.full_name as client_name,
+                    ct.contract_number as policy_number,
+                    c.claim_date,
+                    c.status,
+                    c.stage,
+                    c.total_amount,
+                    h.name as hospital_name,
+                    d.name as disease_name,
+                    c.notes
+                FROM claim c
+                JOIN client cl ON c.client_id = cl.client_id
+                JOIN app_user u ON cl.agent_id = u.user_id
+                JOIN person p ON cl.person_id = p.person_id
+                LEFT JOIN contract ct ON c.contract_id = ct.contract_id
+                LEFT JOIN hospital h ON c.hospital_id = h.hospital_id
+                LEFT JOIN disease d ON c.disease_id = d.disease_id
+                WHERE u.agency_id = $1
+                ORDER BY c.updated_at DESC
+            `, [agencyId]);
 
-        return res.rows.map(row => ({
-            ...row,
-            claim_date: row.claim_date.toISOString(),
-            total_amount: parseFloat(row.total_amount)
-        }));
-    } finally {
-        client.release();
-    }
+            return res.rows.map(row => ({
+                ...row,
+                claim_date: row.claim_date.toISOString(),
+                total_amount: parseFloat(row.total_amount)
+            }));
+        } finally {
+            client.release();
+        }
+    });
 }
 
 

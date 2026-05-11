@@ -59,8 +59,12 @@ export const CacheKeys = {
   hospitalId:     (userId: string) => k(["hospital", "id-of", userId]),
 
   // Admin agency
-  agencyDashboard: (agencyId: string) => k(["agency", "dashboard", agencyId]),
-  agencyClaims:    (agencyId: string) => k(["agency", "claims", agencyId]),
+  agencyDashboard:   (agencyId: string) => k(["agency", "dashboard", agencyId]),
+  agencyClaims:      (agencyId: string) => k(["agency", "claims", agencyId]),
+  agencyAgents:      (agencyId: string) => k(["agency", "agents", agencyId]),
+  agencyClients:     (agencyId: string) => k(["agency", "clients", agencyId]),
+  agencyPerformance: (agencyId: string) => k(["agency", "performance", agencyId]),
+  claimDetail:       (claimId: string)  => k(["claim", "detail", claimId]),
 
   // Developer
   devAnalytics:    () => k(["dev", "analytics"]),

@@ -1,31 +1,19 @@
-import { getAdminAgencyUserIdFromCookies } from "@/lib/auth-cookies";
-import { cookies } from "next/headers";
-import { dbPool } from "@/lib/db";
+import { getSession } from "@/lib/auth";
+import { redirect } from "next/navigation";
 import { getAgencyClaims } from "@/services/admin-agency";
 import { ClaimsDataTable } from "@/components/admin-agency/claims-data-table";
 import { Claim } from "@/lib/claims-data";
 
-async function getAgencyId(): Promise<string | null> {
-    const cookieStore = await cookies();
-    const userId = await getAdminAgencyUserIdFromCookies();
-    if (!userId) return null;
-    const client = await dbPool.connect();
-    try {
-        const res = await client.query("SELECT agency_id FROM app_user WHERE user_id = $1", [userId]);
-        return res.rows[0]?.agency_id || null;
-    } finally {
-        client.release();
-    }
-}
-
 export default async function AgencyClaimsPage() {
-    const agencyId = await getAgencyId();
+    const session = await getSession({ portal: "admin_agency" });
+    if (!session) redirect("/admin-agency/login");
 
+    const agencyId = session.agencyId;
     if (!agencyId) {
         return (
             <div className="p-6">
                 <h1 className="text-2xl font-bold text-red-600">Terjadi Kesalahan</h1>
-                <p>Silakan login kembali sebagai admin agensi.</p>
+                <p>Akun ini belum terafiliasi dengan agensi manapun.</p>
             </div>
         );
     }

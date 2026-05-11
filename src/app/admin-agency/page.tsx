@@ -1,4 +1,5 @@
-import { getAdminAgencyUserIdFromCookies } from "@/lib/auth-cookies";
+import { getSession } from "@/lib/auth";
+import { redirect } from "next/navigation";
 import { ClaimsDataTable } from "@/components/admin-agency/claims-data-table"
 import { getAgencyClaims } from "@/services/admin-agency"
 import Link from "next/link"
@@ -80,25 +81,20 @@ async function fetchAgencyDashboardData(userId: string): Promise<AgencyDashboard
 }
 
 export default async function AdminAgencyDashboardPage() {
-  const userId = await getAdminAgencyUserIdFromCookies();
+  const session = await getSession({ portal: "admin_agency" });
+  if (!session) redirect("/admin-agency/login");
 
-  const data: AgencyDashboardData = userId
-    ? await cached(
-        CacheKeys.agencyDashboard(userId),
-        TTL.MEDIUM,
-        () => fetchAgencyDashboardData(userId),
-        { fallback: {
-            agencyName: "Dashboard Agency",
-            agentsCount: 0, hospitalsCount: 0, policiesCount: 0,
-            pendingTransfersCount: 0, pendingClaimsCount: 0, claims: [],
-          } as AgencyDashboardData
-        }
-      )
-    : {
+  const data: AgencyDashboardData = await cached(
+    CacheKeys.agencyDashboard(session.userId),
+    TTL.MEDIUM,
+    () => fetchAgencyDashboardData(session.userId),
+    { fallback: {
         agencyName: "Dashboard Agency",
         agentsCount: 0, hospitalsCount: 0, policiesCount: 0,
         pendingTransfersCount: 0, pendingClaimsCount: 0, claims: [],
-      };
+      } as AgencyDashboardData
+    }
+  );
 
   const { agencyName, agentsCount, hospitalsCount, policiesCount,
           pendingTransfersCount, pendingClaimsCount, claims } = data;
