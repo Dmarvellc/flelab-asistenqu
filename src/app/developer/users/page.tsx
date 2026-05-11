@@ -253,6 +253,7 @@ export default function UsersPage() {
             const res = await fetch(`/api/users?${params}`);
             const data = await res.json();
             if (res.ok) { setUsers(data.data); setTotalPages(data.meta.totalPages); setTotal(data.meta.total); }
+            else { toast({ title: "Error", description: data.error ?? "Failed to fetch users", variant: "destructive" }); }
         } catch {
             toast({ title: "Error", description: "Failed to fetch users", variant: "destructive" });
         } finally { setLoading(false); }

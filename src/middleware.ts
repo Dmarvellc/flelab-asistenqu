@@ -23,6 +23,7 @@ const ROUTE_TO_PORTAL: Record<string, string> = {
   hospital: "hospital",
   developer: "developer",
   "admin-agency": "admin_agency",
+  users: "developer", // /api/users is developer-only; pin to developer portal cookie
 };
 
 /**

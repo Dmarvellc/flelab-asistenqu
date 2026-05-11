@@ -2,7 +2,8 @@
 
 import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { Users, UserX, Upload } from "lucide-react";
+import Link from "next/link";
+import { Users, UserX, Upload, UserPlus } from "lucide-react";
 import { AgencyClient, AgencyAgent } from "@/services/admin-agency";
 import { ClientsTable } from "@/components/admin/clients-table";
 import { ClientImportPanel } from "@/components/admin-agency/client-import-panel";
@@ -50,15 +51,26 @@ export function ClientsPageClient({ allClients, unassignedClients, agents }: Pro
           </p>
         </div>
 
-        {/* Badge unassigned */}
-        {unassignedClients.length > 0 && (
-          <div className="shrink-0 flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
-            <UserX className="w-4 h-4 text-amber-600" />
-            <span className="text-sm font-semibold text-amber-700">
-              {unassignedClients.length} klien belum ditugaskan
-            </span>
-          </div>
-        )}
+        <div className="shrink-0 flex items-center gap-3">
+          {/* Badge unassigned */}
+          {unassignedClients.length > 0 && (
+            <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
+              <UserX className="w-4 h-4 text-amber-600" />
+              <span className="text-sm font-semibold text-amber-700">
+                {unassignedClients.length} klien belum ditugaskan
+              </span>
+            </div>
+          )}
+
+          {/* Tombol tambah klien */}
+          <Link
+            href="/agent/clients/new"
+            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors"
+          >
+            <UserPlus className="w-4 h-4" />
+            Tambah Klien
+          </Link>
+        </div>
       </div>
 
       {/* Tabs */}
