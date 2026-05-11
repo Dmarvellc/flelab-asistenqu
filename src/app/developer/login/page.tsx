@@ -49,17 +49,8 @@ export default function DeveloperLoginPage() {
         return;
       }
 
-      if (
-        data.user?.role !== "developer" &&
-        data.user?.role !== "super_admin"
-      ) {
-        setError("Akun ini tidak memiliki akses Developer Console.");
-        setLoading(false);
-        return;
-      }
-
-      localStorage.setItem("user", JSON.stringify(data.user));
       router.push("/developer");
+      router.refresh();
     } catch (err) {
       console.error(err);
       setError("Terjadi kesalahan jaringan. Periksa koneksi internet Anda lalu coba lagi.");

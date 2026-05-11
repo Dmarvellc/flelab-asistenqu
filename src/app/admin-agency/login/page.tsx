@@ -55,17 +55,8 @@ export default function AdminAgencyLoginPage() {
         return;
       }
 
-      if (
-        data.user?.role !== "admin_agency" &&
-        data.user?.role !== "insurance_admin" &&
-        data.user?.role !== "super_admin"
-      ) {
-        setError("Akun ini tidak memiliki akses sebagai Admin Agency.");
-        setLoading(false);
-        return;
-      }
-
       router.push("/admin-agency");
+      router.refresh();
     } catch (err) {
       console.error(err);
       setError("Terjadi kesalahan jaringan. Periksa koneksi internet Anda lalu coba lagi.");

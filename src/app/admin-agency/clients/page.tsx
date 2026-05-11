@@ -22,8 +22,8 @@ async function getAgencyId(userId: string): Promise<string | null> {
 }
 
 export default async function AdminClientsPage() {
-  const session = await getSession();
-  if (!session) redirect("/login");
+  const session = await getSession({ portal: "admin_agency" });
+  if (!session) redirect("/admin-agency/login");
 
   const agencyId = session.agencyId ?? (await getAgencyId(session.userId));
   if (!agencyId) {

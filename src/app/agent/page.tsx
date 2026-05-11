@@ -21,7 +21,7 @@ async function getInsuranceName(userId: string): Promise<string | null> {
 }
 
 export default async function AgentDashboardPage() {
-  const session = await getSession()
+  const session = await getSession({ portal: "agent" })
   if (!session) {
     redirect("/agent/login")
   }

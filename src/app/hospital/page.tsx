@@ -1,18 +1,18 @@
-import { getHospitalUserIdFromCookies } from "@/lib/auth-cookies";
+import { getSession } from "@/lib/auth";
 import { ClaimsList } from "@/components/dashboard/claims-list"
-import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 import { getHospitalClaims, getHospitalIdByUserId } from "@/services/claims"
 import { CalendarCheck, FileText, Activity } from "lucide-react";
 import Link from "next/link";
 
 export default async function HospitalDashboardPage() {
-  const cookieStore = await cookies()
-  const userId = await getHospitalUserIdFromCookies()
+  const session = await getSession({ portal: "hospital" });
 
-  if (!userId || userId.trim() === "") {
+  if (!session) {
     redirect("/hospital/login")
   }
+
+  const userId = session.userId;
 
   const hospitalId = await getHospitalIdByUserId(userId)
   const claims = await getHospitalClaims(hospitalId)

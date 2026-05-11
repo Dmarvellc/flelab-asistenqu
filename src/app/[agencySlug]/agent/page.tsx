@@ -9,7 +9,7 @@ export default async function DynamicAgentDashboardPage(props: {
   params: Promise<{ agencySlug: string }>
 }) {
   const { agencySlug } = await props.params
-  const session = await getSession()
+  const session = await getSession({ portal: "agent" })
   if (!session) {
     redirect(`/${agencySlug}/agent/login`)
   }

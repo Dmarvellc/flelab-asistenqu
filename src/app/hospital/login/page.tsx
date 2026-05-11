@@ -55,13 +55,6 @@ export default function HospitalLoginPage() {
         return;
       }
 
-      if (data.user?.role !== "hospital_admin" && data.user?.role !== "super_admin") {
-        setError("Akun ini tidak memiliki akses Rumah Sakit.");
-        setLoading(false);
-        await fetch("/api/auth/logout", { method: "POST" });
-        return;
-      }
-
       router.push("/hospital");
       router.refresh();
     } catch (err) {

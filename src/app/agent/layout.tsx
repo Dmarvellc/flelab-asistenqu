@@ -3,10 +3,16 @@ import { AgentLayoutClient } from "./client-layout";
 import { getAgentMetrics } from "@/services/agent-metrics";
 import { findUserWithProfile } from "@/lib/auth-queries";
 import { getSession } from "@/lib/auth";
+import { redirect } from "next/navigation";
 
 export default async function AgentLayout(props: { children: React.ReactNode }) {
-  const session = await getSession();
-  const userId = session?.userId;
+  const session = await getSession({ portal: "agent" });
+
+  if (!session) {
+    redirect("/agent/login");
+  }
+
+  const userId = session.userId;
 
   let initialBadges = { pendingContracts: 0, pendingRequests: 0, totalClaims: 0 };
   let serverUserName: string | null = null;

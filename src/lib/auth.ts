@@ -363,13 +363,6 @@ export async function getSession(options?: {
     if (s) return s;
   }
 
-  // 4. Backward-compat: legacy single-cookie session
-  const legacySid = cookieStore.get(AUTH_SESSION_COOKIE)?.value;
-  if (legacySid) {
-    const s = await loadAndValidateSession(legacySid, options?.forceRevalidate);
-    if (s) return s;
-  }
-
   return null;
 }
 

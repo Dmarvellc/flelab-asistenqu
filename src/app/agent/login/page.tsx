@@ -57,14 +57,8 @@ export default function AgentLoginPage() {
         return;
       }
 
-      if (data.user?.role !== "agent" && data.user?.role !== "agent_manager" && data.user?.role !== "super_admin") {
-        setError(lang === 'id' ? "Akun ini tidak memiliki akses sebagai agen." : "This account does not have agent access.");
-        setLoading(false);
-        return;
-      }
-
-      localStorage.setItem("user", JSON.stringify(data.user));
       router.push("/agent");
+      router.refresh();
     } catch (err) {
       console.error(err);
       setError(lang === 'id' ? "Terjadi kesalahan jaringan. Periksa koneksi internet Anda lalu coba lagi." : "A network error occurred. Check your internet connection and try again.");

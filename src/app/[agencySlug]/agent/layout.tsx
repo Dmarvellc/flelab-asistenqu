@@ -5,7 +5,7 @@ import { getAgentMetrics } from "@/services/agent-metrics";
 import { findUserWithProfile } from "@/lib/auth-queries";
 import { getSession } from "@/lib/auth";
 import { resolveAgencyBySlug } from "@/lib/agency-resolver";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 
 export default async function DynamicAgentLayout(props: {
   children: React.ReactNode;
@@ -19,8 +19,18 @@ export default async function DynamicAgentLayout(props: {
     notFound();
   }
 
-  const session = await getSession();
-  const userId = session?.userId;
+  const session = await getSession({ portal: "agent" });
+
+  if (!session) {
+    redirect(`/${agencySlug}/agent/login`);
+  }
+
+  // Verify the session's agency slug matches the URL slug
+  if (session.agencySlug && session.agencySlug !== agencySlug) {
+    redirect(`/${session.agencySlug}/agent`);
+  }
+
+  const userId = session.userId;
 
   let initialBadges = { pendingContracts: 0, pendingRequests: 0, totalClaims: 0 };
   let serverUserName: string | null = null;
