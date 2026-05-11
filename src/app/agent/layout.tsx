@@ -13,7 +13,7 @@ export default async function AgentLayout(props: { children: React.ReactNode }) 
   const isPublic = AUTH_PATHS.some((p) => pathname.endsWith(p));
 
   if (isPublic) {
-    return <>{props.children}</>;
+    return <I18nProvider>{props.children}</I18nProvider>;
   }
 
   const session = await getSession({ portal: "agent" });
