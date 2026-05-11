@@ -6,6 +6,9 @@ import { findUserWithProfile } from "@/lib/auth-queries";
 import { getSession } from "@/lib/auth";
 import { resolveAgencyBySlug } from "@/lib/agency-resolver";
 import { notFound, redirect } from "next/navigation";
+import { headers } from "next/headers";
+
+const AUTH_PATHS = ["/login", "/register"];
 
 export default async function DynamicAgentLayout(props: {
   children: React.ReactNode;
@@ -13,10 +16,36 @@ export default async function DynamicAgentLayout(props: {
 }) {
   const { agencySlug } = await props.params;
 
-  // Resolve agency branding
+  const pathname = (await headers()).get("x-pathname") ?? "";
+  const isPublic = AUTH_PATHS.some((p) => pathname.endsWith(p));
+
+  // Resolve agency branding (needed even for public pages for branding)
   const branding = await resolveAgencyBySlug(agencySlug);
   if (!branding) {
     notFound();
+  }
+
+  if (isPublic) {
+    return (
+      <I18nProvider>
+        <AgencyBrandingProvider
+          branding={{
+            agencyId: branding.agencyId,
+            slug: branding.slug,
+            name: branding.name,
+            logoUrl: branding.logoUrl,
+            primaryColor: branding.primaryColor,
+            secondaryColor: branding.secondaryColor,
+            accentColor: branding.accentColor,
+            sidebarBg: branding.sidebarBg,
+            sidebarText: branding.sidebarText,
+            loginBg: branding.loginBg,
+          }}
+        >
+          {props.children}
+        </AgencyBrandingProvider>
+      </I18nProvider>
+    );
   }
 
   const session = await getSession({ portal: "agent" });

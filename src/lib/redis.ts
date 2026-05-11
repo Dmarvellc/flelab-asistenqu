@@ -42,6 +42,7 @@ function createRedisClient() {
 
   const client = createClient({
     url,
+    disableOfflineQueue: true, // fail-fast when not connected, never queue commands
     socket: {
       connectTimeout: REDIS_CONNECT_TIMEOUT_MS,
       reconnectStrategy: (retries) => {

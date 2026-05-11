@@ -74,16 +74,14 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // For page routes, we only inject the x-portal header.
-  // Auth enforcement is now handled in Server Components (Layouts/Pages).
+  // For page routes, inject x-portal and x-pathname headers.
+  // Auth enforcement is handled in Server Components (Layouts/Pages).
+  // x-pathname lets layouts skip auth for login/register routes.
   const portal = derivePortalFromPath(path);
-  if (portal) {
-    const headers = new Headers(request.headers);
-    headers.set("x-portal", portal);
-    return NextResponse.next({ request: { headers } });
-  }
-
-  return NextResponse.next();
+  const reqHeaders = new Headers(request.headers);
+  reqHeaders.set("x-pathname", path);
+  if (portal) reqHeaders.set("x-portal", portal);
+  return NextResponse.next({ request: { headers: reqHeaders } });
 }
 
 export const config = {

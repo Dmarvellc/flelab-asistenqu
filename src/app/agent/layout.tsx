@@ -4,8 +4,18 @@ import { getAgentMetrics } from "@/services/agent-metrics";
 import { findUserWithProfile } from "@/lib/auth-queries";
 import { getSession } from "@/lib/auth";
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
+
+const AUTH_PATHS = ["/login", "/register", "/verification"];
 
 export default async function AgentLayout(props: { children: React.ReactNode }) {
+  const pathname = (await headers()).get("x-pathname") ?? "";
+  const isPublic = AUTH_PATHS.some((p) => pathname.endsWith(p));
+
+  if (isPublic) {
+    return <>{props.children}</>;
+  }
+
   const session = await getSession({ portal: "agent" });
 
   if (!session) {
