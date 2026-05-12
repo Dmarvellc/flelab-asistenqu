@@ -281,7 +281,7 @@ export default function AgentRegisterPage() {
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="agencyId" className="text-xs font-semibold uppercase tracking-wider text-gray-500">{lang === 'en' ? "Agency" : "Agensi"}</Label>
-                                <Select name="agencyId" value={formData.agencyId} onValueChange={(value) => { handleChange({ target: { name: 'agencyId', value } } as any); if (fieldErrors.agencyId) setFieldErrors({ ...fieldErrors, agencyId: false }); }}>
+                                <Select name="agencyId" value={formData.agencyId || undefined} onValueChange={(value) => { handleChange({ target: { name: 'agencyId', value } } as any); if (fieldErrors.agencyId) setFieldErrors({ ...fieldErrors, agencyId: false }); }}>
                                     <SelectTrigger id="agencyId" className={cn("h-12 rounded-md bg-gray-50 border-gray-200 focus:bg-white focus:border-black", fieldErrors.agencyId && "border-red-500")}>
                                         <SelectValue placeholder={lang === 'en' ? "Select your Agency" : "Pilih Agensi Anda"} />
                                     </SelectTrigger>
@@ -358,7 +358,7 @@ export default function AgentRegisterPage() {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div className="space-y-2">
                                     <Label htmlFor="provinceId" className="text-xs font-semibold uppercase tracking-wider text-gray-500">{lang === 'en' ? "Province" : "Provinsi"}</Label>
-                                    <Select name="provinceId" value={formData.provinceId} onValueChange={(value) => { handleChange({ target: { name: 'provinceId', value } } as any); if (fieldErrors.provinceId) setFieldErrors({ ...fieldErrors, provinceId: false }); }}>
+                                    <Select name="provinceId" value={formData.provinceId || undefined} onValueChange={(value) => { handleChange({ target: { name: 'provinceId', value } } as any); if (fieldErrors.provinceId) setFieldErrors({ ...fieldErrors, provinceId: false }); }}>
                                         <SelectTrigger id="provinceId" className={cn("h-12 rounded-md bg-gray-50 border-gray-200 focus:bg-white focus:border-black", fieldErrors.provinceId && "border-red-500")}>
                                             <SelectValue placeholder="Pilih Provinsi" />
                                         </SelectTrigger>
@@ -367,7 +367,7 @@ export default function AgentRegisterPage() {
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="regencyId" className="text-xs font-semibold uppercase tracking-wider text-gray-500">{lang === 'en' ? "City / Regency" : "Kabupaten / Kota"}</Label>
-                                    <Select name="regencyId" value={formData.regencyId} onValueChange={(value) => { handleChange({ target: { name: 'regencyId', value } } as any); if (fieldErrors.regencyId) setFieldErrors({ ...fieldErrors, regencyId: false }); }} disabled={!formData.provinceId}>
+                                    <Select name="regencyId" value={formData.regencyId || undefined} onValueChange={(value) => { handleChange({ target: { name: 'regencyId', value } } as any); if (fieldErrors.regencyId) setFieldErrors({ ...fieldErrors, regencyId: false }); }} disabled={!formData.provinceId}>
                                         <SelectTrigger id="regencyId" className={cn("h-12 rounded-md bg-gray-50 border-gray-200 focus:bg-white focus:border-black", fieldErrors.regencyId && "border-red-500")}>
                                             <SelectValue placeholder="Pilih Kabupaten/Kota" />
                                         </SelectTrigger>
@@ -379,7 +379,7 @@ export default function AgentRegisterPage() {
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                 <div className="space-y-2">
                                     <Label htmlFor="districtId" className="text-xs font-semibold uppercase tracking-wider text-gray-500">{lang === 'en' ? "District" : "Kecamatan"}</Label>
-                                    <Select name="districtId" value={formData.districtId} onValueChange={(value) => { handleChange({ target: { name: 'districtId', value } } as any); if (fieldErrors.districtId) setFieldErrors({ ...fieldErrors, districtId: false }); }} disabled={!formData.regencyId}>
+                                    <Select name="districtId" value={formData.districtId || undefined} onValueChange={(value) => { handleChange({ target: { name: 'districtId', value } } as any); if (fieldErrors.districtId) setFieldErrors({ ...fieldErrors, districtId: false }); }} disabled={!formData.regencyId}>
                                         <SelectTrigger id="districtId" className={cn("h-12 rounded-md bg-gray-50 border-gray-200 focus:bg-white focus:border-black", fieldErrors.districtId && "border-red-500")}>
                                             <SelectValue placeholder="Pilih Kecamatan" />
                                         </SelectTrigger>
@@ -388,7 +388,7 @@ export default function AgentRegisterPage() {
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="villageId" className="text-xs font-semibold uppercase tracking-wider text-gray-500">{lang === 'en' ? "Village" : "Kelurahan"}</Label>
-                                    <Select name="villageId" value={formData.villageId} onValueChange={(value) => { handleChange({ target: { name: 'villageId', value } } as any); if (fieldErrors.villageId) setFieldErrors({ ...fieldErrors, villageId: false }); }} disabled={!formData.districtId}>
+                                    <Select name="villageId" value={formData.villageId || undefined} onValueChange={(value) => { handleChange({ target: { name: 'villageId', value } } as any); if (fieldErrors.villageId) setFieldErrors({ ...fieldErrors, villageId: false }); }} disabled={!formData.districtId}>
                                         <SelectTrigger id="villageId" className={cn("h-12 rounded-md bg-gray-50 border-gray-200 focus:bg-white focus:border-black", fieldErrors.villageId && "border-red-500")}>
                                             <SelectValue placeholder="Pilih Kelurahan" />
                                         </SelectTrigger>

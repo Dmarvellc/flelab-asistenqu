@@ -672,7 +672,7 @@ export default function NewClientPage() {
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                             <div className="space-y-1.5">
                                                 <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Jenis Polis *</Label>
-                                                <Select value={formData.policyType} onValueChange={v => update("policyType", v)}>
+                                                <Select value={formData.policyType || undefined} onValueChange={v => update("policyType", v)}>
                                                     <SelectTrigger className={cn("h-10 rounded-lg bg-background", fieldErrors.policyType && "border-red-500")}>
                                                         <SelectValue placeholder="Pilih jenis polis" />
                                                     </SelectTrigger>
@@ -1060,7 +1060,7 @@ export default function NewClientPage() {
                                     <Section title="Metode Pembayaran" icon={Wallet}>
                                         <div className="space-y-1.5">
                                             <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Metode *</Label>
-                                            <Select value={formData.paymentMethod} onValueChange={v => update("paymentMethod", v)}>
+                                            <Select value={formData.paymentMethod || undefined} onValueChange={v => update("paymentMethod", v)}>
                                                 <SelectTrigger className={cn("h-10 rounded-lg bg-background", fieldErrors.paymentMethod && "border-red-500")}>
                                                     <SelectValue placeholder="Pilih metode pembayaran" />
                                                 </SelectTrigger>
@@ -1145,7 +1145,7 @@ export default function NewClientPage() {
                                                     </div>
                                                     <div className="space-y-1.5">
                                                         <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Jaringan Kartu</Label>
-                                                        <Select value={formData.cardNetwork} onValueChange={v => update("cardNetwork", v)}>
+                                                        <Select value={formData.cardNetwork || undefined} onValueChange={v => update("cardNetwork", v)}>
                                                             <SelectTrigger className="h-10 rounded-lg bg-background"><SelectValue placeholder="Pilih jaringan" /></SelectTrigger>
                                                             <SelectContent>
                                                                 <SelectItem value="VISA">Visa</SelectItem>
@@ -1291,7 +1291,7 @@ export default function NewClientPage() {
                                             </div>
                                             <div className="space-y-1.5">
                                                 <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Jenis Kelamin *</Label>
-                                                <Select value={formData.gender} onValueChange={v => update("gender", v)}>
+                                                <Select value={formData.gender || undefined} onValueChange={v => update("gender", v)}>
                                                     <SelectTrigger className={cn("h-10 rounded-lg bg-background", fieldErrors.gender && "border-red-500")}>
                                                         <SelectValue placeholder="Pilih jenis kelamin" />
                                                     </SelectTrigger>
@@ -1310,7 +1310,7 @@ export default function NewClientPage() {
                                             </div>
                                             <div className="space-y-1.5">
                                                 <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Status Pernikahan</Label>
-                                                <Select value={formData.maritalStatus} onValueChange={v => update("maritalStatus", v)}>
+                                                <Select value={formData.maritalStatus || undefined} onValueChange={v => update("maritalStatus", v)}>
                                                     <SelectTrigger className="h-10 rounded-lg bg-background">
                                                         <SelectValue placeholder="Pilih status" />
                                                     </SelectTrigger>
@@ -1363,7 +1363,7 @@ export default function NewClientPage() {
                                                 </div>
                                                 <div className="space-y-1.5">
                                                     <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Jenis Kelamin *</Label>
-                                                    <Select value={formData.insuredGender} onValueChange={v => update("insuredGender", v)}>
+                                                    <Select value={formData.insuredGender || undefined} onValueChange={v => update("insuredGender", v)}>
                                                         <SelectTrigger className={cn("h-10 rounded-lg bg-background", fieldErrors.insuredGender && "border-red-500")}>
                                                             <SelectValue placeholder="Pilih jenis kelamin" />
                                                         </SelectTrigger>
@@ -1376,7 +1376,7 @@ export default function NewClientPage() {
                                                 </div>
                                                 <div className="space-y-1.5 md:col-span-2">
                                                     <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Hubungan dengan Pemegang Polis *</Label>
-                                                    <Select value={formData.insuredRelationship} onValueChange={v => update("insuredRelationship", v)}>
+                                                    <Select value={formData.insuredRelationship || undefined} onValueChange={v => update("insuredRelationship", v)}>
                                                         <SelectTrigger className={cn("h-10 rounded-lg bg-background", fieldErrors.insuredRelationship && "border-red-500")}>
                                                             <SelectValue placeholder="Pilih hubungan" />
                                                         </SelectTrigger>
@@ -1410,7 +1410,7 @@ export default function NewClientPage() {
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                             <div className="space-y-1.5">
                                                 <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Provinsi *</Label>
-                                                <Select value={formData.provinceId} onValueChange={v => { update("provinceId", v); update("regencyId",""); update("districtId",""); update("villageId",""); }}>
+                                                <Select value={formData.provinceId || undefined} onValueChange={v => { update("provinceId", v); update("regencyId",""); update("districtId",""); update("villageId",""); }}>
                                                     <SelectTrigger className={cn("h-10 rounded-lg bg-background", fieldErrors.provinceId && "border-red-500")}><SelectValue placeholder="Pilih provinsi" /></SelectTrigger>
                                                     <SelectContent className="max-h-64">{provinces.map(p => <SelectItem key={p.code} value={p.code}>{p.name}</SelectItem>)}</SelectContent>
                                                 </Select>
@@ -1418,7 +1418,7 @@ export default function NewClientPage() {
                                             </div>
                                             <div className="space-y-1.5">
                                                 <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Kabupaten / Kota *</Label>
-                                                <Select value={formData.regencyId} onValueChange={v => { update("regencyId", v); update("districtId",""); update("villageId",""); }} disabled={!formData.provinceId}>
+                                                <Select value={formData.regencyId || undefined} onValueChange={v => { update("regencyId", v); update("districtId",""); update("villageId",""); }} disabled={!formData.provinceId}>
                                                     <SelectTrigger className={cn("h-10 rounded-lg bg-background", fieldErrors.regencyId && "border-red-500", !formData.provinceId && "opacity-50")}><SelectValue placeholder={formData.provinceId ? "Pilih kota/kab" : "Pilih provinsi dahulu"} /></SelectTrigger>
                                                     <SelectContent className="max-h-64">{regencies.map(r => <SelectItem key={r.code} value={r.code}>{r.name}</SelectItem>)}</SelectContent>
                                                 </Select>
@@ -1428,7 +1428,7 @@ export default function NewClientPage() {
                                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                             <div className="space-y-1.5">
                                                 <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Kecamatan *</Label>
-                                                <Select value={formData.districtId} onValueChange={v => { update("districtId", v); update("villageId",""); }} disabled={!formData.regencyId}>
+                                                <Select value={formData.districtId || undefined} onValueChange={v => { update("districtId", v); update("villageId",""); }} disabled={!formData.regencyId}>
                                                     <SelectTrigger className={cn("h-10 rounded-lg bg-background", fieldErrors.districtId && "border-red-500", !formData.regencyId && "opacity-50")}><SelectValue placeholder={formData.regencyId ? "Pilih kecamatan" : "Pilih kab/kota dahulu"} /></SelectTrigger>
                                                     <SelectContent className="max-h-64">{districts.map(d => <SelectItem key={d.code} value={d.code}>{d.name}</SelectItem>)}</SelectContent>
                                                 </Select>
@@ -1436,7 +1436,7 @@ export default function NewClientPage() {
                                             </div>
                                             <div className="space-y-1.5">
                                                 <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Kelurahan / Desa *</Label>
-                                                <Select value={formData.villageId} onValueChange={v => update("villageId", v)} disabled={!formData.districtId}>
+                                                <Select value={formData.villageId || undefined} onValueChange={v => update("villageId", v)} disabled={!formData.districtId}>
                                                     <SelectTrigger className={cn("h-10 rounded-lg bg-background", fieldErrors.villageId && "border-red-500", !formData.districtId && "opacity-50")}><SelectValue placeholder={formData.districtId ? "Pilih kelurahan" : "Pilih kecamatan dahulu"} /></SelectTrigger>
                                                     <SelectContent className="max-h-64">{villages.map(v => <SelectItem key={v.code} value={v.code}>{v.name}</SelectItem>)}</SelectContent>
                                                 </Select>
