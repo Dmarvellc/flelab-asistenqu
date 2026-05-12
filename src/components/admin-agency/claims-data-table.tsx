@@ -6,9 +6,18 @@ import { Claim } from "@/lib/claims-data";
 import {
   Search, SlidersHorizontal, ChevronUp, ChevronDown,
   ArrowRight, FileText, Trash2, Download, Check,
-  ChevronsUpDown, X,
+  ChevronsUpDown, X, Eye, MoreHorizontal, Copy
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+    DropdownMenu,
+    DropdownMenuTrigger,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuCheckboxItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 
 /* ─── Status config ─────────────────────────────────────────────── */
 const STATUS_CFG: Record<string, { dot: string; label: string; text: string; bg: string; ring: string }> = {
@@ -65,7 +74,28 @@ export function ClaimsDataTable({ claims: raw, limit, showViewAll = true, role =
   const [filterStatus,setFilterStatus]= useState<string | null>(null);
   const [sort,        setSort]        = useState<{ key: SortKey; dir: SortDir }>({ key: "claim_date", dir: "desc" });
   const [selected,    setSelected]    = useState<Set<string>>(new Set());
+  const [visibleCols, setVisibleCols] = useState<Set<string>>(new Set(["client_name", "hospital_name", "claim_date", "total_amount", "status"]));
+  const [density,     setDensity]     = useState<"comfortable" | "compact">("comfortable");
   const searchRef = useRef<HTMLInputElement>(null);
+
+  const COL_NAMES: Record<string, string> = {
+    client_name: "Klien",
+    hospital_name: "Rumah Sakit",
+    disease_name: "Diagnosa",
+    claim_date: "Tanggal",
+    total_amount: "Nominal",
+    status: "Status"
+  };
+
+  const toggleCol = (col: string) => {
+      setVisibleCols(prev => {
+          const next = new Set(prev);
+          if (next.has(col)) {
+              if (next.size > 1) next.delete(col);
+          } else next.add(col);
+          return next;
+      });
+  };
 
   /* per-status counts */
   const statusCounts = useMemo(() => {
@@ -179,6 +209,39 @@ export function ClaimsDataTable({ claims: raw, limit, showViewAll = true, role =
 
         {/* Right */}
         <div className="flex items-center gap-2">
+          {/* Export CSV Button */}
+          <button className="hidden sm:flex items-center gap-2 px-3 py-2 border border-gray-200 bg-white rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all outline-none">
+              <Download className="w-4 h-4" />
+              Ekspor CSV
+          </button>
+
+          {/* View Options Dropdown */}
+          <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                  <button className="flex items-center gap-2 px-3 py-2 border border-gray-200 bg-white rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all outline-none">
+                      <SlidersHorizontal className="w-4 h-4" />
+                      Tampilan
+                  </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56 p-2 rounded-xl shadow-xl">
+                  <DropdownMenuLabel className="text-xs text-gray-400 font-bold uppercase tracking-wider">Visibilitas Kolom</DropdownMenuLabel>
+                  {Object.entries(COL_NAMES).map(([key, label]) => (
+                      <DropdownMenuCheckboxItem
+                          key={key}
+                          checked={visibleCols.has(key)}
+                          onCheckedChange={() => toggleCol(key)}
+                          className="font-medium cursor-pointer rounded-md"
+                      >
+                          {label}
+                      </DropdownMenuCheckboxItem>
+                  ))}
+                  <DropdownMenuSeparator className="my-2 bg-gray-100" />
+                  <DropdownMenuLabel className="text-xs text-gray-400 font-bold uppercase tracking-wider">Kepadatan Tabel</DropdownMenuLabel>
+                  <DropdownMenuCheckboxItem checked={density === "comfortable"} onCheckedChange={() => setDensity("comfortable")} className="font-medium cursor-pointer rounded-md">Nyaman</DropdownMenuCheckboxItem>
+                  <DropdownMenuCheckboxItem checked={density === "compact"} onCheckedChange={() => setDensity("compact")} className="font-medium cursor-pointer rounded-md">Padat</DropdownMenuCheckboxItem>
+              </DropdownMenuContent>
+          </DropdownMenu>
+
           {/* Expandable search */}
           <div className={cn(
             "flex items-center gap-2 h-8 rounded-xl border bg-white transition-all duration-250 overflow-hidden",
@@ -274,8 +337,8 @@ export function ClaimsDataTable({ claims: raw, limit, showViewAll = true, role =
 
           {/* Header */}
           <thead>
-            <tr className="border-b border-gray-100 bg-gray-50/40">
-              <th className="w-10 pl-5 sm:pl-6 pr-3 py-2.5">
+            <tr className="border-b border-gray-100 bg-gray-50/80 backdrop-blur-sm sticky top-0 z-10">
+              <th className="w-10 pl-5 sm:pl-6 pr-3 py-3.5 border-b border-gray-200">
                 <Checkbox
                   checked={allSelected}
                   indeterminate={someSelected && !allSelected}
@@ -284,39 +347,39 @@ export function ClaimsDataTable({ claims: raw, limit, showViewAll = true, role =
               </th>
               {([
                 { col: "client_name" as SortKey, label: "Klien",      sortable: true  },
-                { col: null,                      label: "Rumah Sakit", sortable: false },
-                { col: null,                      label: "Diagnosa",   sortable: false, hidden: true },
+                { col: "hospital_name" as SortKey,label: "Rumah Sakit", sortable: false },
+                { col: "disease_name" as SortKey, label: "Diagnosa",   sortable: false, hidden: true },
                 { col: "claim_date" as SortKey,   label: "Tanggal",    sortable: true  },
                 { col: "total_amount" as SortKey, label: "Nominal",    sortable: true, right: true },
-                { col: null,                      label: "Status",     sortable: false },
-              ] as Array<{ col: SortKey | null; label: string; sortable: boolean; hidden?: boolean; right?: boolean }>).map((h, i) => (
-                <th key={i}
-                  className={cn(
-                    "py-2.5 pr-4 text-left",
-                    h.hidden && "hidden lg:table-cell",
-                    h.right  && "text-right"
-                  )}
-                >
-                  {h.sortable && h.col ? (
-                    <button
-                      onClick={() => cycleSort(h.col!)}
-                      className={cn(
-                        "group/th flex items-center gap-1.5 text-[11px] font-semibold transition-colors",
-                        sort.key === h.col ? "text-gray-800" : "text-gray-400 hover:text-gray-600",
-                        h.right && "ml-auto"
-                      )}
-                    >
-                      {h.label}
-                      <SortIcon col={h.col} />
-                    </button>
-                  ) : (
-                    <span className="text-[11px] font-semibold text-gray-400">
-                      {h.label}
-                    </span>
-                  )}
-                </th>
+                { col: "status" as SortKey,       label: "Status",     sortable: false },
+              ] as Array<{ col: string; label: string; sortable: boolean; hidden?: boolean; right?: boolean }>).map((h, i) => (
+                visibleCols.has(h.col) && (
+                  <th key={i}
+                    className={cn(
+                      "px-5 py-3.5 text-xs font-bold uppercase tracking-wider select-none border-b border-gray-200 text-left text-gray-500",
+                      h.hidden && "hidden lg:table-cell",
+                      h.right  && "text-right"
+                    )}
+                  >
+                    {h.sortable ? (
+                      <button
+                        onClick={() => cycleSort(h.col as SortKey)}
+                        className={cn(
+                          "group/th flex items-center gap-1 transition-colors hover:text-gray-900",
+                          sort.key === h.col ? "text-black" : "text-gray-500",
+                          h.right && "ml-auto"
+                        )}
+                      >
+                        {h.label}
+                        <SortIcon col={h.col as SortKey} />
+                      </button>
+                    ) : (
+                      <span>{h.label}</span>
+                    )}
+                  </th>
+                )
               ))}
-              <th className="py-2.5 pr-5 sm:pr-6 w-16" />
+              <th className="w-14 pr-5 py-3.5 border-b border-gray-200 bg-gray-50/80 backdrop-blur-sm sticky top-0 right-0 z-20 shadow-[-12px_0_15px_-10px_rgba(0,0,0,0.05)]" />
             </tr>
           </thead>
 
@@ -349,17 +412,18 @@ export function ClaimsDataTable({ claims: raw, limit, showViewAll = true, role =
               rows.map((claim, idx) => {
                 const cfg  = STATUS_CFG[claim.status] || FALLBACK_STATUS;
                 const isSel = selected.has(claim.claim_id);
+                const pyClass = density === "compact" ? "py-2.5" : "py-4";
                 return (
                   <tr
                     key={claim.claim_id}
                     className={cn(
-                      "group/row border-b border-gray-50 last:border-0 transition-colors duration-100",
-                      isSel ? "bg-blue-50/30" : "hover:bg-gray-50/70"
+                      "group/row transition-colors cursor-pointer",
+                      isSel ? "bg-blue-50/40" : "hover:bg-gray-50/80"
                     )}
                     style={{ animationDelay: `${idx * 25}ms` }}
                   >
                     {/* Checkbox */}
-                    <td className="pl-5 sm:pl-6 pr-3 py-3.5">
+                    <td className={`pl-5 sm:pl-6 pr-3 ${pyClass}`}>
                       <Checkbox
                         checked={isSel}
                         onClick={() => toggleRow(claim.claim_id)}
@@ -368,28 +432,35 @@ export function ClaimsDataTable({ claims: raw, limit, showViewAll = true, role =
                     </td>
 
                     {/* Client */}
-                    <td className="py-3.5 pr-4">
+                    {visibleCols.has("client_name") && (
+                    <td className={`px-5 ${pyClass}`}>
                       <div className="min-w-0">
                         <p className="text-[13px] font-semibold text-gray-900 truncate max-w-[150px] leading-tight">{claim.client_name}</p>
                         <p className="text-[10px] text-gray-400 tracking-wide mt-0.5">{claim.policy_number}</p>
                       </div>
                     </td>
+                    )}
 
                     {/* Hospital */}
-                    <td className="py-3.5 pr-4">
+                    {visibleCols.has("hospital_name") && (
+                    <td className={`px-5 ${pyClass}`}>
                       <p className="text-[13px] text-gray-500 truncate max-w-[140px]">{claim.hospital_name}</p>
                     </td>
+                    )}
 
                     {/* Disease */}
-                    <td className="py-3.5 pr-4 hidden lg:table-cell">
+                    {visibleCols.has("disease_name") && (
+                    <td className={`px-5 ${pyClass} hidden lg:table-cell`}>
                       {claim.disease_name
                         ? <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-gray-50 text-gray-500 border border-gray-100 max-w-[110px] truncate">{claim.disease_name}</span>
                         : <span className="text-gray-200">—</span>
                       }
                     </td>
+                    )}
 
                     {/* Date */}
-                    <td className="py-3.5 pr-4">
+                    {visibleCols.has("claim_date") && (
+                    <td className={`px-5 ${pyClass}`}>
                       <span
                         title={new Date(claim.claim_date).toLocaleDateString("id-ID", { dateStyle: "long" })}
                         className="text-[13px] text-gray-500 cursor-default"
@@ -397,32 +468,55 @@ export function ClaimsDataTable({ claims: raw, limit, showViewAll = true, role =
                         {relDate(claim.claim_date)}
                       </span>
                     </td>
+                    )}
 
                     {/* Amount */}
-                    <td className="py-3.5 pr-4 text-right">
+                    {visibleCols.has("total_amount") && (
+                    <td className={`px-5 ${pyClass} text-right`}>
                       <span className="text-[13px] font-bold text-gray-900 tabular-nums">{fmtIDR(claim.total_amount)}</span>
                     </td>
+                    )}
 
                     {/* Status */}
-                    <td className="py-3.5 pr-4">
+                    {visibleCols.has("status") && (
+                    <td className={`px-5 ${pyClass}`}>
                       <span className={cn(
-                        "inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-semibold ring-1 whitespace-nowrap",
+                        "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold tracking-wider uppercase ring-1 whitespace-nowrap",
                         cfg.bg, cfg.text, cfg.ring
                       )}>
-                        <span className={cn("w-1.5 h-1.5 rounded-full shrink-0", cfg.dot)} />
                         {cfg.label}
                       </span>
                     </td>
+                    )}
 
-                    {/* Action — slides in on hover */}
-                    <td className="py-3.5 pr-5 sm:pr-6">
-                      <Link
-                        href={detailUrl(claim.claim_id)}
-                        className="opacity-0 group-hover/row:opacity-100 translate-x-1.5 group-hover/row:translate-x-0 transition-all duration-150 inline-flex items-center gap-1 text-[11px] font-semibold text-gray-500 hover:text-gray-900 bg-white border border-gray-200 hover:border-gray-300 rounded-lg px-2.5 py-1 hover:shadow-sm whitespace-nowrap"
-                      >
-                        Tinjau
-                        <ArrowRight className="w-3 h-3" />
-                      </Link>
+                    {/* Enterprise Sticky Actions Column */}
+                    <td className={cn(`pr-5 ${pyClass} text-right sticky right-0 z-0 transition-colors`, isSel ? "bg-blue-50/40" : "bg-white group-hover/row:bg-gray-50/80", "shadow-[-12px_0_15px_-10px_rgba(0,0,0,0.03)]")} onClick={e => e.stopPropagation()}>
+                        <div className="flex items-center justify-end gap-1">
+                            <Link href={detailUrl(claim.claim_id)} className="p-1.5 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors outline-none" title="Lihat Profil">
+                                <Eye className="w-4 h-4" />
+                            </Link>
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <button className="p-1.5 rounded-lg text-gray-400 hover:text-black hover:bg-gray-200 transition-colors outline-none">
+                                        <MoreHorizontal className="w-4 h-4" />
+                                    </button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-56 p-1.5 rounded-xl shadow-lg border-gray-100">
+                                    <DropdownMenuItem asChild className="cursor-pointer font-medium rounded-lg py-2">
+                                        <Link href={detailUrl(claim.claim_id)}>
+                                            <Eye className="w-4 h-4 mr-2 text-gray-500" /> Lihat Detail Klaim
+                                        </Link>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(claim.claim_id); }} className="cursor-pointer font-medium rounded-lg py-2">
+                                        <Copy className="w-4 h-4 mr-2 text-gray-500" /> Salin ID Klaim
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator className="bg-gray-100" />
+                                    <DropdownMenuItem className="cursor-pointer font-bold text-red-600 focus:bg-red-50 focus:text-red-700 rounded-lg py-2">
+                                        <Trash2 className="w-4 h-4 mr-2" /> Hapus
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        </div>
                     </td>
                   </tr>
                 );

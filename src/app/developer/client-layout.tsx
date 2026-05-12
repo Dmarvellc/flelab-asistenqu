@@ -17,7 +17,6 @@ import {
   Users,
   Briefcase,
   BarChart2,
-  Server,
   Building2,
   UserCheck,
   Box,
@@ -74,14 +73,6 @@ export function DeveloperLayoutClient({
         >
           Analitik
         </NavItem>
-        <NavItem
-          href="/developer/system"
-          icon={Server}
-          active={pathname === "/developer/system"}
-        >
-          Kesehatan Sistem
-        </NavItem>
-
         {/* ── Management ── */}
         <div className="px-2 pb-1 pt-4">
           <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 px-2">Pengelolaan</p>

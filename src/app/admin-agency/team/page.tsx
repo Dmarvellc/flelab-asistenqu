@@ -14,6 +14,7 @@ import {
 import Link from "next/link";
 import { toast } from "@/hooks/use-toast";
 import { useBusy } from "@/components/ui/busy-overlay-provider";
+import { PageShell, PageHeader } from "@/components/dashboard/page-shell";
 
 interface TeamMember {
   member_id: string;
@@ -257,32 +258,32 @@ export default function TeamManagementPage() {
   const staffPending = pending.filter((i) => i.agency_role !== "agent");
 
   return (
-    <div className="flex flex-col gap-8 animate-in fade-in duration-500 w-full">
+    <PageShell>
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 pb-6 border-b border-gray-200">
-        <div className="min-w-0">
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-black">
-            Staff Internal
-          </h1>
-          <p className="text-sm text-gray-500 mt-1.5 max-w-xl">
-            Kelola Master Admin, Admin, dan Manager agensi Anda. Untuk mengundang{" "}
-            <span className="font-semibold text-gray-700">agen baru</span>, buka halaman{" "}
-            <Link
-              href="/admin-agency/agents"
-              className="text-black underline decoration-dotted underline-offset-2 font-semibold hover:text-violet-700"
+      <PageHeader
+        title="Staff Internal"
+        description={
+            <>
+                Kelola Master Admin, Admin, dan Manager agensi Anda. Untuk mengundang{" "}
+                <span className="font-semibold text-gray-700">agen baru</span>, buka halaman{" "}
+                <Link
+                    href="/admin-agency/agents"
+                    className="text-black underline decoration-dotted underline-offset-2 font-semibold hover:text-violet-700"
+                >
+                    Agen
+                </Link>.
+            </>
+        }
+        actions={
+            <Button
+                onClick={() => { setShowInvite(true); setInviteResult(null); }}
+                className="bg-black hover:bg-gray-800 text-white gap-2 h-10 px-4 rounded-md text-sm font-semibold shadow-sm shrink-0"
             >
-              Agen
-            </Link>.
-          </p>
-        </div>
-        <Button
-          onClick={() => { setShowInvite(true); setInviteResult(null); }}
-          className="bg-black hover:bg-gray-800 text-white gap-2 h-10 px-4 rounded-md text-sm font-semibold shadow-sm shrink-0"
-        >
-          <UserPlus className="h-4 w-4" />
-          Undang Staff
-        </Button>
-      </div>
+                <UserPlus className="h-4 w-4" />
+                Undang Staff
+            </Button>
+        }
+      />
 
       {/* Invite Dialog */}
       <Dialog open={showInvite} onOpenChange={(open) => { setShowInvite(open); if (!open) setInviteResult(null); }}>
@@ -570,6 +571,6 @@ export default function TeamManagementPage() {
           )}
         </div>
       </div>
-    </div>
+    </PageShell>
   );
 }

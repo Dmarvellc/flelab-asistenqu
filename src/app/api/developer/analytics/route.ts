@@ -41,7 +41,7 @@ async function computeDevAnalytics() {
       ) AS gs
       LEFT JOIN (
         SELECT DATE(created_at) AS d, COUNT(*) AS cnt
-        FROM public.app_user
+        FROM public.client
         WHERE created_at >= NOW() - INTERVAL '30 days'
         GROUP BY DATE(created_at)
       ) c ON c.d = gs::date
@@ -61,7 +61,7 @@ async function computeDevAnalytics() {
       ) AS gs
       LEFT JOIN (
         SELECT DATE_TRUNC('month', created_at) AS m, COUNT(*) AS cnt
-        FROM public.app_user
+        FROM public.client
         WHERE created_at >= DATE_TRUNC('month', NOW() - INTERVAL '11 months')
         GROUP BY DATE_TRUNC('month', created_at)
       ) c ON c.m = gs
@@ -103,7 +103,8 @@ async function computeDevAnalytics() {
         (SELECT COUNT(*)::int FROM public.claim)                           AS total_claims,
         (SELECT COUNT(*)::int FROM public.app_user)                        AS total_users,
         (SELECT COUNT(*)::int FROM public.app_user WHERE status = 'ACTIVE') AS active_users,
-        (SELECT COUNT(*)::int FROM public.app_user WHERE status = 'PENDING') AS pending_users
+        (SELECT COUNT(*)::int FROM public.app_user WHERE status = 'PENDING') AS pending_users,
+        (SELECT COUNT(*)::int FROM public.client)                          AS total_clients
     `)
 
     // 7. Recent user registrations
@@ -210,6 +211,7 @@ async function computeDevAnalytics() {
         totalUsers:   totals.total_users   ?? 0,
         activeUsers:  totals.active_users  ?? 0,
         pendingUsers: totals.pending_users ?? 0,
+        totalClients: totals.total_clients ?? 0,
       },
       recentUsers: recentRes.rows,
       roleGrowth30d: roleGrowthRes.rows,

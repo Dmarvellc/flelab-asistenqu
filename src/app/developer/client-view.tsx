@@ -16,6 +16,7 @@ interface Analytics {
     hospitals: number;
     agencies: number;
     totalClaims: number;
+    totalClients: number;
   };
   sparklines: {
     users: number[];
@@ -64,8 +65,8 @@ export function DeveloperClientView({ initialData }: { initialData?: Analytics |
 
   // Funnel: shows the 4 key platform metrics as a visual comparison
   const funnelSteps = totals ? [
+    { label: "Total Client",   value: totals.totalClients },
     { label: "Total Pengguna", value: totals.totalUsers },
-    { label: "Pengguna Aktif", value: totals.activeUsers },
     { label: "Agen Aktif",     value: totals.activeAgents },
     { label: "Total Klaim",    value: totals.totalClaims },
   ] : [];
@@ -82,10 +83,7 @@ export function DeveloperClientView({ initialData }: { initialData?: Analytics |
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8 mt-2">
         <div className="flex items-center gap-3">
-          <h1 className="text-4xl font-normal text-gray-900 tracking-tight">Ringkasan</h1>
-          <button className="w-8 h-8 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center text-gray-400 hover:text-gray-900 transition-colors">
-            <Link2 className="w-4 h-4" />
-          </button>
+          <h1 className="text-4xl font-black text-black tracking-tight">Ringkasan</h1>
         </div>
       </div>
 
@@ -156,21 +154,18 @@ export function DeveloperClientView({ initialData }: { initialData?: Analytics |
                   <>
                     <MiniBar
                       label={`Agen Aktif (${totals ? totals.activeAgents.toLocaleString("id-ID") : "—"})`}
-                      color="bg-emerald-500"
+                      color="bg-blue-600"
                       pct={totals ? Math.min((totals.activeAgents / total) * 100, 100) : 0}
-                      striped
                     />
                     <MiniBar
                       label={`Admin Rumah Sakit (${totals ? totals.hospitals.toLocaleString("id-ID") : "—"})`}
-                      color="bg-blue-500"
+                      color="bg-slate-800"
                       pct={totals ? Math.min((totals.hospitals / total) * 100, 100) : 0}
-                      striped
                     />
                     <MiniBar
                       label={`Agensi (${totals ? totals.agencies.toLocaleString("id-ID") : "—"})`}
-                      color="bg-pink-400"
+                      color="bg-slate-400"
                       pct={totals ? Math.min((totals.agencies / total) * 100, 100) : 0}
-                      striped
                     />
                   </>
                 );
@@ -229,9 +224,9 @@ export function DeveloperClientView({ initialData }: { initialData?: Analytics |
             {data?.recentUsers?.length ? (
               data.recentUsers.slice(0, 3).map((u, i) => (
                 <div key={u.user_id} className="flex items-center gap-3">
-                  <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${i === 0 ? "bg-blue-500" : i === 1 ? "bg-emerald-500" : "bg-pink-400"}`} />
+                  <div className={`w-2 h-2 rounded-full shrink-0 ${i === 0 ? "bg-blue-600" : i === 1 ? "bg-slate-600" : "bg-slate-300"}`} />
                   <p className="text-sm text-gray-600 truncate">
-                    <strong>{u.full_name || u.email.split("@")[0]}</strong> bergabung sebagai {u.role.replace(/_/g, " ")}
+                    <strong className="text-black">{u.full_name || u.email.split("@")[0]}</strong> bergabung sebagai {u.role.replace(/_/g, " ")}
                   </p>
                 </div>
               ))
@@ -279,15 +274,12 @@ function FunnelBar({ label, value, height, nextHeight, isLast, dataValue, prevVa
             className="w-full relative transition-all duration-300"
             style={{
               height: `${height}%`,
-              backgroundImage: isHovered
-                ? "linear-gradient(to bottom, #3b82f6, #2563eb)"
-                : "repeating-linear-gradient(45deg, rgba(255,255,255,0.9) 0, rgba(255,255,255,0.9) 6px, transparent 6px, transparent 12px), linear-gradient(to bottom, #60a5fa, #eff6ff)",
-              boxShadow: isHovered ? "0 0 30px rgba(37,99,235,0.3)" : "none",
-              borderTop: isHovered ? "1px solid #60a5fa" : "1px solid rgba(255,255,255,1)",
+              backgroundColor: isHovered ? "#1d4ed8" : "#2563eb",
+              borderTop: "1px solid rgba(255,255,255,0.2)",
             }}
           />
           {isHovered && (
-            <div className="absolute bottom-0 left-0 w-full h-[300px] bg-gradient-to-t from-transparent via-blue-100/30 to-blue-200/50 -z-10 pointer-events-none" />
+            <div className="absolute bottom-0 left-0 w-full h-[300px] bg-blue-50 -z-10 pointer-events-none" />
           )}
         </div>
 
@@ -297,9 +289,7 @@ function FunnelBar({ label, value, height, nextHeight, isLast, dataValue, prevVa
               className="w-full relative transition-all duration-300"
               style={{
                 height: `${highest}%`,
-                background: isHovered
-                  ? "linear-gradient(to bottom, #2563eb, rgba(37,99,235,0.1))"
-                  : "linear-gradient(to bottom, #93c5fd, rgba(147,197,253,0.1))",
+                background: isHovered ? "#3b82f6" : "#60a5fa",
                 clipPath: `polygon(0 ${leftTop}%, 100% ${rightTop}%, 100% 100%, 0 100%)`,
               }}
             />
@@ -360,12 +350,12 @@ function Sparkline({ values }: { values: number[] }) {
     <svg viewBox={`0 0 ${width} ${height}`} className="h-full w-full overflow-visible" preserveAspectRatio="none">
       <defs>
         <linearGradient id="registration-sparkline-fill" x1="0" x2="0" y1="0" y2="1">
-          <stop offset="0%" stopColor="#f9a8d4" stopOpacity="0.35" />
-          <stop offset="100%" stopColor="#f9a8d4" stopOpacity="0" />
+          <stop offset="0%" stopColor="#2563eb" stopOpacity="0.15" />
+          <stop offset="100%" stopColor="#2563eb" stopOpacity="0" />
         </linearGradient>
       </defs>
       <path d={areaPath} fill="url(#registration-sparkline-fill)" />
-      <path d={path} fill="none" stroke="#f472b6" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
+      <path d={path} fill="none" stroke="#2563eb" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
     </svg>
   );
 }

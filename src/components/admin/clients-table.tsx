@@ -6,7 +6,7 @@ import { AgencyAgent, AgencyClient } from "@/services/admin-agency";
 import {
   Search, ChevronUp, ChevronDown, ChevronsUpDown,
   X, Check, ArrowRight, Users, UserCog, Shield,
-  Download, Loader2, UserX, CheckCheck,
+  Download, Loader2, UserX, CheckCheck, SlidersHorizontal,
 } from "lucide-react";
 import {
   Dialog, DialogContent, DialogDescription,
@@ -16,6 +16,15 @@ import {
   Select, SelectContent, SelectItem,
   SelectTrigger, SelectValue,
 } from "@/components/ui/select";
+import {
+    DropdownMenu,
+    DropdownMenuTrigger,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuCheckboxItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
@@ -44,7 +53,25 @@ export function ClientsTable({ clients: initialClients, agents, showBulkAssign =
   const [selClient,       setSelClient]       = useState<AgencyClient | null>(null);
   const [selAgent,        setSelAgent]        = useState("");
   const [bulkAgent,       setBulkAgent]       = useState("");
+  const [visibleCols,     setVisibleCols]     = useState<Set<string>>(new Set(["full_name", "total_policies", "agent_name"]));
+  const [density,         setDensity]         = useState<"comfortable" | "compact">("comfortable");
   const searchRef = useRef<HTMLInputElement>(null);
+
+  const COL_NAMES: Record<string, string> = {
+    full_name: "Klien",
+    total_policies: "Polis Aktif",
+    agent_name: "Agen Pendamping"
+  };
+
+  const toggleCol = (col: string) => {
+      setVisibleCols(prev => {
+          const next = new Set(prev);
+          if (next.has(col)) {
+              if (next.size > 1) next.delete(col);
+          } else next.add(col);
+          return next;
+      });
+  };
 
   const maxPolicies = useMemo(() => Math.max(...clients.map(c => c.total_policies), 1), [clients]);
 
@@ -200,7 +227,34 @@ export function ClientsTable({ clients: initialClients, agents, showBulkAssign =
           )}
 
           <div className="flex items-center gap-2 shrink-0">
-            <div className="flex items-center gap-1 border border-gray-200 rounded-lg px-2 py-1.5">
+            {/* View Options Dropdown */}
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <button className="flex items-center gap-2 px-3 py-2 border border-gray-200 bg-white rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all outline-none">
+                        <SlidersHorizontal className="w-4 h-4" />
+                        Tampilan
+                    </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56 p-2 rounded-xl shadow-xl">
+                    <DropdownMenuLabel className="text-xs text-gray-400 font-bold uppercase tracking-wider">Visibilitas Kolom</DropdownMenuLabel>
+                    {Object.entries(COL_NAMES).map(([key, label]) => (
+                        <DropdownMenuCheckboxItem
+                            key={key}
+                            checked={visibleCols.has(key)}
+                            onCheckedChange={() => toggleCol(key)}
+                            className="font-medium cursor-pointer rounded-md"
+                        >
+                            {label}
+                        </DropdownMenuCheckboxItem>
+                    ))}
+                    <DropdownMenuSeparator className="my-2 bg-gray-100" />
+                    <DropdownMenuLabel className="text-xs text-gray-400 font-bold uppercase tracking-wider">Kepadatan Tabel</DropdownMenuLabel>
+                    <DropdownMenuCheckboxItem checked={density === "comfortable"} onCheckedChange={() => setDensity("comfortable")} className="font-medium cursor-pointer rounded-md">Nyaman</DropdownMenuCheckboxItem>
+                    <DropdownMenuCheckboxItem checked={density === "compact"} onCheckedChange={() => setDensity("compact")} className="font-medium cursor-pointer rounded-md">Padat</DropdownMenuCheckboxItem>
+                </DropdownMenuContent>
+            </DropdownMenu>
+
+            <div className="flex items-center gap-1 border border-gray-200 rounded-lg px-2 py-1.5 bg-white">
               <button onClick={() => { if (searchOpen) { setSearchOpen(false); setSearch(""); } else setSearchOpen(true); }} className="p-0.5 text-gray-400 hover:text-gray-700 transition-colors">
                 {searchOpen ? <X className="h-3.5 w-3.5" /> : <Search className="h-3.5 w-3.5" />}
               </button>
@@ -215,24 +269,26 @@ export function ClientsTable({ clients: initialClients, agents, showBulkAssign =
         <div className="overflow-x-auto">
           <table className="w-full text-sm min-w-[560px]">
             <thead>
-              <tr className="border-b border-gray-200 bg-white">
-                <th className="w-10 pl-5 sm:pl-6 pr-3 py-3">
+              <tr className="border-b border-gray-100 bg-gray-50/80 backdrop-blur-sm sticky top-0 z-10">
+                <th className="w-10 pl-5 sm:pl-6 pr-3 py-3.5 border-b border-gray-200">
                   <Checkbox checked={allSel} indeterminate={someSel && !allSel} onClick={toggleAll} />
                 </th>
                 {([
                   { key: "full_name"      as SortKey, label: "Klien",           sortable: true },
                   { key: "total_policies" as SortKey, label: "Polis Aktif",     sortable: true },
                   { key: "agent_name"     as SortKey, label: "Agen Pendamping", sortable: true },
-                ] as Array<{ key: SortKey; label: string; sortable: boolean }>).map((h, i) => (
-                  <th key={i} className="py-3 pr-4 text-left">
-                    <button onClick={() => cycleSort(h.key)}
-                      className={cn("group/th flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider transition-colors",
-                        sort.key === h.key ? "text-black" : "text-gray-400 hover:text-gray-600")}>
-                      {h.label}<SortIcon col={h.key} />
-                    </button>
-                  </th>
+                ] as Array<{ key: string; label: string; sortable: boolean }>).map((h, i) => (
+                  visibleCols.has(h.key) && (
+                    <th key={i} className="px-5 py-3.5 text-xs font-bold uppercase tracking-wider select-none border-b border-gray-200 text-left text-gray-500">
+                      <button onClick={() => cycleSort(h.key as SortKey)}
+                        className={cn("group/th flex items-center gap-1.5 transition-colors hover:text-gray-900",
+                          sort.key === h.key ? "text-black" : "text-gray-500")}>
+                        {h.label}<SortIcon col={h.key as SortKey} />
+                      </button>
+                    </th>
+                  )
                 ))}
-                <th className="py-3 pr-5 sm:pr-6 w-16" />
+                <th className="w-14 pr-5 py-3.5 border-b border-gray-200 bg-gray-50/80 backdrop-blur-sm sticky top-0 right-0 z-20 shadow-[-12px_0_15px_-10px_rgba(0,0,0,0.05)]" />
               </tr>
             </thead>
             <tbody>
@@ -274,18 +330,21 @@ export function ClientsTable({ clients: initialClients, agents, showBulkAssign =
                     className: "text-sm font-semibold text-black truncate max-w-[180px]"
                   };
 
+                  const pyClass = density === "compact" ? "py-2.5" : "py-4";
+
                   return (
                     <tr key={client.client_id}
                       className={cn("group/row border-b border-gray-50 transition-colors duration-100",
                         isSel ? "bg-gray-50/50" : "hover:bg-gray-50")}
                       style={{ animationDelay: `${idx * 15}ms` }}>
 
-                      <td className="pl-5 sm:pl-6 pr-3 py-4">
+                      <td className={`pl-5 sm:pl-6 pr-3 ${pyClass}`}>
                         <Checkbox checked={isSel} onClick={() => toggleRow(client.client_id)} invisible />
                       </td>
 
                       {/* Client name */}
-                      <td className="py-4 pr-4">
+                      {visibleCols.has("full_name") && (
+                      <td className={`px-5 ${pyClass}`}>
                         <Wrapper {...wrapperProps}>
                           {client.full_name}
                         </Wrapper>
@@ -296,9 +355,11 @@ export function ClientsTable({ clients: initialClients, agents, showBulkAssign =
                           ) : null}
                         </div>
                       </td>
+                      )}
 
                       {/* Policies with mini bar */}
-                      <td className="py-4 pr-4">
+                      {visibleCols.has("total_policies") && (
+                      <td className={`px-5 ${pyClass}`}>
                         <div className="flex items-center gap-3 min-w-[120px]">
                           <div className="flex items-center gap-1 shrink-0">
                             <span className="text-sm font-semibold text-black tabular-nums w-5 text-right">
@@ -313,9 +374,11 @@ export function ClientsTable({ clients: initialClients, agents, showBulkAssign =
                           </div>
                         </div>
                       </td>
+                      )}
 
                       {/* Agent */}
-                      <td className="py-4 pr-4">
+                      {visibleCols.has("agent_name") && (
+                      <td className={`px-5 ${pyClass}`}>
                         {client.agent_name ? (
                           <span className="text-sm text-gray-700 truncate max-w-[160px] block">
                             {client.agent_name}
@@ -326,16 +389,19 @@ export function ClientsTable({ clients: initialClients, agents, showBulkAssign =
                           </span>
                         )}
                       </td>
+                      )}
 
-                      {/* Action */}
-                      <td className="py-4 pr-5 sm:pr-6 text-right">
-                        <button
-                          onClick={() => openReassign(client)}
-                          className="opacity-0 group-hover/row:opacity-100 translate-x-1.5 group-hover/row:translate-x-0 transition-all duration-150 inline-flex items-center gap-1.5 text-xs font-semibold text-gray-500 hover:text-black bg-white border border-gray-200 hover:border-gray-300 rounded-lg px-2.5 py-1.5 hover:shadow-sm whitespace-nowrap"
-                        >
-                          <UserCog className="w-3.5 h-3.5" />
-                          {client.agent_id ? "Pindahkan" : "Tugaskan"}
-                        </button>
+                      {/* Enterprise Sticky Actions Column */}
+                      <td className={cn(`pr-5 ${pyClass} text-right sticky right-0 z-0 transition-colors`, isSel ? "bg-gray-50/50" : "bg-white group-hover/row:bg-gray-50", "shadow-[-12px_0_15px_-10px_rgba(0,0,0,0.03)]")}>
+                        <div className="flex items-center justify-end">
+                            <button
+                              onClick={() => openReassign(client)}
+                              className="opacity-0 group-hover/row:opacity-100 transition-all duration-150 inline-flex items-center gap-1.5 text-xs font-semibold text-gray-500 hover:text-black bg-white border border-gray-200 hover:border-gray-300 rounded-lg px-2.5 py-1.5 hover:shadow-sm whitespace-nowrap"
+                            >
+                              <UserCog className="w-3.5 h-3.5" />
+                              {client.agent_id ? "Pindahkan" : "Tugaskan"}
+                            </button>
+                        </div>
                       </td>
                     </tr>
                   );

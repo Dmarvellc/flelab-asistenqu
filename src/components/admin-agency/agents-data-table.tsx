@@ -7,8 +7,18 @@ import {
   Search, ChevronUp, ChevronDown, ChevronsUpDown,
   X, Check, ArrowRight, User, CheckCircle2, Loader2,
   Mail, Phone, FileText, Shield, Download, Trash2,
+  Eye, MoreHorizontal, Copy, SlidersHorizontal
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+    DropdownMenu,
+    DropdownMenuTrigger,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuCheckboxItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 import { toast } from "@/hooks/use-toast";
 
 function relDate(iso: string) {
@@ -41,7 +51,28 @@ export function AgentsDataTable({ agents: raw }: Props) {
   const [sort,        setSort]        = useState<{ key: SortKey; dir: SortDir }>({ key: "joined_at", dir: "desc" });
   const [selected,    setSelected]    = useState<Set<string>>(new Set());
   const [approving,   setApproving]   = useState<string | null>(null);
+  const [visibleCols, setVisibleCols] = useState<Set<string>>(new Set(["full_name", "contact", "status", "joined_at", "total_policies", "total_claims"]));
+  const [density,     setDensity]     = useState<"comfortable" | "compact">("comfortable");
   const searchRef = useRef<HTMLInputElement>(null);
+
+  const COL_NAMES: Record<string, string> = {
+    full_name: "Agen",
+    contact: "Kontak",
+    status: "Status",
+    joined_at: "Bergabung",
+    total_policies: "Polis",
+    total_claims: "Klaim"
+  };
+
+  const toggleCol = (col: string) => {
+      setVisibleCols(prev => {
+          const next = new Set(prev);
+          if (next.has(col)) {
+              if (next.size > 1) next.delete(col);
+          } else next.add(col);
+          return next;
+      });
+  };
 
   const statusCounts = useMemo(() => {
     const c: Record<string, number> = {};
@@ -154,6 +185,39 @@ export function AgentsDataTable({ agents: raw }: Props) {
           </div>
         )}
         <div className="flex items-center gap-2">
+          {/* Export CSV Button */}
+          <button className="hidden sm:flex items-center gap-2 px-3 py-2 border border-gray-200 bg-white rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all outline-none">
+              <Download className="w-4 h-4" />
+              Ekspor CSV
+          </button>
+
+          {/* View Options Dropdown */}
+          <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                  <button className="flex items-center gap-2 px-3 py-2 border border-gray-200 bg-white rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all outline-none">
+                      <SlidersHorizontal className="w-4 h-4" />
+                      Tampilan
+                  </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56 p-2 rounded-xl shadow-xl">
+                  <DropdownMenuLabel className="text-xs text-gray-400 font-bold uppercase tracking-wider">Visibilitas Kolom</DropdownMenuLabel>
+                  {Object.entries(COL_NAMES).map(([key, label]) => (
+                      <DropdownMenuCheckboxItem
+                          key={key}
+                          checked={visibleCols.has(key)}
+                          onCheckedChange={() => toggleCol(key)}
+                          className="font-medium cursor-pointer rounded-md"
+                      >
+                          {label}
+                      </DropdownMenuCheckboxItem>
+                  ))}
+                  <DropdownMenuSeparator className="my-2 bg-gray-100" />
+                  <DropdownMenuLabel className="text-xs text-gray-400 font-bold uppercase tracking-wider">Kepadatan Tabel</DropdownMenuLabel>
+                  <DropdownMenuCheckboxItem checked={density === "comfortable"} onCheckedChange={() => setDensity("comfortable")} className="font-medium cursor-pointer rounded-md">Nyaman</DropdownMenuCheckboxItem>
+                  <DropdownMenuCheckboxItem checked={density === "compact"} onCheckedChange={() => setDensity("compact")} className="font-medium cursor-pointer rounded-md">Padat</DropdownMenuCheckboxItem>
+              </DropdownMenuContent>
+          </DropdownMenu>
+
           <div className={cn(
             "flex items-center gap-2 h-8 rounded-xl border bg-white transition-all duration-250 overflow-hidden",
             searchOpen ? "w-48 border-gray-300 px-3 shadow-sm" : "w-8 border-transparent justify-center hover:border-gray-200 hover:bg-gray-50 cursor-pointer"
@@ -206,31 +270,33 @@ export function AgentsDataTable({ agents: raw }: Props) {
       <div className="overflow-x-auto">
         <table className="w-full min-w-[720px]">
           <thead>
-            <tr className="border-b border-gray-100 bg-gray-50/40">
-              <th className="w-10 pl-5 sm:pl-6 pr-3 py-2.5">
+            <tr className="border-b border-gray-100 bg-gray-50/80 backdrop-blur-sm sticky top-0 z-10">
+              <th className="w-10 pl-5 sm:pl-6 pr-3 py-3.5 border-b border-gray-200">
                 <Checkbox checked={allSel} indeterminate={someSel && !allSel} onClick={toggleAll} />
               </th>
               {([
                 { key: "full_name" as SortKey,      label: "Agen",       sortable: true  },
-                { key: null,                         label: "Kontak",     sortable: false },
-                { key: null,                         label: "Status",     sortable: false },
+                { key: "contact" as SortKey,        label: "Kontak",     sortable: false },
+                { key: "status" as SortKey,         label: "Status",     sortable: false },
                 { key: "joined_at" as SortKey,       label: "Bergabung",  sortable: true  },
                 { key: "total_policies" as SortKey,  label: "Polis",      sortable: true  },
                 { key: "total_claims" as SortKey,    label: "Klaim",      sortable: true  },
-              ] as Array<{ key: SortKey | null; label: string; sortable: boolean }>).map((h, i) => (
-                <th key={i} className="py-2.5 pr-4 text-left">
-                  {h.sortable && h.key ? (
-                    <button onClick={() => cycleSort(h.key!)}
-                      className={cn("group/th flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider transition-colors",
-                        sort.key === h.key ? "text-gray-800" : "text-gray-400 hover:text-gray-600")}>
-                      {h.label}<SortIcon col={h.key} />
-                    </button>
-                  ) : (
-                    <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">{h.label}</span>
-                  )}
-                </th>
+              ] as Array<{ key: string; label: string; sortable: boolean }>).map((h, i) => (
+                visibleCols.has(h.key) && (
+                  <th key={i} className="px-5 py-3.5 text-xs font-bold uppercase tracking-wider select-none border-b border-gray-200 text-left text-gray-500">
+                    {h.sortable ? (
+                      <button onClick={() => cycleSort(h.key as SortKey)}
+                        className={cn("group/th flex items-center gap-1 transition-colors hover:text-gray-900",
+                          sort.key === h.key ? "text-black" : "text-gray-500")}>
+                        {h.label}<SortIcon col={h.key as SortKey} />
+                      </button>
+                    ) : (
+                      <span>{h.label}</span>
+                    )}
+                  </th>
+                )
               ))}
-              <th className="py-2.5 pr-5 sm:pr-6 w-24" />
+              <th className="w-14 pr-5 py-3.5 border-b border-gray-200 bg-gray-50/80 backdrop-blur-sm sticky top-0 right-0 z-20 shadow-[-12px_0_15px_-10px_rgba(0,0,0,0.05)]" />
             </tr>
           </thead>
           <tbody>
@@ -255,18 +321,20 @@ export function AgentsDataTable({ agents: raw }: Props) {
               rows.map((agent, idx) => {
                 const cfg   = STATUS_CFG[agent.status] || FALLBACK_S;
                 const isSel = selected.has(agent.user_id);
+                const pyClass = density === "compact" ? "py-2.5" : "py-4";
                 return (
                   <tr key={agent.user_id}
-                    className={cn("group/row border-b border-gray-50 last:border-0 transition-colors duration-100",
-                      isSel ? "bg-blue-50/30" : "hover:bg-gray-50/70")}
+                    className={cn("group/row transition-colors cursor-pointer",
+                      isSel ? "bg-blue-50/40" : "hover:bg-gray-50/80")}
                     style={{ animationDelay: `${idx * 25}ms` }}>
 
-                    <td className="pl-5 sm:pl-6 pr-3 py-3.5">
+                    <td className={`pl-5 sm:pl-6 pr-3 ${pyClass}`} onClick={e => e.stopPropagation()}>
                       <Checkbox checked={isSel} onClick={() => toggleRow(agent.user_id)} invisible />
                     </td>
 
                     {/* Name + email */}
-                    <td className="py-3.5 pr-4">
+                    {visibleCols.has("full_name") && (
+                    <td className={`px-5 ${pyClass}`}>
                       <div className="min-w-0">
                         <p className="text-[13px] font-semibold text-gray-900 truncate max-w-[170px] leading-tight">{agent.full_name}</p>
                         <p className="text-[11px] text-gray-400 flex items-center gap-1 mt-0.5 truncate max-w-[170px]">
@@ -274,62 +342,86 @@ export function AgentsDataTable({ agents: raw }: Props) {
                         </p>
                       </div>
                     </td>
+                    )}
 
                     {/* Phone */}
-                    <td className="py-3.5 pr-4">
+                    {visibleCols.has("contact") && (
+                    <td className={`px-5 ${pyClass}`}>
                       <span className="text-[13px] text-gray-500 flex items-center gap-1.5">
                         <Phone className="w-3 h-3 text-gray-300 shrink-0" />
                         {agent.phone_number || <span className="text-gray-200">—</span>}
                       </span>
                     </td>
+                    )}
 
                     {/* Status */}
-                    <td className="py-3.5 pr-4">
-                      <span className={cn("inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-semibold ring-1 whitespace-nowrap",
+                    {visibleCols.has("status") && (
+                    <td className={`px-5 ${pyClass}`}>
+                      <span className={cn("inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold tracking-wider uppercase ring-1 whitespace-nowrap",
                         cfg.bg, cfg.text, cfg.ring)}>
-                        <span className={cn("w-1.5 h-1.5 rounded-full shrink-0", cfg.dot)} />
                         {cfg.label}
                       </span>
                     </td>
+                    )}
 
                     {/* Joined */}
-                    <td className="py-3.5 pr-4">
+                    {visibleCols.has("joined_at") && (
+                    <td className={`px-5 ${pyClass}`}>
                       <span title={agent.joined_at ? new Date(agent.joined_at).toLocaleDateString("id-ID", { dateStyle: "long" }) : ""}
                         className="text-[13px] text-gray-500 cursor-default">{relDate(agent.joined_at)}</span>
                     </td>
+                    )}
 
                     {/* Policies */}
-                    <td className="py-3.5 pr-4">
+                    {visibleCols.has("total_policies") && (
+                    <td className={`px-5 ${pyClass}`}>
                       <span className="inline-flex items-center gap-1 text-[13px] font-semibold text-gray-900 tabular-nums">
                         <Shield className="w-3 h-3 text-gray-300" />{agent.total_policies}
                       </span>
                     </td>
+                    )}
 
                     {/* Claims */}
-                    <td className="py-3.5 pr-4">
+                    {visibleCols.has("total_claims") && (
+                    <td className={`px-5 ${pyClass}`}>
                       <span className="inline-flex items-center gap-1 text-[13px] font-semibold text-gray-900 tabular-nums">
                         <FileText className="w-3 h-3 text-gray-300" />{agent.total_claims}
                       </span>
                     </td>
+                    )}
 
-                    {/* Action */}
-                    <td className="py-3.5 pr-5 sm:pr-6">
-                      {agent.status === "PENDING" ? (
-                        <button
-                          onClick={() => handleApprove(agent.user_id)}
-                          disabled={approving === agent.user_id}
-                          className="opacity-0 group-hover/row:opacity-100 translate-x-1.5 group-hover/row:translate-x-0 transition-all duration-150 inline-flex items-center gap-1.5 text-[11px] font-semibold text-white bg-gray-900 hover:bg-black rounded-lg px-2.5 py-1 shadow-sm whitespace-nowrap disabled:opacity-60"
-                        >
-                          {approving === agent.user_id
-                            ? <Loader2 className="w-3 h-3 animate-spin" />
-                            : <CheckCircle2 className="w-3 h-3" />}
-                          Setujui
-                        </button>
-                      ) : (
-                        <span className="opacity-0 group-hover/row:opacity-100 translate-x-1.5 group-hover/row:translate-x-0 transition-all duration-150 inline-flex items-center gap-1 text-[11px] font-semibold text-gray-500 hover:text-gray-900 bg-white border border-gray-200 hover:border-gray-300 rounded-lg px-2.5 py-1 hover:shadow-sm whitespace-nowrap cursor-default">
-                          <ArrowRight className="w-3 h-3" />
-                        </span>
-                      )}
+                    {/* Enterprise Sticky Actions Column */}
+                    <td className={cn(`pr-5 ${pyClass} text-right sticky right-0 z-0 transition-colors`, isSel ? "bg-blue-50/40" : "bg-white group-hover/row:bg-gray-50/80", "shadow-[-12px_0_15px_-10px_rgba(0,0,0,0.03)]")} onClick={e => e.stopPropagation()}>
+                        <div className="flex items-center justify-end gap-1">
+                            {agent.status === "PENDING" ? (
+                              <button
+                                onClick={() => handleApprove(agent.user_id)}
+                                disabled={approving === agent.user_id}
+                                className="opacity-0 group-hover/row:opacity-100 transition-all duration-150 inline-flex items-center gap-1.5 text-[11px] font-semibold text-white bg-gray-900 hover:bg-black rounded-lg px-2.5 py-1 shadow-sm whitespace-nowrap disabled:opacity-60"
+                              >
+                                {approving === agent.user_id
+                                  ? <Loader2 className="w-3 h-3 animate-spin" />
+                                  : <CheckCircle2 className="w-3 h-3" />}
+                                Setujui
+                              </button>
+                            ) : null}
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <button className="p-1.5 rounded-lg text-gray-400 hover:text-black hover:bg-gray-200 transition-colors outline-none">
+                                        <MoreHorizontal className="w-4 h-4" />
+                                    </button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-56 p-1.5 rounded-xl shadow-lg border-gray-100">
+                                    <DropdownMenuItem onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(agent.user_id); }} className="cursor-pointer font-medium rounded-lg py-2">
+                                        <Copy className="w-4 h-4 mr-2 text-gray-500" /> Salin ID Agen
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator className="bg-gray-100" />
+                                    <DropdownMenuItem className="cursor-pointer font-bold text-red-600 focus:bg-red-50 focus:text-red-700 rounded-lg py-2">
+                                        <Trash2 className="w-4 h-4 mr-2" /> Hapus
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        </div>
                     </td>
                   </tr>
                 );

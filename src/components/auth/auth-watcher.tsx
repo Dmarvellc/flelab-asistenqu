@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 
-const PUBLIC_PATHS = ["/", "/login", "/register", "/suspended", "/access-denied"];
+const PUBLIC_PATHS = ["/", "/login", "/register", "/access-denied"];
 
 export function AuthWatcher() {
   const pathname = usePathname();

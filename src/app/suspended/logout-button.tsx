@@ -24,8 +24,7 @@ export function SuspendedLogoutButton() {
 
   return (
     <Button 
-      variant="outline" 
-      className="w-full font-medium h-11 border-gray-200 text-gray-700 hover:bg-gray-50 hover:text-black"
+      className="w-full font-medium h-11 bg-black hover:bg-gray-800 text-white"
       onClick={handleLogout}
       disabled={loading}
     >
