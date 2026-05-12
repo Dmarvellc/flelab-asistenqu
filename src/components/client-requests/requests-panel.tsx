@@ -34,7 +34,7 @@ import {
 } from "./types";
 import { NewClientRequestDialog } from "./new-request-dialog";
 
-type Mode = "agent" | "hospital";
+type Mode = "agent" | "hospital" | "developer" | "admin";
 
 /**
  * The reusable requests panel. Used in two contexts:

@@ -3,7 +3,12 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Loader2, ArrowLeft, Send, AlertCircle, Trash2, Edit2, Upload, FileText, MoreVertical, Download, Shield, User, Calendar, Building2, Stethoscope, Banknote, Clock } from "lucide-react";
+import { 
+    Loader2, ArrowLeft, Send, AlertCircle, Trash2, Edit2, Upload, 
+    FileText, MoreVertical, Download, Shield, User, Calendar, 
+    Building2, Stethoscope, Banknote, Clock, CheckCircle2, XCircle,
+    History, MessageSquare, Info
+} from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -28,12 +33,13 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Link from "next/link";
 import { extractClaimNotes } from "@/lib/claim-form-meta";
 import { ActionModal } from "@/components/ui/action-modal";
 import { cn } from "@/lib/utils";
 import { ClaimTimeline } from "@/components/claims/claim-timeline";
-
+import { Separator } from "@/components/ui/separator";
 
 type ClaimDetail = {
     claim_id: string;
@@ -79,20 +85,64 @@ type NoticeState = {
     onClose?: () => void;
 };
 
-function FieldRow({ label, icon: Icon, value }: { label: string; icon: React.ElementType; value: React.ReactNode }) {
+/* ─── Helpers ─────────────────────────────────────────────── */
+const idr = (v?: string | number | null) => {
+    const n = typeof v === "number" ? v : parseFloat(v || "0");
+    return isNaN(n) || n === 0 ? "—" : "Rp " + n.toLocaleString("id-ID");
+};
+const date = (v?: string) => v ? new Date(v).toLocaleDateString("id-ID", { day:"numeric", month:"long", year:"numeric" }) : "—";
+
+function Stat({ label, value, icon: Icon }: { label: string; value: React.ReactNode; icon: React.ElementType }) {
     return (
-        <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-6 py-4 border-b border-gray-50 last:border-0">
-            <div className="flex items-center gap-2 sm:w-48 shrink-0">
-                <Icon className="h-4 w-4 text-gray-400" />
-                <span className="text-xs font-medium text-gray-400">{label}</span>
+        <div className="flex flex-col gap-1">
+            <div className="flex items-center gap-2 text-gray-400">
+                <Icon className="w-3.5 h-3.5" />
+                <span className="text-[10px] font-bold uppercase tracking-wider">{label}</span>
             </div>
-            <div className="flex-1 min-w-0">
-                <p className={cn("text-sm text-gray-900", !value && "text-gray-400 italic")}>
-                    {value || "Belum diisi"}
-                </p>
-            </div>
+            <p className="text-sm font-semibold text-black">{value || "—"}</p>
         </div>
     );
+}
+
+function getStatusConfig(status: string) {
+    switch (status) {
+        case "APPROVED":
+            return {
+                className: "bg-white text-emerald-700 border-emerald-200",
+                icon: <CheckCircle2 className="h-3 w-3" />,
+                label: "Disetujui",
+            };
+        case "INFO_REQUESTED":
+            return {
+                className: "bg-white text-amber-700 border-amber-200",
+                icon: <AlertCircle className="h-3 w-3" />,
+                label: "Perlu Info",
+            };
+        case "INFO_SUBMITTED":
+            return {
+                className: "bg-white text-blue-700 border-blue-200",
+                icon: <Info className="h-3 w-3" />,
+                label: "Info Terkirim",
+            };
+        case "REJECTED":
+            return {
+                className: "bg-red-50 text-red-700 border-red-200",
+                icon: <XCircle className="h-3 w-3" />,
+                label: "Ditolak",
+            };
+        case "DRAFT":
+            return {
+                className: "bg-gray-50 text-gray-600 border-gray-200",
+                icon: <FileText className="h-3 w-3" />,
+                label: "Draft",
+            };
+        default:
+            return {
+                className: "bg-white text-black border-gray-200",
+                icon: <Clock className="h-3 w-3" />,
+                label: status,
+            };
+    }
 }
 
 export default function ClaimDetailPage() {
@@ -137,7 +187,6 @@ export default function ClaimDetailPage() {
                         claim_date: data.claim.claim_date ? new Date(data.claim.claim_date).toISOString().split('T')[0] : "",
                     });
 
-                    // If status is INFO_REQUESTED, fetch the request details
                     if (data.claim.status === 'INFO_REQUESTED') {
                         const reqRes = await fetch(`/api/agent/claims/${params.id}/info-request`);
                         if (reqRes.ok) {
@@ -145,17 +194,13 @@ export default function ClaimDetailPage() {
                             setInfoRequest(reqData.request);
                         }
                     }
-                } else {
-                    console.error("Failed to fetch claim");
                 }
 
-                // Fetch documents
                 const docRes = await fetch(`/api/agent/claims/${params.id}/documents`);
                 if (docRes.ok) {
                     const docData = await docRes.json();
                     setDocuments(docData.documents || []);
                 }
-
             } catch (error) {
                 console.error("Error fetching claim", error);
             } finally {
@@ -284,440 +329,368 @@ export default function ClaimDetailPage() {
             openNotice("Kesalahan Sistem", "Terjadi kesalahan saat mengunggah dokumen.");
         } finally {
             setUploading(false);
-            // Reset input
-            e.target.value = "";
         }
     };
 
-    const handleSubmitInfo = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const handleInfoSubmit = async () => {
         if (!infoRequest) return;
-
         setSubmitting(true);
         try {
             const res = await fetch(`/api/agent/claims/${params.id}/info-request`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    request_id: infoRequest.request_id,
-                    responses
-                }),
+                body: JSON.stringify({ responses }),
             });
 
             if (res.ok) {
-                openNotice("Berhasil", "Data tambahan berhasil dikirim.", () => window.location.reload());
+                setClaim(prev => prev ? { ...prev, status: 'INFO_SUBMITTED' } : null);
+                setInfoRequest(null);
+                openNotice("Berhasil", "Informasi tambahan berhasil dikirim.");
             } else {
                 const err = await res.json().catch(() => null);
-                openNotice("Gagal", err?.error || "Gagal mengirim data tambahan.");
+                openNotice("Gagal", err?.error || "Gagal mengirim informasi.");
             }
         } catch (error) {
             console.error("Error submitting info", error);
-            openNotice("Kesalahan Sistem", "Terjadi kesalahan saat mengirim data tambahan.");
+            openNotice("Kesalahan Sistem", "Terjadi kesalahan saat mengirim informasi.");
         } finally {
             setSubmitting(false);
         }
     };
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const handleInputChange = (id: string, value: any) => {
-        setResponses(prev => ({
-            ...prev,
-            [id]: value
-        }));
-    };
-
     if (loading) {
+        return <div className="flex h-[50vh] items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>;
+    }
+
+    if (!claim) {
         return (
-            <div className="flex h-[60vh] w-full items-center justify-center">
-                <div className="flex flex-col items-center gap-4">
-                    <div className="h-10 w-10 rounded-full border-2 border-gray-200 border-t-gray-800 animate-spin" />
-                    <p className="text-sm text-gray-400">Memuat detail klaim...</p>
-                </div>
+            <div className="flex flex-col items-center justify-center h-[50vh] gap-4">
+                <h2 className="text-xl font-semibold">Klaim tidak ditemukan</h2>
+                <Button onClick={() => router.back()}>Kembali</Button>
             </div>
         );
     }
 
-    if (!claim) {
-        return <div className="text-sm text-gray-500 py-10 text-center">Klaim tidak ditemukan.</div>;
-    }
-
-    const getStatusStyle = (status: string) => {
-        switch (status) {
-            case 'DRAFT': return "bg-gray-100 text-gray-600 border-gray-200";
-            case 'SUBMITTED': return "bg-blue-50 text-blue-700 border-blue-200";
-            case 'APPROVED': return "bg-green-50 text-green-700 border-green-200";
-            case 'REJECTED': return "bg-red-50 text-red-700 border-red-200";
-            case 'PAID': return "bg-emerald-50 text-emerald-700 border-emerald-200";
-            case 'INFO_REQUESTED': return "bg-amber-50 text-amber-700 border-amber-200";
-            case 'INFO_SUBMITTED': return "bg-blue-50 text-blue-700 border-blue-200";
-            default: return "bg-gray-50 text-gray-600 border-gray-200";
-        }
-    };
-
-    const getStatusLabel = (status: string) => {
-        switch (status) {
-            case 'DRAFT': return "Draft";
-            case 'SUBMITTED': return "Diajukan";
-            case 'APPROVED': return "Disetujui";
-            case 'REJECTED': return "Ditolak";
-            case 'PAID': return "Dibayar";
-            case 'INFO_REQUESTED': return "Butuh Info";
-            case 'INFO_SUBMITTED': return "Info Diterima";
-            default: return status;
-        }
-    };
-
-    const parsedNotes = extractClaimNotes(claim.notes);
+    const statusConfig = getStatusConfig(claim.status);
 
     return (
-        <div className="flex flex-col gap-8 animate-in fade-in duration-500 max-w-5xl mx-auto pb-12">
-            {/* Header */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 pb-6 border-b border-gray-100">
-                <div className="flex items-center gap-4">
-                    <Link href="/agent/claims">
-                        <Button variant="ghost" size="icon" className="rounded-full bg-gray-50 hover:bg-gray-100 h-10 w-10 shrink-0">
-                            <ArrowLeft className="h-4 w-4 text-gray-600" />
-                        </Button>
-                    </Link>
-                    <div>
+        <div className="flex flex-col gap-6 animate-in fade-in duration-500 w-full max-w-6xl mx-auto pb-16">
+            {/* ── Header ──────────────────────────── */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-gray-200">
+                <div className="flex items-center gap-4 min-w-0">
+                    <Button variant="outline" size="icon" onClick={() => router.back()} className="rounded-md shrink-0 h-10 w-10">
+                        <ArrowLeft className="h-4 w-4" />
+                    </Button>
+                    <div className="min-w-0">
                         <div className="flex flex-wrap items-center gap-2 mb-1">
-                            <span className={cn("text-[10px] font-bold px-2.5 py-1 rounded-full border", getStatusStyle(claim.status))}>
-                                {getStatusLabel(claim.status)}
+                            <span className={cn("text-[10px] font-bold px-2.5 py-1 rounded-full border flex items-center gap-1.5", statusConfig.className)}>
+                                {statusConfig.icon}
+                                {statusConfig.label}
                             </span>
-                            {claim.log_number && (
-                                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-purple-700 bg-purple-50 border border-purple-200 px-2.5 py-1 rounded-full">
-                                    <Shield className="h-3 w-3" />
-                                    LOG: {claim.log_number}
-                                </span>
-                            )}
+                            <span className="text-xs text-gray-400 font-medium">
+                                Dibuat {new Date(claim.created_at).toLocaleDateString("id-ID", { month:"long", year:"numeric" })}
+                            </span>
+                            <span className="text-xs text-gray-500 font-semibold">Tahap: {claim.stage}</span>
                         </div>
-                        <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight text-gray-900 mt-2">
-                            {claim.claim_number || `Klaim #${claim.claim_id.slice(0, 8)}`}
-                        </h2>
+                        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-black">{claim.client_name}</h1>
                     </div>
                 </div>
-
-                <div className="flex items-center gap-2 shrink-0">
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        className="gap-2 rounded-xl h-10 px-4 border-gray-200 shadow-sm text-gray-700 bg-white"
-                        onClick={() => window.open(`/agent/claims/${params.id}/print`, '_blank')}
-                    >
-                        <Download className="h-4 w-4" />
-                        PDF
-                    </Button>
-
-                    {claim.status === 'DRAFT' && (
-                        <>
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button variant="outline" size="icon" className="rounded-xl h-10 w-10 border-gray-200 shadow-sm bg-white hover:bg-gray-50 text-gray-700">
-                                        <MoreVertical className="h-4 w-4" />
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end" className="w-48 rounded-xl shadow-lg border-gray-100">
-                                    <DropdownMenuItem onClick={() => setIsEditOpen(true)} className="gap-2 p-2.5 cursor-pointer">
-                                        <Edit2 className="h-4 w-4" /> Edit Detail
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => setPendingAction("delete")} className="text-red-500 focus:text-red-600 gap-2 p-2.5 cursor-pointer focus:bg-red-50 mt-1">
-                                        <Trash2 className="h-4 w-4" /> Hapus Klaim
-                                    </DropdownMenuItem>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-
-                            <Button
-                                onClick={() => {
-                                    if (documents.length === 0) {
-                                        openNotice("Dokumen Belum Lengkap", "Minimal 1 dokumen pendukung wajib diunggah sebelum klaim diajukan.");
-                                        return;
-                                    }
-                                    setPendingAction("submit");
-                                }}
-                                disabled={submitting}
-                                className={cn(
-                                    "gap-2 rounded-xl h-10 px-5 shadow-sm text-sm font-medium transition-all ml-1",
-                                    claim?.stage === 'PENDING_AGENT'
-                                        ? "bg-emerald-600 hover:bg-emerald-700 text-white"
-                                        : "bg-black hover:bg-gray-900 text-white"
-                                )}
-                            >
-                                {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                                {claim?.stage === 'PENDING_AGENT' ? "Ajukan ke Agensi" : "Kirim ke RS"}
-                            </Button>
-                        </>
+                <div className="flex items-center gap-2">
+                    {(claim.status === 'DRAFT' || claim.status === 'INFO_REQUESTED') && (
+                        <Button 
+                            onClick={() => setPendingAction("submit")} 
+                            disabled={submitting}
+                            className="gap-2 rounded-md bg-black hover:bg-black text-white"
+                        >
+                            {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                            Ajukan Klaim
+                        </Button>
                     )}
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="outline" size="icon" className="rounded-md h-10 w-10">
+                                <MoreVertical className="h-4 w-4" />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-48 rounded-md">
+                            <DropdownMenuItem onClick={() => setIsEditOpen(true)} className="gap-2">
+                                <Edit2 className="w-4 h-4" /> Edit Klaim
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setPendingAction("delete")} className="gap-2 text-red-600 focus:text-red-600">
+                                <Trash2 className="w-4 h-4" /> Hapus Klaim
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
                 </div>
             </div>
 
-            {/* Alert: Info Requested */}
-            {claim.status === 'INFO_REQUESTED' && infoRequest && (
-                <div className="bg-amber-50 rounded-2xl p-5 border border-amber-200 flex items-start gap-4">
-                    <div className="h-10 w-10 rounded-full bg-amber-100 flex items-center justify-center shrink-0 mt-0.5">
-                        <AlertCircle className="h-5 w-5 text-amber-600" />
-                    </div>
-                    <div>
-                        <h3 className="font-semibold text-amber-900">Permintaan Data Tambahan</h3>
-                        <p className="text-sm text-amber-800 mt-1 leading-relaxed">
-                            Rumah sakit atau tim medis memerlukan informasi tambahan untuk melanjutkan proses klaim ini. Silakan lengkapi formulir di bagian "Kebutuhan Data" di bawah.
-                        </p>
-                    </div>
-                </div>
-            )}
+            <Tabs defaultValue="overview" className="w-full">
+                <TabsList className="bg-transparent border-b border-gray-200 w-full justify-start rounded-none p-0 h-auto space-x-6">
+                    <TabsTrigger value="overview" className="rounded-none border-b-2 border-transparent data-[state=active]:border-black data-[state=active]:text-black text-gray-500 bg-transparent px-2 py-3 shadow-none data-[state=active]:shadow-none font-semibold">Overview</TabsTrigger>
+                    <TabsTrigger value="documents" className="rounded-none border-b-2 border-transparent data-[state=active]:border-black data-[state=active]:text-black text-gray-500 bg-transparent px-2 py-3 shadow-none data-[state=active]:shadow-none font-semibold">Documents</TabsTrigger>
+                    <TabsTrigger value="timeline" className="rounded-none border-b-2 border-transparent data-[state=active]:border-black data-[state=active]:text-black text-gray-500 bg-transparent px-2 py-3 shadow-none data-[state=active]:shadow-none font-semibold">Timeline & Logs</TabsTrigger>
+                </TabsList>
 
-            {/* Main Content Layout */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* Left Column: Details */}
-                <div className="lg:col-span-2 space-y-8">
-                    {/* section: Info Utama */}
-                    <div className="bg-white rounded-3xl border border-gray-100 overflow-hidden shadow-sm">
-                        <div className="px-6 py-5 border-b border-gray-50 flex items-center justify-between bg-gray-50/30">
-                            <h3 className="font-semibold text-gray-900 text-base">Informasi Utama</h3>
-                        </div>
-                        <div className="px-6 py-2">
-                            <FieldRow label="Nasabah" icon={User} value={<span className="font-medium">{claim.client_name}</span>} />
-                            <FieldRow label="Tanggal Kejadian" icon={Calendar} value={new Date(claim.claim_date).toLocaleDateString("id-ID", { day: 'numeric', month: 'long', year: 'numeric' })} />
-                            <FieldRow label="Rumah Sakit" icon={Building2} value={claim.hospital_name} />
-                            <FieldRow label="Diagnosis / Penyakit" icon={Stethoscope} value={claim.disease_name} />
-                            <FieldRow
-                                label="Perkiraan Biaya"
-                                icon={Banknote}
-                                value={claim.total_amount ? <span className="text-lg font-bold text-emerald-600">{new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(claim.total_amount)}</span> : undefined}
-                            />
-                            <FieldRow label="Catatan Tambahan" icon={FileText} value={parsedNotes.plainNotes} />
-                        </div>
-                    </div>
-
-                    {/* section: Meta Form */}
-                    {parsedNotes.meta && (
-                        <div className="bg-white rounded-3xl border border-gray-100 overflow-hidden shadow-sm">
-                            <div className="px-6 py-5 border-b border-gray-50 flex items-center justify-between bg-gray-50/30">
-                                <h3 className="font-semibold text-gray-900 text-base">Detail Medis Awal</h3>
-                            </div>
-                            <div className="px-6 py-2">
-                                <FieldRow label="Kategori" icon={FileText} value={parsedNotes.meta.claim_category} />
-                                <FieldRow label="Jenis Manfaat" icon={FileText} value={parsedNotes.meta.benefit_type} />
-                                <FieldRow label="Penyebab Perawatan" icon={FileText} value={parsedNotes.meta.care_cause} />
-                                <FieldRow label="Awal Gejala" icon={Clock} value={parsedNotes.meta.symptom_onset_date} />
-                                <FieldRow label="Terkait Narkotika" icon={AlertCircle} value={parsedNotes.meta.alcohol_drug_related} />
-                            </div>
-                        </div>
-                    )}
-                </div>
-
-                {/* Right Column: Uploads / Actions */}
-                <div className="space-y-6">
-                    {claim.status === 'INFO_REQUESTED' && infoRequest ? (
-                        <div className="bg-white rounded-3xl border border-amber-200 overflow-hidden shadow-sm">
-                            <div className="px-6 py-5 bg-amber-50 border-b border-amber-200 flex items-center gap-2">
-                                <AlertCircle className="w-4 h-4 text-amber-600" />
-                                <div>
-                                    <h3 className="font-semibold text-amber-900 text-sm">Kebutuhan Data</h3>
-                                    <p className="text-[10px] text-amber-700/70 mt-0.5 font-bold">Wajib diisi</p>
+                <TabsContent value="overview" className="mt-6 space-y-6">
+                    <div className="grid gap-6 lg:grid-cols-2">
+                        {/* Main Info Card */}
+                        <div className="bg-white rounded-lg p-6 sm:p-8 shadow-sm border border-gray-200 relative overflow-hidden flex-1">
+                            <div className="absolute top-0 right-0 p-6 sm:p-8">
+                                <div className="bg-gray-50 border border-gray-200 rounded-md px-3 py-1.5 flex flex-col items-end">
+                                    <span className="text-[10px] font-bold text-gray-400 uppercase">Nomor Klaim</span>
+                                    <span className="text-sm font-semibold text-black">{claim.claim_number || "—"}</span>
                                 </div>
                             </div>
-                            <div className="p-6">
-                                <form onSubmit={handleSubmitInfo} className="space-y-5">
+
+                            <div className="flex items-center gap-3 mb-2">
+                                <Stethoscope className="w-5 h-5 text-gray-500" />
+                                <span className="text-xs font-bold text-black uppercase tracking-wider">Detail Medis & Biaya</span>
+                            </div>
+                            <h2 className="text-xl sm:text-2xl font-bold text-black mb-1">{claim.disease_name || "Diagnosis Belum Diisi"}</h2>
+                            <p className="text-sm text-gray-400 font-medium mb-8">{claim.hospital_name || "Rumah Sakit Belum Dipilih"}</p>
+
+                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-6">
+                                <Stat label="Total Estimasi Biaya" icon={Banknote} value={idr(claim.total_amount)} />
+                                <Stat label="Tanggal Kejadian" icon={Calendar} value={date(claim.claim_date)} />
+                                <Stat label="Asuransi" icon={Shield} value={claim.insurance_name} />
+                            </div>
+
+                            {claim.notes && (
+                                <>
+                                    <Separator className="my-8 opacity-50" />
+                                    <div className="space-y-2">
+                                        <div className="flex items-center gap-2 text-gray-400">
+                                            <FileText className="w-3.5 h-3.5" />
+                                            <span className="text-[10px] font-bold uppercase tracking-wider">Catatan Tambahan</span>
+                                        </div>
+                                        <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-wrap bg-white p-4 rounded-md border border-gray-200/50">
+                                            {claim.notes}
+                                        </p>
+                                    </div>
+                                </>
+                            )}
+                        </div>
+
+                        {/* Info Request Section */}
+                        {infoRequest && (
+                            <div className="bg-white rounded-lg p-6 sm:p-8 border border-gray-200 animate-in slide-in-from-top-2 duration-500">
+                                <div className="flex items-center gap-3 mb-6">
+                                    <div className="h-10 w-10 rounded-md bg-gray-100 flex items-center justify-center text-amber-700">
+                                        <MessageSquare className="w-5 h-5" />
+                                    </div>
+                                    <div>
+                                        <h3 className="font-bold text-amber-900">Permintaan Informasi Tambahan</h3>
+                                        <p className="text-xs text-amber-700/70">Mohon lengkapi data berikut</p>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-6">
                                     {infoRequest.form_schema.map((field) => (
                                         <div key={field.id} className="space-y-2">
-                                            <Label htmlFor={field.id} className="text-xs uppercase font-semibold text-gray-500 tracking-wider">
-                                                {field.label} {field.required && <span className="text-red-500">*</span>}
-                                            </Label>
+                                            <Label className="text-sm font-semibold text-amber-900">{field.label} {field.required && "*"}</Label>
                                             {field.type === 'select' ? (
-                                                <Select
-                                                    onValueChange={(val) => handleInputChange(field.id, val)}
-                                                    required={field.required}
-                                                >
-                                                    <SelectTrigger className="rounded-xl border-gray-200 text-sm h-11">
-                                                        <SelectValue placeholder="Pilih opsi..." />
+                                                <Select onValueChange={(v) => setResponses(r => ({ ...r, [field.id]: v }))}>
+                                                    <SelectTrigger className="bg-white border-amber-200 rounded-md">
+                                                        <SelectValue placeholder={`Pilih ${field.label}`} />
                                                     </SelectTrigger>
-                                                    <SelectContent className="rounded-xl">
-                                                        {field.options?.map((opt) => (
+                                                    <SelectContent className="rounded-md">
+                                                        {field.options?.map(opt => (
                                                             <SelectItem key={opt} value={opt}>{opt}</SelectItem>
                                                         ))}
                                                     </SelectContent>
                                                 </Select>
                                             ) : (
                                                 <Input
-                                                    id={field.id}
                                                     type={field.type}
-                                                    required={field.required}
-                                                    onChange={(e) => handleInputChange(field.id, e.target.value)}
-                                                    className="rounded-xl border-gray-200 text-sm h-11"
-                                                    placeholder={`Ketik ${field.label.toLowerCase()}...`}
+                                                    className="bg-white border-amber-200 rounded-md"
+                                                    onChange={(e) => setResponses(r => ({ ...r, [field.id]: e.target.value }))}
                                                 />
                                             )}
                                         </div>
                                     ))}
-                                    <Button type="submit" className="w-full rounded-xl h-11 bg-black hover:bg-gray-900 text-white shadow-md font-medium mt-4 transition-all active:scale-[0.98]" disabled={submitting}>
-                                        {submitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
-                                        Kirim Respon
+                                    <Button 
+                                        onClick={handleInfoSubmit} 
+                                        disabled={submitting}
+                                        className="w-full bg-amber-600 hover:bg-amber-700 text-white rounded-md h-12 font-bold"
+                                    >
+                                        {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : "Kirim Informasi"}
                                     </Button>
-                                </form>
-                            </div>
-                        </div>
-                    ) : (
-                        <div className="bg-white rounded-3xl border border-gray-100 overflow-hidden shadow-sm">
-                            <div className="px-6 py-5 border-b border-gray-50 flex items-center justify-between bg-gray-50/30">
-                                <h3 className="font-semibold text-gray-900 text-base">Dokumen File</h3>
-                                <span className="bg-gray-200/60 text-gray-600 text-xs font-bold px-2 py-0.5 rounded-md">{documents.length} File</span>
-                            </div>
-                            <div className="p-6 space-y-5">
-                                {claim.status === 'DRAFT' && (
-                                    <div className="border-2 border-dashed border-gray-200 rounded-2xl p-6 relative flex flex-col items-center justify-center text-center hover:bg-gray-50 transition-colors group cursor-pointer bg-white">
-                                        <input
-                                            type="file"
-                                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                                            onChange={handleFileUpload}
-                                            disabled={uploading}
-                                        />
-                                        <div className="h-12 w-12 rounded-full bg-gray-50 flex items-center justify-center mb-3 group-hover:scale-110 shadow-sm border border-gray-100 transition-transform">
-                                            {uploading ? (
-                                                <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
-                                            ) : (
-                                                <Upload className="h-5 w-5 text-gray-400" />
-                                            )}
-                                        </div>
-                                        <h4 className="font-medium text-sm text-gray-900">
-                                            {uploading ? "Sabar, mengunggah..." : "Tambah Dokumen"}
-                                        </h4>
-                                        <p className="text-[11px] text-gray-400 mt-1 max-w-[200px]">PDF, JPG, PNG &bull; Maks 5MB</p>
-                                    </div>
-                                )}
-
-                                <div className="space-y-3">
-                                    {documents.length === 0 ? (
-                                        claim.status !== 'DRAFT' ? (
-                                            <div className="text-center py-6">
-                                                <FileText className="h-8 w-8 text-gray-200 mx-auto mb-2" />
-                                                <p className="text-xs text-gray-400">Belum ada dokumen tertaut</p>
-                                            </div>
-                                        ) : null
-                                    ) : (
-                                        documents.map((doc) => (
-                                            <a
-                                                key={doc.document_id}
-                                                href={doc.file_url}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="group flex flex-col sm:flex-row sm:items-center gap-3 p-3.5 rounded-xl border border-gray-100 bg-gray-50/30 hover:border-gray-200 hover:bg-gray-50 transition-all cursor-pointer relative"
-                                            >
-                                                <div className="flex items-center gap-3 flex-1 min-w-0">
-                                                    <div className="h-10 w-10 bg-white rounded-lg flex items-center justify-center shrink-0 border border-gray-100 group-hover:shadow-sm transition-all">
-                                                        <FileText className="h-4 w-4 text-gray-400 group-hover:text-black transition-colors" />
-                                                    </div>
-                                                    <div className="flex-1 min-w-0">
-                                                        <p className="text-sm font-medium text-gray-900 truncate group-hover:text-black transition-colors">
-                                                            {doc.file_url.split('/').pop()}
-                                                        </p>
-                                                        <p className="text-[10px] text-gray-400 mt-0.5 font-semibold">
-                                                            {new Date(doc.created_at).toLocaleDateString("id-ID", { day: 'numeric', month: 'short', year: 'numeric' })}
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                                <div className="hidden sm:flex h-8 w-8 bg-white border border-gray-100 rounded-lg shrink-0 items-center justify-center text-gray-300 group-hover:text-black group-hover:border-gray-300 transition-colors shadow-sm">
-                                                    <Download className="h-3.5 w-3.5" />
-                                                </div>
-                                            </a>
-                                        ))
-                                    )}
                                 </div>
                             </div>
+                        )}
+                    </div>
+                </TabsContent>
+
+                <TabsContent value="documents" className="mt-6">
+                    {/* Documents Section */}
+                    <div className="bg-white rounded-lg p-6 sm:p-8 shadow-sm border border-gray-200">
+                        <div className="flex items-center justify-between mb-8">
+                            <div className="flex items-center gap-4">
+                                <div className="h-12 w-12 rounded-md bg-black flex items-center justify-center text-white shadow-sm shadow-gray-200">
+                                    <FileText className="w-6 h-6" />
+                                </div>
+                                <div>
+                                    <h3 className="font-bold text-black">Dokumen Pendukung</h3>
+                                    <p className="text-xs text-gray-400">{documents.length} file terunggah</p>
+                                </div>
+                            </div>
+                            <div className="relative">
+                                <input
+                                    type="file"
+                                    id="file-upload"
+                                    className="hidden"
+                                    onChange={handleFileUpload}
+                                    disabled={uploading}
+                                />
+                                <Button 
+                                    asChild 
+                                    variant="outline" 
+                                    className="rounded-md gap-2 border-gray-200 hover:bg-gray-50"
+                                    disabled={uploading}
+                                >
+                                    <label htmlFor="file-upload" className="cursor-pointer">
+                                        {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                                        Unggah File
+                                    </label>
+                                </Button>
+                            </div>
                         </div>
-                    )}
-                </div>
-            </div>
 
-            {/* Audit Trail / Riwayat Klaim */}
-            <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6">
-                <ClaimTimeline claimId={claim.claim_id} />
-            </div>
+                        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {documents.map((doc) => (
+                                <div key={doc.document_id} className="group flex items-center justify-between p-4 rounded-md bg-gray-50 border border-gray-200 hover:border-gray-300 transition-all">
+                                    <div className="flex items-center gap-3 min-w-0">
+                                        <div className="h-10 w-10 rounded-md bg-white border border-gray-200 flex items-center justify-center shrink-0">
+                                            <FileText className="w-5 h-5 text-gray-400" />
+                                        </div>
+                                        <div className="min-w-0">
+                                            <p className="text-sm font-semibold text-black truncate">Dokumen Klaim</p>
+                                            <p className="text-[10px] text-gray-400 font-medium uppercase">{date(doc.created_at)}</p>
+                                        </div>
+                                    </div>
+                                    <Button variant="ghost" size="icon" asChild className="rounded-lg opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <a href={doc.file_url} target="_blank" rel="noreferrer">
+                                            <Download className="w-4 h-4 text-gray-500" />
+                                        </a>
+                                    </Button>
+                                </div>
+                            ))}
+                            {documents.length === 0 && (
+                                <div className="col-span-full py-12 text-center bg-white rounded-lg border border-dashed border-gray-200">
+                                    <FileText className="w-8 h-8 text-gray-200 mx-auto mb-2" />
+                                    <p className="text-sm text-gray-400">Belum ada dokumen pendukung</p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </TabsContent>
 
-            {/* Dialog Edit */}
+                <TabsContent value="timeline" className="mt-6 space-y-6">
+                    <div className="grid gap-6 lg:grid-cols-2">
+                        {/* Timeline Card */}
+                        <div className="bg-white rounded-lg p-6 sm:p-8 shadow-sm border border-gray-200">
+                            <ClaimTimeline claimId={claim.claim_id} />
+                        </div>
+
+                        {/* Log Info Card */}
+                        {(claim.log_number || claim.log_issued_at) && (
+                            <div className="bg-white rounded-lg p-6 sm:p-8 border border-gray-200 h-fit">
+                                <div className="flex items-center gap-3 mb-6">
+                                    <div className="h-10 w-10 rounded-md bg-gray-100 flex items-center justify-center text-black">
+                                        <Shield className="w-5 h-5" />
+                                    </div>
+                                    <div>
+                                        <h3 className="font-bold text-black">Informasi LOG</h3>
+                                        <p className="text-xs text-gray-500">Letter of Guarantee</p>
+                                    </div>
+                                </div>
+                                <div className="space-y-4">
+                                    <Stat label="Nomor LOG" icon={FileText} value={claim.log_number} />
+                                    <Stat label="Diterbitkan" icon={Calendar} value={date(claim.log_issued_at || "")} />
+                                    <Stat label="Dikirim ke RS" icon={Send} value={date(claim.log_sent_to_hospital_at || "")} />
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </TabsContent>
+            </Tabs>
+
+            {/* Modals */}
+            <ActionModal
+                open={pendingAction !== null}
+                onOpenChange={(open) => { if (!open) setPendingAction(null); }}
+                onConfirm={pendingAction === "submit" ? executeSubmitClaim : executeDeleteClaim}
+                title={pendingAction === "submit" ? "Ajukan Klaim?" : "Hapus Klaim?"}
+                description={pendingAction === "submit" 
+                    ? "Pastikan semua dokumen sudah lengkap. Klaim akan dikirim untuk diproses lebih lanjut." 
+                    : "Tindakan ini tidak dapat dibatalkan. Seluruh data klaim akan dihapus permanen."}
+                confirmText={pendingAction === "submit" ? "Ya, Ajukan" : "Ya, Hapus"}
+                destructive={pendingAction !== "submit"}
+                loading={submitting}
+            />
+
             <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-                <DialogContent className="rounded-3xl border border-gray-100 shadow-2xl overflow-hidden sm:max-w-md p-0">
-                    <div className="px-6 py-5 border-b border-gray-100 bg-white">
-                        <DialogTitle className="text-xl font-bold">Edit Detail Klaim</DialogTitle>
-                        <DialogDescription className="text-xs mt-1 text-gray-500">
-                            Masukan tagihan kasar perkiraan untuk RS
-                        </DialogDescription>
-                    </div>
-                    <div className="p-6 space-y-5 bg-gray-50/30">
+                <DialogContent className="rounded-lg max-w-md">
+                    <DialogHeader>
+                        <DialogTitle className="text-xl font-bold">Edit Informasi Klaim</DialogTitle>
+                        <DialogDescription>Perbarui estimasi biaya atau catatan klaim.</DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
                         <div className="space-y-2">
-                            <Label className="text-xs font-semibold text-gray-500">Tanggal Kejadian</Label>
-                            <Input
-                                type="date"
-                                className="rounded-xl border-gray-200 h-11"
-                                value={editForm.claim_date}
-                                onChange={(e) => setEditForm({ ...editForm, claim_date: e.target.value })}
+                            <Label>Estimasi Total Biaya</Label>
+                            <Input 
+                                type="number" 
+                                value={editForm.total_amount} 
+                                onChange={e => setEditForm(f => ({ ...f, total_amount: e.target.value }))}
+                                className="rounded-md"
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label className="text-xs font-semibold text-gray-500">Perkiraan Biaya (Rp)</Label>
-                            <Input
-                                type="number"
-                                className="rounded-xl border-gray-200 h-11"
-                                value={editForm.total_amount}
-                                onChange={(e) => setEditForm({ ...editForm, total_amount: e.target.value })}
-                                placeholder="0"
+                            <Label>Tanggal Kejadian</Label>
+                            <Input 
+                                type="date" 
+                                value={editForm.claim_date} 
+                                onChange={e => setEditForm(f => ({ ...f, claim_date: e.target.value }))}
+                                className="rounded-md"
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label className="text-xs font-semibold text-gray-500">Catatan</Label>
-                            <Textarea
-                                className="rounded-xl border-gray-200 min-h-[100px] resize-none"
-                                value={editForm.notes}
-                                onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })}
-                                placeholder="Tambahkan informasi pendukung opsional di sini..."
+                            <Label>Catatan</Label>
+                            <Textarea 
+                                value={editForm.notes} 
+                                onChange={e => setEditForm(f => ({ ...f, notes: e.target.value }))}
+                                className="rounded-md min-h-[100px]"
                             />
                         </div>
                     </div>
-                    <div className="px-6 py-4 bg-white border-t border-gray-100 flex items-center justify-end gap-2">
-                        <Button variant="ghost" onClick={() => setIsEditOpen(false)} className="rounded-xl font-medium text-gray-500 hover:text-gray-900">Batal Edit</Button>
-                        <Button onClick={handleUpdateClaim} disabled={submitting} className="rounded-xl bg-black hover:bg-gray-900 font-medium px-6 h-10 shadow-md transition-all active:scale-95">
-                            {submitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Simpan Perubahaan"}
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsEditOpen(false)} className="rounded-md">Batal</Button>
+                        <Button onClick={handleUpdateClaim} disabled={submitting} className="rounded-md bg-black hover:bg-black">
+                            {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : "Simpan Perubahan"}
                         </Button>
-                    </div>
+                    </DialogFooter>
                 </DialogContent>
             </Dialog>
 
-            <ActionModal
-                open={pendingAction === "submit"}
-                onOpenChange={(open) => {
-                    if (!open) setPendingAction(null);
-                }}
-                title={claim?.stage === 'PENDING_AGENT' ? "Ajukan ke Agensi" : "Kirim ke Rumah Sakit"}
-                description={claim?.stage === 'PENDING_AGENT' ? "Pastikan berkas medis telah dilampirkan. Yakin lanjutkan ke Agensi Asuransi?" : "Apakah dokumen pendukung sudah diunggah seluruhnya dan siap diproses Rumah Sakit?"}
-                confirmText={claim?.stage === 'PENDING_AGENT' ? "Ya, Ajukan Final" : "Kirim & Proses"}
-                cancelText="Kembali"
-                onConfirm={executeSubmitClaim}
-                loading={submitting}
-            />
-            <ActionModal
-                open={pendingAction === "delete"}
-                onOpenChange={(open) => {
-                    if (!open) setPendingAction(null);
-                }}
-                title="Hapus Pengajuan"
-                description="Hapus klaim yang berstatus 'Draft' ini tidak dapat dipulihkan dan fail yang di upload akan terbuang."
-                confirmText="Ya, Hapus Permanen"
-                cancelText="Batal"
-                onConfirm={executeDeleteClaim}
-                destructive
-                loading={submitting}
-            />
-            <ActionModal
-                open={notice.open}
-                onOpenChange={(open) => {
-                    setNotice((prev) => ({ ...prev, open }));
-                    if (!open && notice.onClose) {
-                        notice.onClose();
-                    }
-                }}
-                title={notice.title}
-                description={notice.description}
-                confirmText="OKE"
-            />
+            <Dialog open={notice.open} onOpenChange={(o) => !o && setNotice(n => ({ ...n, open: false }))}>
+                <DialogContent className="rounded-lg max-w-sm">
+                    <DialogHeader>
+                        <DialogTitle className="text-xl font-bold">{notice.title}</DialogTitle>
+                        <DialogDescription className="pt-2">{notice.description}</DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button 
+                            onClick={() => {
+                                setNotice(n => ({ ...n, open: false }));
+                                notice.onClose?.();
+                            }}
+                            className="w-full rounded-md bg-black hover:bg-black"
+                        >
+                            Tutup
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

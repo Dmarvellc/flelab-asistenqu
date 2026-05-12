@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { BusyOverlayProvider } from "@/components/ui/busy-overlay-provider";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import { AuthWatcher } from "@/components/auth/auth-watcher";
 
 const poppins = Poppins({
   variable: "--font-poppins",
@@ -36,6 +37,7 @@ export default function RootLayout({
         style={{ fontFamily: 'var(--font-poppins), sans-serif' }}
       >
         <BusyOverlayProvider>
+          <AuthWatcher />
           {children}
         </BusyOverlayProvider>
         <Toaster />

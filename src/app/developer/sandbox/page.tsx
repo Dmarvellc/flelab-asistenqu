@@ -36,13 +36,13 @@ const ROLE_META: Record<string, { label: string; icon: React.ElementType; color:
   agent: {
     label: "Agen",
     icon: UserCheck,
-    color: "bg-emerald-50 text-emerald-700 border-emerald-200",
+    color: "bg-white text-emerald-700 border-emerald-200",
     loginPath: "/agent/login",
   },
   admin_agency: {
     label: "Admin Agency",
     icon: Building2,
-    color: "bg-blue-50 text-blue-700 border-blue-200",
+    color: "bg-white text-blue-700 border-blue-200",
     loginPath: "/admin-agency/login",
   },
   hospital_admin: {
@@ -54,7 +54,7 @@ const ROLE_META: Record<string, { label: string; icon: React.ElementType; color:
   insurance_admin: {
     label: "Insurance Admin",
     icon: Shield,
-    color: "bg-amber-50 text-amber-700 border-amber-200",
+    color: "bg-white text-amber-700 border-amber-200",
     loginPath: "/agent/login",
   },
 }
@@ -62,8 +62,8 @@ const ROLE_META: Record<string, { label: string; icon: React.ElementType; color:
 const ALL_ROLES = Object.keys(ROLE_META)
 
 const STATUS_META = {
-  ACTIVE: { label: "Aktif", icon: CheckCircle2, cls: "text-emerald-600 bg-emerald-50 border-emerald-200" },
-  EXPIRED: { label: "Kedaluwarsa", icon: Timer, cls: "text-amber-600 bg-amber-50 border-amber-200" },
+  ACTIVE: { label: "Aktif", icon: CheckCircle2, cls: "text-emerald-600 bg-white border-emerald-200" },
+  EXPIRED: { label: "Kedaluwarsa", icon: Timer, cls: "text-amber-600 bg-white border-amber-200" },
   DESTROYED: { label: "Dihapus", icon: XCircle, cls: "text-gray-400 bg-gray-50 border-gray-200" },
 }
 
@@ -114,7 +114,7 @@ function AccountRow({ acc, sessionStatus }: { acc: SandboxAccount; sessionStatus
   const isAlive = sessionStatus === "ACTIVE"
 
   return (
-    <div className={`rounded-xl border p-3 transition-all ${isAlive ? "bg-white border-gray-100" : "bg-gray-50 border-gray-100 opacity-60"}`}>
+    <div className={`rounded-md border p-3 transition-all ${isAlive ? "bg-white border-gray-200" : "bg-gray-50 border-gray-200 opacity-60"}`}>
       <div className="flex items-center justify-between mb-2">
         <span className={`inline-flex items-center gap-1.5 text-[11px] font-bold px-2 py-0.5 rounded-full border ${meta.color}`}>
           <Icon className="h-3 w-3" />
@@ -204,23 +204,23 @@ function SessionCard({
   }
 
   return (
-    <div className={`rounded-2xl border transition-all duration-200 overflow-hidden ${
+    <div className={`rounded-md border transition-all duration-200 overflow-hidden ${
       session.status === "ACTIVE"
         ? "bg-white border-gray-200 shadow-sm"
-        : "bg-gray-50 border-gray-100"
+        : "bg-gray-50 border-gray-200"
     }`}>
       {/* Header */}
       <div className="p-4 sm:p-5">
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-start gap-3 min-w-0">
-            <div className={`mt-0.5 h-8 w-8 rounded-xl flex items-center justify-center shrink-0 ${
+            <div className={`mt-0.5 h-8 w-8 rounded-md flex items-center justify-center shrink-0 ${
               session.status === "ACTIVE" ? "bg-emerald-50" : "bg-gray-100"
             }`}>
               <Box className={`h-4 w-4 ${session.status === "ACTIVE" ? "text-emerald-600" : "text-gray-400"}`} />
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
-                <h3 className="font-semibold text-gray-900 text-sm">{session.name}</h3>
+                <h3 className="font-semibold text-black text-sm">{session.name}</h3>
                 <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border ${st.cls}`}>
                   <StatusIcon className="h-3 w-3" />
                   {st.label}
@@ -273,7 +273,7 @@ function SessionCard({
                 ) : (
                   <button
                     onClick={() => setConfirm(true)}
-                    className="flex items-center gap-1.5 text-[12px] font-semibold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 px-3 py-1.5 rounded-xl transition-colors"
+                    className="flex items-center gap-1.5 text-[12px] font-semibold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 px-3 py-1.5 rounded-md transition-colors"
                   >
                     <Trash2 className="h-3.5 w-3.5" /> Destroy
                   </button>
@@ -282,7 +282,7 @@ function SessionCard({
             )}
             <button
               onClick={() => setExpanded(e => !e)}
-              className="p-2 rounded-xl hover:bg-gray-100 transition-colors"
+              className="p-2 rounded-md hover:bg-gray-100 transition-colors"
             >
               {expanded ? <ChevronUp className="h-4 w-4 text-gray-500" /> : <ChevronDown className="h-4 w-4 text-gray-500" />}
             </button>
@@ -291,7 +291,7 @@ function SessionCard({
 
         {/* Expiry warning bar */}
         {session.status === "ACTIVE" && isExpiring && (
-          <div className="mt-3 flex items-center gap-2 bg-red-50 border border-red-200 rounded-xl px-3 py-2">
+          <div className="mt-3 flex items-center gap-2 bg-red-50 border border-red-200 rounded-md px-3 py-2">
             <AlertTriangle className="h-3.5 w-3.5 text-red-500 shrink-0" />
             <span className="text-[11px] text-red-600 font-medium">
               Session ini akan kedaluwarsa dalam kurang dari 1 jam. Segera selesaikan testing.
@@ -314,7 +314,7 @@ function SessionCard({
           {Object.keys(session.metadata).length > 0 && (
             <div className="mt-4 flex gap-2 flex-wrap">
               {session.metadata.agency_id && (
-                <span className="inline-flex items-center gap-1.5 text-[10px] text-blue-600 bg-blue-50 border border-blue-200 px-2.5 py-1 rounded-lg">
+                <span className="inline-flex items-center gap-1.5 text-[10px] text-blue-600 bg-white border border-blue-200 px-2.5 py-1 rounded-lg">
                   <Building2 className="h-3 w-3" /> agency_id: {session.metadata.agency_id.slice(0, 8)}…
                 </span>
               )}
@@ -379,11 +379,11 @@ function CreateModal({ onClose, onCreate }: {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+      <div className="bg-white rounded-md shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200">
         {/* Header */}
-        <div className="bg-gray-900 p-5">
+        <div className="bg-black p-5">
           <div className="flex items-center gap-3">
-            <div className="h-9 w-9 bg-white/10 rounded-xl flex items-center justify-center">
+            <div className="h-9 w-9 bg-white/10 rounded-md flex items-center justify-center">
               <Box className="h-5 w-5 text-white" />
             </div>
             <div>
@@ -402,7 +402,7 @@ function CreateModal({ onClose, onCreate }: {
               value={name}
               onChange={e => setName(e.target.value)}
               placeholder="mis. Sprint 24 Testing"
-              className="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-gray-400 transition-all bg-gray-50 focus:bg-white"
+              className="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-md focus:outline-none focus:border-gray-400 transition-all bg-gray-50 focus:bg-white"
             />
           </div>
 
@@ -414,7 +414,7 @@ function CreateModal({ onClose, onCreate }: {
               onChange={e => setDescription(e.target.value)}
               placeholder="Tujuan testing ini..."
               rows={2}
-              className="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-gray-400 transition-all bg-gray-50 focus:bg-white resize-none"
+              className="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-md focus:outline-none focus:border-gray-400 transition-all bg-gray-50 focus:bg-white resize-none"
             />
           </div>
 
@@ -430,8 +430,8 @@ function CreateModal({ onClose, onCreate }: {
                   <button
                     key={r}
                     onClick={() => toggleRole(r)}
-                    className={`flex items-center gap-2 p-3 rounded-xl border text-left transition-all ${
-                      active ? "bg-gray-900 text-white border-transparent" : "bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100"
+                    className={`flex items-center gap-2 p-3 rounded-md border text-left transition-all ${
+                      active ? "bg-black text-white border-transparent" : "bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100"
                     }`}
                   >
                     <Icon className="h-4 w-4 shrink-0" />
@@ -446,7 +446,7 @@ function CreateModal({ onClose, onCreate }: {
           {/* TTL */}
           <div>
             <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider block mb-2">
-              Durasi Session: <span className="text-gray-900">{ttl} jam</span>
+              Durasi Session: <span className="text-black">{ttl} jam</span>
             </label>
             <input
               type="range" min={1} max={72} step={1} value={ttl}
@@ -459,14 +459,14 @@ function CreateModal({ onClose, onCreate }: {
           </div>
 
           {error && (
-            <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-xl px-3 py-2.5">
+            <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-md px-3 py-2.5">
               <AlertTriangle className="h-4 w-4 text-red-500 shrink-0" />
               <span className="text-[12px] text-red-600">{error}</span>
             </div>
           )}
 
           {/* Info box */}
-          <div className="flex items-start gap-2 bg-blue-50 border border-blue-100 rounded-xl px-3 py-2.5">
+          <div className="flex items-start gap-2 bg-white border border-gray-200 rounded-md px-3 py-2.5">
             <Info className="h-3.5 w-3.5 text-blue-500 shrink-0 mt-0.5" />
             <span className="text-[11px] text-blue-600">
               Semua data sandbox akan dihapus bersih saat dihapus manual atau otomatis setelah {ttl} jam.
@@ -476,13 +476,13 @@ function CreateModal({ onClose, onCreate }: {
 
         {/* Footer */}
         <div className="flex gap-3 px-5 pb-5">
-          <button onClick={onClose} className="flex-1 py-2.5 text-sm font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors">
+          <button onClick={onClose} className="flex-1 py-2.5 text-sm font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors">
             Batal
           </button>
           <button
             onClick={submit}
             disabled={loading || selectedRoles.length === 0}
-            className="flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-semibold text-white bg-gray-900 hover:bg-gray-800 rounded-xl transition-colors disabled:opacity-50"
+            className="flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-semibold text-white bg-black hover:bg-gray-800 rounded-md transition-colors disabled:opacity-50"
           >
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Zap className="h-4 w-4" />}
             {loading ? "Membuat…" : "Buat Session"}
@@ -545,14 +545,14 @@ export default function SandboxPage() {
     <div className="flex flex-col gap-6 animate-in fade-in duration-500">
 
       {/* ── Hero ── */}
-      <div className="relative overflow-hidden rounded-2xl bg-gray-900 p-6 sm:p-8">
+      <div className="relative overflow-hidden rounded-md bg-black p-6 sm:p-8">
         <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">Sandbox Testing</h1>
           </div>
           <button
             onClick={() => setShowModal(true)}
-            className="flex items-center gap-2 bg-white text-gray-900 font-semibold text-sm px-5 py-3 rounded-xl hover:bg-gray-100 transition-all shrink-0 shadow-lg"
+            className="flex items-center gap-2 bg-white text-black font-semibold text-sm px-5 py-3 rounded-md hover:bg-gray-100 transition-all shrink-0 shadow-lg"
           >
             <Plus className="h-4 w-4" /> Buat Session Baru
           </button>
@@ -568,7 +568,7 @@ export default function SandboxPage() {
           ].map(s => {
             const Icon = s.icon
             return (
-              <div key={s.label} className="bg-white/10 backdrop-blur-sm border border-white/10 rounded-xl px-4 py-3">
+              <div key={s.label} className="bg-white/10 backdrop-blur-sm border border-white/10 rounded-md px-4 py-3">
                 <div className="flex items-center gap-2">
                   <Icon className={`h-4 w-4 ${s.color}`} />
                   <span className="text-[11px] text-white/60">{s.label}</span>
@@ -589,14 +589,14 @@ export default function SandboxPage() {
         ].map(item => {
           const Icon = item.icon
           return (
-            <div key={item.step} className="bg-white border border-gray-100 rounded-2xl p-4 flex gap-3">
-              <div className="h-8 w-8 rounded-xl bg-gray-900 text-white flex items-center justify-center text-xs font-bold shrink-0">
+            <div key={item.step} className="bg-white border border-gray-200 rounded-md p-4 flex gap-3">
+              <div className="h-8 w-8 rounded-md bg-black text-white flex items-center justify-center text-xs font-bold shrink-0">
                 {item.step}
               </div>
               <div>
                 <div className="flex items-center gap-2 mb-1">
                   <Icon className="h-3.5 w-3.5 text-gray-500" />
-                  <span className="text-sm font-semibold text-gray-900">{item.title}</span>
+                  <span className="text-sm font-semibold text-black">{item.title}</span>
                 </div>
                 <p className="text-[11px] text-gray-500 leading-relaxed">{item.desc}</p>
               </div>
@@ -607,13 +607,13 @@ export default function SandboxPage() {
 
       {/* ── Filter tabs + refresh ── */}
       <div className="flex items-center justify-between gap-3">
-        <div className="flex gap-1 bg-gray-100 p-1 rounded-xl">
+        <div className="flex gap-1 bg-gray-100 p-1 rounded-md">
           {(["ALL", "ACTIVE", "EXPIRED", "DESTROYED"] as const).map(f => (
             <button
               key={f}
               onClick={() => setFilter(f)}
               className={`px-3 py-1.5 text-[12px] font-semibold rounded-lg transition-all ${
-                filter === f ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"
+                filter === f ? "bg-white text-black shadow-sm" : "text-gray-500 hover:text-gray-700"
               }`}
             >
               {f === "ALL" ? `Semua (${sessions.length})` : f === "ACTIVE" ? `Aktif (${activeCnt})` : f === "EXPIRED" ? `Kedaluwarsa (${expiredCnt})` : `Dihapus (${destroyedCnt})`}
@@ -622,7 +622,7 @@ export default function SandboxPage() {
         </div>
         <button
           onClick={fetchSessions}
-          className="flex items-center gap-2 text-[12px] font-semibold text-gray-500 hover:text-gray-700 bg-white border border-gray-200 px-3 py-1.5 rounded-xl hover:bg-gray-50 transition-all"
+          className="flex items-center gap-2 text-[12px] font-semibold text-gray-500 hover:text-gray-700 bg-white border border-gray-200 px-3 py-1.5 rounded-md hover:bg-gray-50 transition-all"
         >
           <RefreshCw className="h-3.5 w-3.5" /> Refresh
         </button>
@@ -632,12 +632,12 @@ export default function SandboxPage() {
       {loading ? (
         <div className="flex flex-col gap-3">
           {[1, 2].map(i => (
-            <div key={i} className="bg-white border border-gray-100 rounded-2xl p-5 animate-pulse h-28" />
+            <div key={i} className="bg-white border border-gray-200 rounded-md p-5 animate-pulse h-28" />
           ))}
         </div>
       ) : filtered.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 bg-white border border-gray-100 rounded-2xl text-center">
-          <div className="h-14 w-14 rounded-2xl bg-gray-50 flex items-center justify-center mb-4">
+        <div className="flex flex-col items-center justify-center py-20 bg-white border border-gray-200 rounded-md text-center">
+          <div className="h-14 w-14 rounded-md bg-gray-50 flex items-center justify-center mb-4">
             <Box className="h-7 w-7 text-gray-300" />
           </div>
           <p className="font-semibold text-gray-700 mb-1">
@@ -651,7 +651,7 @@ export default function SandboxPage() {
           {filter === "ALL" && (
             <button
               onClick={() => setShowModal(true)}
-              className="flex items-center gap-2 bg-gray-900 text-white text-sm font-semibold px-5 py-2.5 rounded-xl hover:bg-gray-800 transition-all"
+              className="flex items-center gap-2 bg-black text-white text-sm font-semibold px-5 py-2.5 rounded-md hover:bg-gray-800 transition-all"
             >
               <Plus className="h-4 w-4" /> Buat Session Pertama
             </button>

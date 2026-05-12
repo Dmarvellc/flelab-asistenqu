@@ -370,7 +370,7 @@ export default function NewClaimPage() {
         <div className="flex flex-col h-full w-full">
             {/* Draft restored banner */}
             {draftRestored && (
-                <div className="flex items-center justify-between gap-3 px-4 py-2.5 mb-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-sm">
+                <div className="flex items-center justify-between gap-3 px-4 py-2.5 mb-3 rounded-md bg-white border border-amber-200 text-amber-800 text-sm">
                     <div className="flex items-center gap-2">
                         <RotateCcw className="w-4 h-4 shrink-0" />
                         <span className="font-medium">Draft tersimpan dipulihkan.</span>
@@ -399,7 +399,7 @@ export default function NewClaimPage() {
                             const Icon = step.icon;
                             return (
                                 <div key={step.id} className={cn(
-                                    "flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-200",
+                                    "flex items-center gap-3 px-3 py-3 rounded-md transition-all duration-200",
                                     isActive ? "bg-black text-white shadow-sm" : isCompleted ? "text-foreground bg-muted/40" : "text-muted-foreground"
                                 )}>
                                     <div className={cn(
@@ -467,7 +467,7 @@ export default function NewClaimPage() {
                                     </div>
 
                                     {/* Section 1: Fasilitas & Tanggal */}
-                                    <div className="rounded-xl border border-border/60 p-5 space-y-4 bg-muted/20">
+                                    <div className="rounded-md border border-border/60 p-5 space-y-4 bg-muted/20">
                                         <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
                                             <Building2 className="w-3.5 h-3.5" /> Fasilitas Kesehatan
                                         </h3>
@@ -505,7 +505,7 @@ export default function NewClaimPage() {
                                     </div>
 
                                     {/* Section 2: Diagnosa & Biaya */}
-                                    <div className="rounded-xl border border-border/60 p-5 space-y-4 bg-muted/20">
+                                    <div className="rounded-md border border-border/60 p-5 space-y-4 bg-muted/20">
                                         <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
                                             <Stethoscope className="w-3.5 h-3.5" /> Diagnosa & Biaya
                                         </h3>
@@ -589,7 +589,7 @@ export default function NewClaimPage() {
                                     </div>
 
                                     {/* Section 3: Informasi Pendukung */}
-                                    <div className="rounded-xl border border-border/60 p-5 space-y-4 bg-muted/20">
+                                    <div className="rounded-md border border-border/60 p-5 space-y-4 bg-muted/20">
                                         <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Informasi Pendukung Klaim</h3>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                             <div className="space-y-1.5">
@@ -749,7 +749,7 @@ export default function NewClaimPage() {
                                         </p>
                                     </div>
 
-                                    <div className="w-full max-w-2xl bg-muted/20 rounded-xl p-8 text-left space-y-6 border border-border/50">
+                                    <div className="w-full max-w-2xl bg-muted/20 rounded-md p-8 text-left space-y-6 border border-border/50">
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                             <div className="space-y-4">
                                                 <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider">Nasabah</h4>
@@ -816,7 +816,7 @@ export default function NewClaimPage() {
                         variant="ghost"
                         onClick={prevStep}
                         disabled={currentStep === 1 || isLoading}
-                        className="h-9 px-4 text-muted-foreground hover:text-foreground rounded-xl text-sm gap-1.5"
+                        className="h-9 px-4 text-muted-foreground hover:text-foreground rounded-md text-sm gap-1.5"
                     >
                         <ArrowLeft className="w-4 h-4" />
                         Kembali
@@ -830,7 +830,7 @@ export default function NewClaimPage() {
                     <Button
                         onClick={nextStep}
                         disabled={isLoading}
-                        className="h-10 px-6 bg-black hover:bg-gray-900 text-white rounded-xl font-semibold text-sm gap-2"
+                        className="h-10 px-6 bg-black hover:bg-black text-white rounded-md font-semibold text-sm gap-2"
                     >
                         Lanjut
                         <ArrowRight className="w-4 h-4" />

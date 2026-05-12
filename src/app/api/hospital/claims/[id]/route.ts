@@ -160,7 +160,7 @@ async function getAuthorizedClaimDetail(
         c.claim_id,
         c.client_id,
         c.hospital_id,
-        c.claim_date,
+        c.claim_date::text,
         c.status,
         c.stage,
         c.total_amount,
@@ -168,15 +168,15 @@ async function getAuthorizedClaimDetail(
         c.hospital_notes,
         p.full_name AS client_name,
         p.gender,
-        p.birth_date,
+        p.birth_date::text,
         p.id_card AS nik,
         p.phone_number,
         p.address,
         ct.contract_number AS policy_number,
         d.name AS disease_name,
         h.name AS hospital_name,
-        c.created_at,
-        c.updated_at
+        c.created_at::text,
+        c.updated_at::text
       FROM public.claim c
       JOIN public.client cl ON c.client_id = cl.client_id
       JOIN public.person p ON cl.person_id = p.person_id

@@ -57,17 +57,17 @@ interface InviteResult {
 }
 
 const ROLE_CONFIG: Record<string, { label: string; icon: React.ElementType; color: string; bg: string }> = {
-  master_admin: { label: "Master Admin", icon: Crown, color: "text-amber-700", bg: "bg-amber-50 border-amber-200" },
-  admin: { label: "Admin", icon: Shield, color: "text-blue-700", bg: "bg-blue-50 border-blue-200" },
+  master_admin: { label: "Master Admin", icon: Crown, color: "text-amber-700", bg: "bg-white border-amber-200" },
+  admin: { label: "Admin", icon: Shield, color: "text-blue-700", bg: "bg-white border-blue-200" },
   manager: { label: "Manager", icon: Star, color: "text-purple-700", bg: "bg-purple-50 border-purple-200" },
   agent: { label: "Agent", icon: Users, color: "text-gray-700", bg: "bg-gray-50 border-gray-200" },
 };
 
 const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
-  ACTIVE: { label: "Aktif", color: "text-emerald-700 bg-emerald-50 border-emerald-200" },
-  INVITED: { label: "Diundang", color: "text-amber-700 bg-amber-50 border-amber-200" },
+  ACTIVE: { label: "Aktif", color: "text-emerald-700 bg-white border-emerald-200" },
+  INVITED: { label: "Diundang", color: "text-amber-700 bg-white border-amber-200" },
   SUSPENDED: { label: "Nonaktif", color: "text-red-700 bg-red-50 border-red-200" },
-  PENDING: { label: "Menunggu", color: "text-amber-700 bg-amber-50 border-amber-200" },
+  PENDING: { label: "Menunggu", color: "text-amber-700 bg-white border-amber-200" },
 };
 
 function formatDate(iso: string) {
@@ -259,9 +259,9 @@ export default function TeamManagementPage() {
   return (
     <div className="flex flex-col gap-8 animate-in fade-in duration-500 w-full">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 pb-6 border-b border-gray-100">
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 pb-6 border-b border-gray-200">
         <div className="min-w-0">
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-black">
             Staff Internal
           </h1>
           <p className="text-sm text-gray-500 mt-1.5 max-w-xl">
@@ -269,7 +269,7 @@ export default function TeamManagementPage() {
             <span className="font-semibold text-gray-700">agen baru</span>, buka halaman{" "}
             <Link
               href="/admin-agency/agents"
-              className="text-gray-900 underline decoration-dotted underline-offset-2 font-semibold hover:text-violet-700"
+              className="text-black underline decoration-dotted underline-offset-2 font-semibold hover:text-violet-700"
             >
               Agen
             </Link>.
@@ -277,7 +277,7 @@ export default function TeamManagementPage() {
         </div>
         <Button
           onClick={() => { setShowInvite(true); setInviteResult(null); }}
-          className="bg-gray-900 hover:bg-gray-800 text-white gap-2 h-10 px-4 rounded-xl text-sm font-semibold shadow-sm shrink-0"
+          className="bg-black hover:bg-gray-800 text-white gap-2 h-10 px-4 rounded-md text-sm font-semibold shadow-sm shrink-0"
         >
           <UserPlus className="h-4 w-4" />
           Undang Staff
@@ -301,30 +301,30 @@ export default function TeamManagementPage() {
           {inviteResult?.mode === "invited" && inviteResult.inviteUrl ? (
             <div className="space-y-4">
               <p className="text-sm text-gray-600">
-                Link untuk <span className="font-semibold text-gray-900">{inviteResult.email}</span>.
+                Link untuk <span className="font-semibold text-black">{inviteResult.email}</span>.
                 Berlaku sampai {inviteResult.expiresAt && formatDate(inviteResult.expiresAt)}.
               </p>
               <div className="flex items-stretch gap-2">
-                <div className="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-xs text-gray-700 break-all font-mono select-all">
+                <div className="flex-1 bg-gray-50 border border-gray-200 rounded-md px-3 py-2.5 text-xs text-gray-700 break-all font-mono select-all">
                   {inviteResult.inviteUrl}
                 </div>
                 <Button
                   onClick={() => copyInviteUrl(inviteResult.inviteUrl!)}
-                  className="bg-gray-900 hover:bg-gray-800 rounded-xl gap-1.5 shrink-0"
+                  className="bg-black hover:bg-gray-800 rounded-md gap-1.5 shrink-0"
                 >
                   <Copy className="h-4 w-4" />
                   Salin
                 </Button>
               </div>
-              <p className="text-[11px] text-amber-700 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2 flex items-start gap-1.5">
+              <p className="text-[11px] text-amber-700 bg-white border border-gray-200 rounded-lg px-3 py-2 flex items-start gap-1.5">
                 <Link2 className="h-3 w-3 mt-0.5 shrink-0" />
                 Link ini hanya muncul sekali. Pastikan Anda salin sebelum menutup dialog ini.
               </p>
               <DialogFooter>
-                <Button variant="outline" onClick={() => { setShowInvite(false); setInviteResult(null); }} className="rounded-xl">
+                <Button variant="outline" onClick={() => { setShowInvite(false); setInviteResult(null); }} className="rounded-md">
                   Selesai
                 </Button>
-                <Button onClick={() => setInviteResult(null)} className="bg-gray-900 hover:bg-gray-800 rounded-xl gap-1.5">
+                <Button onClick={() => setInviteResult(null)} className="bg-black hover:bg-gray-800 rounded-md gap-1.5">
                   <Send className="h-4 w-4" />
                   Undang Lagi
                 </Button>
@@ -339,7 +339,7 @@ export default function TeamManagementPage() {
                     value={inviteForm.email}
                     onChange={e => setInviteForm({ ...inviteForm, email: e.target.value })}
                     placeholder="nama@email.com"
-                    className="rounded-xl"
+                    className="rounded-md"
                     type="email"
                   />
                 </div>
@@ -349,7 +349,7 @@ export default function TeamManagementPage() {
                     value={inviteForm.fullName}
                     onChange={e => setInviteForm({ ...inviteForm, fullName: e.target.value })}
                     placeholder="Nama lengkap"
-                    className="rounded-xl"
+                    className="rounded-md"
                   />
                 </div>
                 <div>
@@ -358,7 +358,7 @@ export default function TeamManagementPage() {
                     value={inviteForm.phone}
                     onChange={e => setInviteForm({ ...inviteForm, phone: e.target.value })}
                     placeholder="+62812…"
-                    className="rounded-xl"
+                    className="rounded-md"
                   />
                 </div>
                 <div className="sm:col-span-2">
@@ -366,7 +366,7 @@ export default function TeamManagementPage() {
                   <select
                     value={inviteForm.role}
                     onChange={e => setInviteForm({ ...inviteForm, role: e.target.value })}
-                    className="w-full h-10 px-3 rounded-xl border border-gray-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-gray-300"
+                    className="w-full h-10 px-3 rounded-md border border-gray-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-gray-300"
                   >
                     <option value="manager">Manager</option>
                     <option value="admin">Admin</option>
@@ -375,11 +375,11 @@ export default function TeamManagementPage() {
                 </div>
               </div>
               <DialogFooter>
-                <Button variant="outline" onClick={() => setShowInvite(false)} className="rounded-xl">Batal</Button>
+                <Button variant="outline" onClick={() => setShowInvite(false)} className="rounded-md">Batal</Button>
                 <Button
                   onClick={handleInvite}
                   disabled={inviting || !inviteForm.email}
-                  className="bg-gray-900 hover:bg-gray-800 rounded-xl gap-2"
+                  className="bg-black hover:bg-gray-800 rounded-md gap-2"
                 >
                   {inviting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                   Buat Undangan
@@ -397,12 +397,12 @@ export default function TeamManagementPage() {
           const count = staffMembers.filter(m => m.member_role === key).length;
           const Icon = cfg.icon;
           return (
-            <div key={key} className="flex items-center gap-3 bg-white border border-gray-100 rounded-xl p-4">
-              <div className={`h-10 w-10 rounded-xl flex items-center justify-center ${cfg.bg} border`}>
+            <div key={key} className="flex items-center gap-3 bg-white border border-gray-200 rounded-md p-4">
+              <div className={`h-10 w-10 rounded-md flex items-center justify-center ${cfg.bg} border`}>
                 <Icon className={`h-4 w-4 ${cfg.color}`} />
               </div>
               <div>
-                <p className="text-xl font-bold text-gray-900">{count}</p>
+                <p className="text-xl font-bold text-black">{count}</p>
                 <p className="text-[10px] text-gray-500 font-medium">{cfg.label}</p>
               </div>
             </div>
@@ -414,13 +414,13 @@ export default function TeamManagementPage() {
       {joinRequests.length > 0 && (
         <Link
           href="/admin-agency/agents"
-          className="flex items-center gap-3 px-5 py-4 bg-blue-50/60 border border-blue-100 rounded-2xl hover:bg-blue-50 transition-colors"
+          className="flex items-center gap-3 px-5 py-4 bg-blue-50/60 border border-gray-200 rounded-md hover:bg-white transition-colors"
         >
-          <div className="h-10 w-10 rounded-xl bg-white border border-blue-200 flex items-center justify-center shrink-0">
+          <div className="h-10 w-10 rounded-md bg-white border border-blue-200 flex items-center justify-center shrink-0">
             <UserCheck className="h-4 w-4 text-blue-600" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-gray-900">
+            <p className="text-sm font-semibold text-black">
               {joinRequests.length} calon agen menunggu persetujuan
             </p>
             <p className="text-[11px] text-gray-500 mt-0.5">
@@ -431,10 +431,10 @@ export default function TeamManagementPage() {
       )}
       {/* Pending staff invitations */}
       {staffPending.length > 0 && (
-        <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm">
+        <div className="bg-white rounded-md border border-gray-200 overflow-hidden shadow-sm">
           <div className="px-5 sm:px-6 py-4 border-b border-gray-50 bg-amber-50/30 flex items-center gap-2">
             <Clock className="h-4 w-4 text-amber-600" />
-            <h3 className="text-sm font-bold text-gray-900">Undangan Pending ({staffPending.length})</h3>
+            <h3 className="text-sm font-bold text-black">Undangan Pending ({staffPending.length})</h3>
           </div>
           <div className="divide-y divide-gray-50">
             {staffPending.map(inv => {
@@ -442,10 +442,10 @@ export default function TeamManagementPage() {
               return (
                 <div
                   key={inv.invitation_id}
-                  className="flex flex-col sm:flex-row sm:items-center gap-3 px-5 sm:px-6 py-4 hover:bg-gray-50/50 transition-colors"
+                  className="flex flex-col sm:flex-row sm:items-center gap-3 px-5 sm:px-6 py-4 hover:bg-white transition-colors"
                 >
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-gray-900 truncate">
+                    <p className="text-sm font-semibold text-black truncate">
                       {inv.full_name || inv.email}
                     </p>
                     <p className="text-[11px] text-gray-400 flex items-center gap-1 truncate">
@@ -478,9 +478,9 @@ export default function TeamManagementPage() {
       )}
 
       {/* Staff List */}
-      <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm">
-        <div className="px-5 sm:px-6 py-4 border-b border-gray-50 bg-gray-50/30">
-          <h3 className="text-sm font-bold text-gray-900">Daftar Staff ({staffMembers.length})</h3>
+      <div className="bg-white rounded-md border border-gray-200 overflow-hidden shadow-sm">
+        <div className="px-5 sm:px-6 py-4 border-b border-gray-50 bg-white">
+          <h3 className="text-sm font-bold text-black">Daftar Staff ({staffMembers.length})</h3>
         </div>
         <div className="divide-y divide-gray-50">
           {staffMembers.length === 0 ? (
@@ -497,10 +497,10 @@ export default function TeamManagementPage() {
               const isEditing = editingId === m.member_id;
 
               return (
-                <div key={m.member_id} className="flex items-center gap-3 sm:gap-4 px-5 sm:px-6 py-4 hover:bg-gray-50/50 transition-colors">
+                <div key={m.member_id} className="flex items-center gap-3 sm:gap-4 px-5 sm:px-6 py-4 hover:bg-white transition-colors">
                   {/* Info */}
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-gray-900 truncate">{m.full_name || m.email}</p>
+                    <p className="text-sm font-semibold text-black truncate">{m.full_name || m.email}</p>
                     <p className="text-[11px] text-gray-400 flex items-center gap-1 truncate">
                       <Mail className="h-3 w-3 shrink-0" /> {m.email}
                     </p>

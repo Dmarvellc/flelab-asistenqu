@@ -45,7 +45,7 @@ const statusConfig: Record<string, { label: string; icon: React.ReactNode; class
     SCHEDULED: {
         label: "Menunggu Konfirmasi",
         icon: <Clock className="h-3.5 w-3.5" />,
-        className: "bg-blue-50 text-blue-700 border border-blue-200",
+        className: "bg-white text-blue-700 border border-blue-200",
     },
     CONFIRMED: {
         label: "Dikonfirmasi",
@@ -183,9 +183,9 @@ export default function HospitalAppointmentsPage() {
     return (
         <div className="flex flex-col gap-8 animate-in fade-in duration-500 w-full">
             {/* Header */}
-            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 pb-6 border-b border-gray-100">
+            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 pb-6 border-b border-gray-200">
                 <div className="min-w-0">
-                    <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900">Jadwal Pasien</h1>
+                    <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-black">Jadwal Pasien</h1>
                     <p className="mt-1.5 text-sm text-gray-500">
                         Kelola permintaan janji temu dan notifikasi kunjungan dari agen asuransi.
                     </p>
@@ -193,13 +193,13 @@ export default function HospitalAppointmentsPage() {
             </div>
 
             {/* Toolbar */}
-            <div className="bg-white rounded-3xl border border-gray-100 overflow-hidden shadow-sm flex flex-col">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 p-8 border-b border-gray-50 bg-gray-50/30">
+            <div className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm flex flex-col">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 p-8 border-b border-gray-50 bg-white">
                     <div className="relative flex-1 max-w-xs">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                         <Input
                             placeholder="Cari pasien atau dokter..."
-                            className="pl-10 bg-gray-50 border-gray-100 text-sm rounded-xl focus:bg-white"
+                            className="pl-10 bg-gray-50 border-gray-200 text-sm rounded-md focus:bg-white"
                             value={search}
                             onChange={e => setSearch(e.target.value)}
                         />
@@ -228,11 +228,11 @@ export default function HospitalAppointmentsPage() {
                     </div>
                 ) : filtered.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-40 gap-3">
-                        <div className="h-12 w-12 rounded-2xl bg-gray-50 border border-gray-100 flex items-center justify-center">
+                        <div className="h-12 w-12 rounded-md bg-gray-50 border border-gray-200 flex items-center justify-center">
                             <Calendar className="h-5 w-5 text-gray-300" />
                         </div>
                         <div className="text-center">
-                            <p className="text-xl font-bold text-gray-900 mb-2">Belum ada jadwal</p>
+                            <p className="text-xl font-bold text-black mb-2">Belum ada jadwal</p>
                             <p className="text-base text-gray-500 max-w-sm mx-auto leading-relaxed">Tidak ada permintaan janji temu saat ini.</p>
                         </div>
                     </div>
@@ -241,7 +241,7 @@ export default function HospitalAppointmentsPage() {
                         {/* Upcoming */}
                         {upcoming.length > 0 && (
                             <div>
-                                <div className="px-8 py-4 bg-gray-50/50">
+                                <div className="px-8 py-4 bg-white">
                                     <p className="text-[13px] font-bold text-gray-500">Mendatang & Menunggu ({upcoming.length})</p>
                                 </div>
                                 {upcoming.map((apt, i) => (
@@ -257,7 +257,7 @@ export default function HospitalAppointmentsPage() {
                         {/* Past */}
                         {past.length > 0 && (
                             <div>
-                                <div className="px-8 py-4 bg-gray-50/50 border-t border-gray-50">
+                                <div className="px-8 py-4 bg-white border-t border-gray-50">
                                     <p className="text-[13px] font-bold text-gray-500">Riwayat ({past.length})</p>
                                 </div>
                                 {past.map((apt, i) => (
@@ -322,7 +322,7 @@ export default function HospitalAppointmentsPage() {
                     </div>
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setRescheduleDialogOpen(false)}>Batal</Button>
-                        <Button onClick={handleReschedule} className="bg-black text-white hover:bg-gray-900" disabled={!newDate}>Simpan Jadwal Baru</Button>
+                        <Button onClick={handleReschedule} className="bg-black text-white hover:bg-black" disabled={!newDate}>Simpan Jadwal Baru</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
@@ -354,14 +354,14 @@ function AppointmentRow({
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.04 }}
             className={cn(
-                "flex flex-col sm:flex-row sm:items-center gap-6 p-6 sm:px-8 bg-white border-b border-gray-50 last:border-0 hover:bg-gray-50/60 transition-colors",
+                "flex flex-col sm:flex-row sm:items-center gap-6 p-6 sm:px-8 bg-white border-b border-gray-50 last:border-0 hover:bg-white transition-colors",
                 isPast && "opacity-70 grayscale-[20%]"
             )}
         >
             {/* Date Block */}
             <div className="flex-shrink-0 w-14 text-center">
                 <div className={cn(
-                    "rounded-xl py-2 px-1",
+                    "rounded-md py-2 px-1",
                     isPast ? "bg-gray-100" : "bg-black"
                 )}>
                     <p className={cn("text-xs font-medium", isPast ? "text-gray-500" : "text-white/70")}>
@@ -376,9 +376,9 @@ function AppointmentRow({
             {/* Info */}
             <div className="flex-1 min-w-0">
                 <div className="flex items-start gap-2 flex-wrap">
-                    <p className="text-sm font-semibold text-gray-900">{apt.client_name}</p>
+                    <p className="text-sm font-semibold text-black">{apt.client_name}</p>
                     {apt.appointment_type === "VISIT_LOG" && (
-                        <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">VISIT LOG</span>
+                        <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-gray-100 text-blue-700">VISIT LOG</span>
                     )}
                     {apt.claim_number && (
                         <span className="text-xs text-gray-400">{apt.claim_number}</span>

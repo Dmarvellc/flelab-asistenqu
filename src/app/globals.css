@@ -257,28 +257,6 @@
   background: oklch(0.4 0 0);
 }
 
-/* Agent portal specific */
-.agent-card {
-  position: relative;
-  overflow: hidden;
-}
-
-.agent-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, oklch(0.7 0 0), transparent);
-  opacity: 0;
-  transition: opacity 0.3s;
-}
-
-.agent-card:hover::before {
-  opacity: 1;
-}
-
 /* Status badge styles */
 .status-approved {
   background-color: oklch(0.95 0 0);
@@ -297,20 +275,6 @@
   background-color: oklch(0.12 0 0);
   color: oklch(0.95 0 0);
   border: 1px solid oklch(0.25 0 0);
-}
-
-/* Glassmorphism effect */
-.glass {
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-}
-
-/* Gradient text */
-.gradient-text {
-  background: linear-gradient(135deg, oklch(0.1 0 0) 0%, oklch(0.5 0 0) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
 }
 
 /* Line clamp utility */

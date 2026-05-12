@@ -7,20 +7,24 @@ import { LayoutDashboard, Users, LogOut, FileText, CalendarCheck, Building2, Bar
 import Link from "next/link"
 import { Logo } from "@/components/ui/logo"
 import { Notifications } from "@/components/dashboard/notifications";
+import { useBusy } from "@/components/ui/busy-overlay-provider";
 
 export function HospitalLayoutClient({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
+  const { run } = useBusy();
 
   const handleLogout = useCallback(async () => {
-    try {
-      await fetch("/api/auth/logout?from=hospital", { method: "POST" });
-    } catch (e) {
-      console.error("Logout failed", e);
-    }
-    router.replace("/hospital/login");
-    router.refresh();
-  }, [router]);
+    await run(async () => {
+      try {
+        await fetch("/api/auth/logout?from=hospital", { method: "POST" });
+      } catch (e) {
+        console.error("Logout failed", e);
+      }
+      router.replace("/hospital/login");
+      router.refresh();
+    }, "Keluar…");
+  }, [router, run]);
 
   const sidebar = (
     <DashboardSidebar>

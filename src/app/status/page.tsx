@@ -15,9 +15,9 @@ const CFG = {
     label: "Operational",
     dot:         "bg-emerald-500",
     bar:         "bg-emerald-500",
-    badge:       "bg-emerald-50 text-emerald-700 border-emerald-200",
+    badge:       "bg-white text-emerald-700 border-emerald-200",
     icon:        CheckCircle2,
-    bannerBg:    "bg-emerald-50 border-emerald-200",
+    bannerBg:    "bg-white border-emerald-200",
     bannerIcon:  "text-emerald-600",
     heading:     "All Systems Operational",
     sub:         "Semua layanan AsistenQu berjalan dengan baik.",
@@ -26,9 +26,9 @@ const CFG = {
     label: "Degraded",
     dot:         "bg-amber-400",
     bar:         "bg-amber-400",
-    badge:       "bg-amber-50 text-amber-700 border-amber-200",
+    badge:       "bg-white text-amber-700 border-amber-200",
     icon:        AlertTriangle,
-    bannerBg:    "bg-amber-50 border-amber-200",
+    bannerBg:    "bg-white border-amber-200",
     bannerIcon:  "text-amber-600",
     heading:     "Partial Degradation",
     sub:         "Beberapa layanan mengalami perlambatan.",
@@ -116,7 +116,7 @@ function ServiceRow({ svc }: { svc: ServiceCheck }) {
 
         {/* Name + desc */}
         <div className="flex-1 min-w-0">
-          <span className="text-sm font-semibold text-gray-900">{svc.name}</span>
+          <span className="text-sm font-semibold text-black">{svc.name}</span>
           <span className="hidden sm:inline text-xs text-gray-400 ml-2">{svc.description}</span>
         </div>
 
@@ -148,8 +148,8 @@ const GROUPS = ["Infrastructure", "Core Services", "Portals", "External Services
 function GroupCard({ name, services }: { name: string; services: ServiceCheck[] }) {
   if (services.length === 0) return null
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-      <div className="px-6 py-3 bg-gray-50/70 border-b border-gray-100 flex items-center justify-between">
+    <div className="bg-white rounded-md border border-gray-200 shadow-sm overflow-hidden">
+      <div className="px-6 py-3 bg-gray-50/70 border-b border-gray-200 flex items-center justify-between">
         <h2 className="text-[10px] font-bold uppercase tracking-widest text-gray-400">{name}</h2>
         <div className="flex items-center gap-2">
           {(["operational", "degraded", "outage"] as const).map(s => {
@@ -181,10 +181,10 @@ export default async function StatusPage() {
     <div className="min-h-screen bg-gray-50/40 font-sans">
 
       {/* ── Header ─────────────────────────────────────────────── */}
-      <header className="bg-white border-b border-gray-100 sticky top-0 z-20 shadow-[0_1px_10px_rgba(0,0,0,0.04)]">
+      <header className="bg-white border-b border-gray-200 sticky top-0 z-20 shadow-[0_1px_10px_rgba(0,0,0,0.04)]">
         <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Link href="/" className="text-lg font-extrabold tracking-tighter text-gray-900 hover:text-blue-600 transition-colors">
+            <Link href="/" className="text-lg font-extrabold tracking-tighter text-black hover:text-blue-600 transition-colors">
               AsistenQu
             </Link>
             <span className="text-gray-200 select-none">/</span>
@@ -205,17 +205,17 @@ export default async function StatusPage() {
       <div className="max-w-4xl mx-auto px-6 py-8 space-y-5">
 
         {/* ── Banner ─────────────────────────────────────────────── */}
-        <div className={`border rounded-2xl px-7 py-6 flex items-center gap-5 ${cfg.bannerBg}`}>
-          <div className="w-11 h-11 rounded-xl bg-white/70 flex items-center justify-center shrink-0">
+        <div className={`border rounded-md px-7 py-6 flex items-center gap-5 ${cfg.bannerBg}`}>
+          <div className="w-11 h-11 rounded-md bg-white/70 flex items-center justify-center shrink-0">
             <BannerIcon className={`h-5 w-5 ${cfg.bannerIcon}`} />
           </div>
           <div className="flex-1 min-w-0">
-            <h1 className="text-xl font-black text-gray-900 tracking-tight">{cfg.heading}</h1>
+            <h1 className="text-xl font-black text-black tracking-tight">{cfg.heading}</h1>
             <p className="text-sm text-gray-500 mt-0.5">{cfg.sub}</p>
             <p className="text-xs text-gray-400 mt-1">Diperbarui {fmtTime(checkedAt)}</p>
           </div>
           <div className="hidden sm:block text-right shrink-0">
-            <p className="text-3xl font-black text-gray-900 tabular-nums leading-none">
+            <p className="text-3xl font-black text-black tabular-nums leading-none">
               {opCount}<span className="text-gray-300">/{services.length}</span>
             </p>
             <p className="text-xs text-gray-400 mt-1">layanan aktif</p>
@@ -229,7 +229,7 @@ export default async function StatusPage() {
             const c = CFG[s]
             const Icon = c.icon
             return (
-              <div key={s} className={`border rounded-xl px-5 py-4 flex items-center gap-3 ${c.bannerBg}`}>
+              <div key={s} className={`border rounded-md px-5 py-4 flex items-center gap-3 ${c.bannerBg}`}>
                 <Icon className={`h-4 w-4 shrink-0 ${c.bannerIcon}`} />
                 <div>
                   <p className={`text-2xl font-black tabular-nums leading-none ${c.bannerIcon}`}>{count}</p>
@@ -252,12 +252,12 @@ export default async function StatusPage() {
         </div>
 
         {/* ── No incidents ───────────────────────────────────────── */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-          <div className="px-6 py-3 bg-gray-50/70 border-b border-gray-100">
+        <div className="bg-white rounded-md border border-gray-200 shadow-sm overflow-hidden">
+          <div className="px-6 py-3 bg-gray-50/70 border-b border-gray-200">
             <h2 className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Incident History</h2>
           </div>
           <div className="px-6 py-10 text-center">
-            <div className="w-10 h-10 bg-emerald-50 rounded-xl flex items-center justify-center mx-auto mb-3">
+            <div className="w-10 h-10 bg-white rounded-md flex items-center justify-center mx-auto mb-3">
               <CheckCircle2 className="h-5 w-5 text-emerald-500" />
             </div>
             <p className="text-sm font-semibold text-gray-700">No incidents reported</p>

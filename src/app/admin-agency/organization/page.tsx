@@ -74,7 +74,7 @@ const ROLE_CFG = {
     bg: "bg-amber-50",
     border: "border-amber-200",
     text: "text-amber-800",
-    badge: "bg-amber-100 text-amber-800 border-amber-300",
+    badge: "bg-gray-100 text-amber-800 border-amber-300",
     dot: "bg-amber-500",
     ring: "ring-amber-300",
   },
@@ -84,7 +84,7 @@ const ROLE_CFG = {
     bg: "bg-blue-50",
     border: "border-blue-200",
     text: "text-blue-800",
-    badge: "bg-blue-100 text-blue-800 border-blue-300",
+    badge: "bg-gray-100 text-blue-800 border-blue-300",
     dot: "bg-blue-500",
     ring: "ring-blue-300",
   },
@@ -111,8 +111,8 @@ const ROLE_CFG = {
 } as const;
 
 const INVITE_ROLE_CFG: Record<string, { label: string; badge: string }> = {
-  master_admin: { label: "Master Admin", badge: "bg-amber-100 text-amber-800 border-amber-300" },
-  admin: { label: "Admin", badge: "bg-blue-100 text-blue-800 border-blue-300" },
+  master_admin: { label: "Master Admin", badge: "bg-gray-100 text-amber-800 border-amber-300" },
+  admin: { label: "Admin", badge: "bg-gray-100 text-blue-800 border-blue-300" },
   manager: { label: "Manager", badge: "bg-purple-100 text-purple-800 border-purple-300" },
   agent: { label: "Agen", badge: "bg-gray-100 text-gray-700 border-gray-300" },
 };
@@ -190,12 +190,12 @@ function StatCard({
   color: string;
 }) {
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex items-center gap-4">
-      <div className={`h-12 w-12 rounded-xl ${color} flex items-center justify-center shrink-0`}>
+    <div className="bg-white rounded-md border border-gray-200 shadow-sm p-4 flex items-center gap-4">
+      <div className={`h-12 w-12 rounded-md ${color} flex items-center justify-center shrink-0`}>
         <Icon className="h-6 w-6 text-white" />
       </div>
       <div>
-        <p className="text-2xl font-bold text-gray-900">{value}</p>
+        <p className="text-2xl font-bold text-black">{value}</p>
         <p className="text-xs text-gray-500 font-medium mt-0.5">{label}</p>
       </div>
     </div>
@@ -239,13 +239,13 @@ function MemberCard({
         style={{ marginLeft: depth * 24 }}
       >
         <div
-          className={`border ${cfg.border} ${cfg.bg} rounded-2xl p-4 transition-all duration-200 hover:shadow-md`}
+          className={`border ${cfg.border} ${cfg.bg} rounded-md p-4 transition-all duration-200 hover:shadow-md`}
         >
           <div className="flex items-start gap-3">
             <Avatar name={member.full_name} email={member.email} role={member.member_role} />
             <div className="flex-1 min-w-0">
               <div className="flex flex-wrap items-center gap-2 mb-1">
-                <p className="font-semibold text-gray-900 text-sm truncate">
+                <p className="font-semibold text-black text-sm truncate">
                   {member.full_name || member.email}
                 </p>
                 <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border ${cfg.badge}`}>
@@ -377,13 +377,13 @@ function InviteCard({ invite }: { invite: PendingInvitation }) {
   const urgent = days <= 1;
 
   return (
-    <div className="flex items-start gap-3 p-4 bg-white rounded-2xl border border-dashed border-amber-200 hover:border-amber-300 transition-colors">
-      <div className="h-10 w-10 rounded-full bg-amber-50 border-2 border-amber-200 flex items-center justify-center shrink-0">
+    <div className="flex items-start gap-3 p-4 bg-white rounded-md border border-dashed border-amber-200 hover:border-amber-300 transition-colors">
+      <div className="h-10 w-10 rounded-full bg-white border-2 border-amber-200 flex items-center justify-center shrink-0">
         <UserPlus className="h-5 w-5 text-amber-600" />
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex flex-wrap items-center gap-2 mb-0.5">
-          <p className="font-semibold text-sm text-gray-900 truncate">
+          <p className="font-semibold text-sm text-black truncate">
             {invite.full_name || invite.email}
           </p>
           <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${cfg.badge}`}>
@@ -419,15 +419,15 @@ function InviteCard({ invite }: { invite: PendingInvitation }) {
 function AgencyHeader({ agency }: { agency: OrgAgency }) {
   const statusColor =
     agency.status === "ACTIVE"
-      ? "bg-emerald-100 text-emerald-800 border-emerald-300"
+      ? "bg-gray-100 text-emerald-800 border-emerald-300"
       : agency.status === "SUSPENDED"
       ? "bg-red-100 text-red-800 border-red-300"
       : "bg-gray-100 text-gray-700 border-gray-300";
 
   return (
-    <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 flex flex-col sm:flex-row sm:items-center gap-4">
+    <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6 flex flex-col sm:flex-row sm:items-center gap-4">
       <div
-        className="h-16 w-16 rounded-2xl flex items-center justify-center shrink-0 text-white font-bold text-xl shadow-inner"
+        className="h-16 w-16 rounded-md flex items-center justify-center shrink-0 text-white font-bold text-xl shadow-inner"
         style={{
           background: agency.primary_color
             ? `linear-gradient(135deg, ${agency.primary_color}, ${agency.primary_color}cc)`
@@ -438,7 +438,7 @@ function AgencyHeader({ agency }: { agency: OrgAgency }) {
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex flex-wrap items-center gap-2 mb-1">
-          <h1 className="text-xl font-bold text-gray-900">{agency.name}</h1>
+          <h1 className="text-xl font-bold text-black">{agency.name}</h1>
           <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full border ${statusColor}`}>
             {agency.status}
           </span>
@@ -463,7 +463,7 @@ function AgencyHeader({ agency }: { agency: OrgAgency }) {
       <div className="flex gap-2 shrink-0">
         <Link
           href="/admin-agency/team"
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-gray-900 text-white hover:bg-gray-700 transition-colors"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-md text-sm font-semibold bg-black text-white hover:bg-gray-700 transition-colors"
         >
           <UserPlus className="h-4 w-4" />
           Kelola Tim
@@ -518,7 +518,7 @@ export default function OrganizationPage() {
         <p className="text-gray-600 font-medium">{error ?? "Data tidak tersedia"}</p>
         <button
           onClick={load}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gray-900 text-white text-sm font-semibold hover:bg-gray-700 transition-colors"
+          className="flex items-center gap-2 px-4 py-2 rounded-md bg-black text-white text-sm font-semibold hover:bg-gray-700 transition-colors"
         >
           <RefreshCw className="h-4 w-4" />
           Coba Lagi
@@ -542,9 +542,9 @@ export default function OrganizationPage() {
   return (
     <div className="flex flex-col gap-6 animate-in fade-in duration-500 w-full pb-12">
       {/* Page header */}
-      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 pb-6 border-b border-gray-100">
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 pb-6 border-b border-gray-200">
         <div className="min-w-0">
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-black">
             Organisasi Agensi
           </h1>
           <p className="mt-1.5 text-sm text-gray-500 max-w-2xl">
@@ -554,7 +554,7 @@ export default function OrganizationPage() {
         <div className="flex items-center gap-2 shrink-0">
           <button
             onClick={load}
-            className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-100 transition-colors border border-gray-200"
+            className="flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium text-gray-600 hover:bg-gray-100 transition-colors border border-gray-200"
           >
             <RefreshCw className="h-4 w-4" />
             Refresh
@@ -568,13 +568,13 @@ export default function OrganizationPage() {
       {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <StatCard label="Total Anggota" value={stats.total_members} icon={Users} color="bg-gray-700" />
-        <StatCard label="Total Klien" value={stats.total_clients} icon={Briefcase} color="bg-indigo-500" />
+        <StatCard label="Total Klien" value={stats.total_clients} icon={Briefcase} color="bg-white0" />
         <StatCard label="Kontrak Aktif" value={stats.total_active_contracts} icon={TrendingUp} color="bg-emerald-500" />
         <StatCard label="Undangan Pending" value={stats.pending_invitations} icon={UserPlus} color="bg-amber-500" />
       </div>
 
       {/* Role Summary Bar */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+      <div className="bg-white rounded-md border border-gray-200 shadow-sm p-4">
         <p className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-3">Komposisi Peran</p>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {(["master_admin", "admin", "manager", "agent"] as const).map((role) => {
@@ -582,7 +582,7 @@ export default function OrganizationPage() {
             const RoleIcon = cfg.icon;
             const count = byRole[role].length;
             return (
-              <div key={role} className={`flex items-center gap-3 p-3 rounded-xl ${cfg.bg} border ${cfg.border}`}>
+              <div key={role} className={`flex items-center gap-3 p-3 rounded-md ${cfg.bg} border ${cfg.border}`}>
                 <div className={`h-8 w-8 rounded-lg bg-white flex items-center justify-center shrink-0 shadow-sm`}>
                   <RoleIcon className={`h-4 w-4 ${cfg.text}`} />
                 </div>
@@ -598,7 +598,7 @@ export default function OrganizationPage() {
 
       {/* Master Admin status notice */}
       {!hasMasterAdmin && (
-        <div className="flex items-start gap-3 p-4 bg-amber-50 border border-amber-200 rounded-2xl">
+        <div className="flex items-start gap-3 p-4 bg-white border border-amber-200 rounded-md">
           <AlertCircle className="h-5 w-5 text-amber-600 mt-0.5 shrink-0" />
           <div>
             <p className="text-sm font-semibold text-amber-800">Belum Ada Master Admin</p>
@@ -613,7 +613,7 @@ export default function OrganizationPage() {
         </div>
       )}
       {hasMasterAdmin && (
-        <div className="flex items-start gap-3 p-4 bg-emerald-50 border border-emerald-200 rounded-2xl">
+        <div className="flex items-start gap-3 p-4 bg-white border border-emerald-200 rounded-md">
           <CheckCircle2 className="h-5 w-5 text-emerald-600 mt-0.5 shrink-0" />
           <div>
             <p className="text-sm font-semibold text-emerald-800">Master Admin Aktif</p>
@@ -626,13 +626,13 @@ export default function OrganizationPage() {
       )}
 
       {/* Organization Tree */}
-      <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-100 flex items-center gap-3">
-          <div className="h-8 w-8 rounded-lg bg-gray-900 flex items-center justify-center">
+      <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-200 flex items-center gap-3">
+          <div className="h-8 w-8 rounded-lg bg-black flex items-center justify-center">
             <Network className="h-4 w-4 text-white" />
           </div>
           <div>
-            <h2 className="text-base font-bold text-gray-900">Pohon Hierarki</h2>
+            <h2 className="text-base font-bold text-black">Pohon Hierarki</h2>
             <p className="text-xs text-gray-500">Struktur organisasi dari atas ke bawah</p>
           </div>
         </div>
@@ -643,7 +643,7 @@ export default function OrganizationPage() {
               <p className="text-sm text-gray-500">Belum ada anggota aktif</p>
               <Link
                 href="/admin-agency/team"
-                className="text-xs text-indigo-600 hover:underline font-semibold"
+                className="text-xs text-black hover:underline font-semibold"
               >
                 + Tambah anggota pertama
               </Link>
@@ -690,20 +690,20 @@ export default function OrganizationPage() {
 
       {/* Pending Invitations */}
       {pending_invitations.length > 0 && (
-        <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+        <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="h-8 w-8 rounded-lg bg-amber-500 flex items-center justify-center">
                 <UserPlus className="h-4 w-4 text-white" />
               </div>
               <div>
-                <h2 className="text-base font-bold text-gray-900">Undangan Tertunda</h2>
+                <h2 className="text-base font-bold text-black">Undangan Tertunda</h2>
                 <p className="text-xs text-gray-500">{pending_invitations.length} undangan belum diterima</p>
               </div>
             </div>
             <Link
               href="/admin-agency/team"
-              className="text-xs text-indigo-600 hover:underline font-semibold"
+              className="text-xs text-black hover:underline font-semibold"
             >
               Kelola →
             </Link>
@@ -717,20 +717,20 @@ export default function OrganizationPage() {
       )}
 
       {/* All Members Detail Table */}
-      <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-100 flex items-center gap-3">
+      <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-200 flex items-center gap-3">
           <div className="h-8 w-8 rounded-lg bg-indigo-600 flex items-center justify-center">
             <Users className="h-4 w-4 text-white" />
           </div>
           <div>
-            <h2 className="text-base font-bold text-gray-900">Semua Anggota</h2>
+            <h2 className="text-base font-bold text-black">Semua Anggota</h2>
             <p className="text-xs text-gray-500">{members.length} anggota aktif</p>
           </div>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-gray-100 bg-gray-50/50">
+              <tr className="border-b border-gray-200 bg-white">
                 <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Anggota</th>
                 <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Peran</th>
                 <th className="text-center px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Klien</th>
@@ -744,12 +744,12 @@ export default function OrganizationPage() {
                 const cfg = ROLE_CFG[m.member_role];
                 const RoleIcon = cfg.icon;
                 return (
-                  <tr key={m.member_id} className="hover:bg-gray-50/50 transition-colors">
+                  <tr key={m.member_id} className="hover:bg-white transition-colors">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <Avatar name={m.full_name} email={m.email} role={m.member_role} size="sm" />
                         <div>
-                          <p className="font-semibold text-gray-900">{m.full_name || "—"}</p>
+                          <p className="font-semibold text-black">{m.full_name || "—"}</p>
                           <p className="text-xs text-gray-500">{m.email}</p>
                         </div>
                       </div>
@@ -771,7 +771,7 @@ export default function OrganizationPage() {
                     </td>
                     <td className="px-4 py-4 text-center">
                       {m.member_status === "ACTIVE" ? (
-                        <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                        <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 bg-white border border-emerald-200 px-2 py-0.5 rounded-full">
                           <CheckCircle2 className="h-3 w-3" /> Aktif
                         </span>
                       ) : (
@@ -789,7 +789,7 @@ export default function OrganizationPage() {
       </div>
 
       {/* Legend */}
-      <div className="bg-gray-50 rounded-2xl border border-gray-100 p-4">
+      <div className="bg-gray-50 rounded-md border border-gray-200 p-4">
         <p className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-3">Keterangan Peran</p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-gray-600">
           <div className="flex items-start gap-2">

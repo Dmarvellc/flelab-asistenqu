@@ -69,6 +69,7 @@ export const CacheKeys = {
   // Developer
   devAnalytics:    () => k(["dev", "analytics"]),
   devSystemHealth: () => k(["dev", "system-health"]),
+  devClaims:       () => k(["dev", "claims"]),
 
   // Public / shared
   status:          () => k(["status"]),
@@ -209,6 +210,7 @@ export async function invalidateDeveloperCaches(): Promise<void> {
   await deleteCacheKeys([
     CacheKeys.devAnalytics(),
     CacheKeys.devSystemHealth(),
+    CacheKeys.devClaims(),
   ]);
 }
 

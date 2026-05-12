@@ -73,10 +73,10 @@ function ChartTooltip({ active, payload, label, unit = "" }: {
 }) {
   if (!active || !payload?.length) return null
   return (
-    <div className="bg-white border border-gray-100 shadow-xl rounded-xl px-3 py-2 text-xs">
+    <div className="bg-white border border-gray-200 shadow-xl rounded-md px-3 py-2 text-xs">
       <p className="text-gray-400 mb-1">{label}</p>
       {payload.map((p, i) => (
-        <p key={i} className="font-bold text-gray-900">
+        <p key={i} className="font-bold text-black">
           {p.value} {unit}
         </p>
       ))}
@@ -88,19 +88,19 @@ function ChartTooltip({ active, payload, label, unit = "" }: {
 function SectionHeader({ title, sub }: { title: string; sub?: string }) {
   return (
     <div className="mb-5">
-      <h2 className="text-sm font-bold text-gray-900">{title}</h2>
+      <h2 className="text-sm font-bold text-black">{title}</h2>
       {sub && <p className="text-xs text-gray-400 mt-0.5">{sub}</p>}
     </div>
   )
 }
 
 /* ─── KPI Card ───────────────────────────────────────────────────── */
-function KPI({ label, value, sub, icon: Icon, color = "text-gray-900", loading }: {
+function KPI({ label, value, sub, icon: Icon, color = "text-black", loading }: {
   label: string; value: number | string | undefined
   sub?: string; icon: React.ElementType; color?: string; loading?: boolean
 }) {
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-6">
+    <div className="bg-white rounded-md border border-gray-200 shadow-sm p-4 sm:p-6">
       <div className="flex items-start justify-between mb-3">
         <span className="text-xs font-semibold uppercase tracking-widest text-gray-400">{label}</span>
         <Icon className={`h-4 w-4 ${color}`} />
@@ -150,17 +150,17 @@ export default function AnalyticsPage() {
       {/* ── Header ──────────────────────────────────────────────── */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 bg-violet-100 rounded-xl flex items-center justify-center">
+          <div className="w-9 h-9 bg-violet-100 rounded-md flex items-center justify-center">
             <BarChart2 className="h-5 w-5 text-violet-700" />
           </div>
           <div>
-            <h1 className="text-2xl font-black tracking-tight text-gray-900">Analytics</h1>
+            <h1 className="text-2xl font-black tracking-tight text-black">Analytics</h1>
             <p className="text-sm text-gray-400">Platform overview & growth metrics</p>
           </div>
         </div>
         <button
           onClick={fetch_}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-all"
+          className="flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium text-gray-500 hover:text-black hover:bg-gray-100 transition-all"
         >
           <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
           Refresh
@@ -177,10 +177,10 @@ export default function AnalyticsPage() {
       </div>
 
       {/* ── Monthly Growth Trend ─────────────────────────────────── */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-6">
+      <div className="bg-white rounded-md border border-gray-200 shadow-sm p-4 sm:p-6">
         <SectionHeader title="Pertumbuhan Pengguna" sub="12 bulan terakhir" />
         {loading ? (
-          <div className="h-56 bg-gray-50 rounded-xl animate-pulse" />
+          <div className="h-56 bg-gray-50 rounded-md animate-pulse" />
         ) : (
           <ResponsiveContainer width="100%" height={220}>
             <AreaChart data={data?.monthlyRegistrations ?? []} margin={{ top: 4, right: 4, left: -16, bottom: 0 }}>
@@ -204,10 +204,10 @@ export default function AnalyticsPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
         {/* Role Distribution */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-6">
+        <div className="bg-white rounded-md border border-gray-200 shadow-sm p-4 sm:p-6">
           <SectionHeader title="Distribusi Role (Aktif)" sub="Breakdown pengguna berdasarkan role" />
           {loading ? (
-            <div className="h-52 bg-gray-50 rounded-xl animate-pulse" />
+            <div className="h-52 bg-gray-50 rounded-md animate-pulse" />
           ) : (
             <div className="flex flex-col gap-5">
               <ResponsiveContainer width="100%" height={160}>
@@ -227,7 +227,7 @@ export default function AnalyticsPage() {
                   <div key={r.name} className="flex items-center gap-2">
                     <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: r.fill }} />
                     <span className="text-xs text-gray-600 flex-1 truncate">{r.name}</span>
-                    <span className="text-xs font-bold text-gray-900 tabular-nums">{r.count}</span>
+                    <span className="text-xs font-bold text-black tabular-nums">{r.count}</span>
                   </div>
                 ))}
               </div>
@@ -236,10 +236,10 @@ export default function AnalyticsPage() {
         </div>
 
         {/* Status Distribution */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-6">
+        <div className="bg-white rounded-md border border-gray-200 shadow-sm p-4 sm:p-6">
           <SectionHeader title="Status Pengguna" sub="Semua pengguna per status" />
           {loading ? (
-            <div className="h-52 bg-gray-50 rounded-xl animate-pulse" />
+            <div className="h-52 bg-gray-50 rounded-md animate-pulse" />
           ) : (
             <div className="flex flex-col gap-5">
               <ResponsiveContainer width="100%" height={160}>
@@ -259,7 +259,7 @@ export default function AnalyticsPage() {
                   <div key={s.name} className="flex items-center gap-2">
                     <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: s.fill }} />
                     <span className="text-xs text-gray-600 flex-1">{s.name}</span>
-                    <span className="text-xs font-bold text-gray-900 tabular-nums">{s.count}</span>
+                    <span className="text-xs font-bold text-black tabular-nums">{s.count}</span>
                   </div>
                 ))}
               </div>
@@ -269,13 +269,13 @@ export default function AnalyticsPage() {
       </div>
 
       {/* ── Claims by Stage ──────────────────────────────────────── */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-6">
+      <div className="bg-white rounded-md border border-gray-200 shadow-sm p-4 sm:p-6">
         <SectionHeader
           title="Pipeline Klaim"
           sub={`${pt?.totalClaims ?? "—"} total klaim — distribusi per stage`}
         />
         {loading ? (
-          <div className="h-52 bg-gray-50 rounded-xl animate-pulse" />
+          <div className="h-52 bg-gray-50 rounded-md animate-pulse" />
         ) : (data?.claimsByStage ?? []).length === 0 ? (
           <p className="text-sm text-gray-400 py-8 text-center">Belum ada data klaim</p>
         ) : (
@@ -307,10 +307,10 @@ export default function AnalyticsPage() {
       {/* ── Approval Rate (30d) ───────────────────────────────────── */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
 
-        <div className="md:col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+        <div className="md:col-span-2 bg-white rounded-md border border-gray-200 shadow-sm p-6">
           <SectionHeader title="Approval Rate — 30 Hari Terakhir" sub="Persetujuan registrasi pengguna baru" />
           {loading ? (
-            <div className="h-32 bg-gray-50 rounded-xl animate-pulse" />
+            <div className="h-32 bg-gray-50 rounded-md animate-pulse" />
           ) : (
             <div>
               <div className="flex items-end gap-4 mb-5">
@@ -331,9 +331,9 @@ export default function AnalyticsPage() {
                   { label: "Ditolak",   count: ar?.rejected, icon: XCircle,      color: "text-red-600",     bg: "bg-red-50"     },
                   { label: "Pending",   count: ar?.pending,  icon: AlertTriangle, color: "text-amber-600",  bg: "bg-amber-50"   },
                 ].map(({ label, count, icon: Icon, color, bg }) => (
-                  <div key={label} className={`${bg} rounded-xl p-4 text-center`}>
+                  <div key={label} className={`${bg} rounded-md p-4 text-center`}>
                     <Icon className={`h-5 w-5 ${color} mx-auto mb-2`} />
-                    <p className="text-2xl font-black text-gray-900">{count ?? 0}</p>
+                    <p className="text-2xl font-black text-black">{count ?? 0}</p>
                     <p className="text-xs text-gray-500 mt-0.5">{label}</p>
                   </div>
                 ))}
@@ -343,7 +343,7 @@ export default function AnalyticsPage() {
         </div>
 
         {/* Role Growth 30d */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-6">
+        <div className="bg-white rounded-md border border-gray-200 shadow-sm p-4 sm:p-6">
           <SectionHeader title="Pertumbuhan per Role" sub="30 hari terakhir" />
           {loading ? (
             <div className="space-y-3">
@@ -363,7 +363,7 @@ export default function AnalyticsPage() {
                         style={{ width: `${(r.count / max) * 100}%`, background: ROLE_COLORS[r.role] ?? DEFAULT_COLOR }}
                       />
                     </div>
-                    <span className="text-xs font-bold text-gray-900 tabular-nums w-5 text-right">{r.count}</span>
+                    <span className="text-xs font-bold text-black tabular-nums w-5 text-right">{r.count}</span>
                   </div>
                 )
               })}

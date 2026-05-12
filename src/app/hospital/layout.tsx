@@ -19,5 +19,9 @@ export default async function HospitalLayout({ children }: { children: React.Rea
     redirect("/hospital/login");
   }
 
+  if (session.status === "SUSPENDED") {
+    redirect("/suspended");
+  }
+
   return <HospitalLayoutClient>{children}</HospitalLayoutClient>;
 }

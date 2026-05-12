@@ -238,8 +238,14 @@ async function loadSessionFromDatabase(sessionId: string): Promise<AppSession | 
     return null;
   }
 
-  // Fail closed if the live user role/status no longer matches the session snapshot.
-  if (row.session_role !== row.current_role || row.session_status !== row.current_status) {
+  // If the user's status is now SUSPENDED, update the session status so the frontend can redirect them.
+  if (row.current_status === "SUSPENDED" && row.session_status !== "SUSPENDED") {
+    await dbPool.query(
+      `UPDATE public.auth_session SET user_status = 'SUSPENDED' WHERE session_id = $1`,
+      [sessionId]
+    ).catch(() => {});
+    row.session_status = "SUSPENDED";
+  } else if (row.session_role !== row.current_role || row.session_status !== row.current_status) {
     await revokeSession(sessionId).catch(() => {});
     return null;
   }
@@ -370,6 +376,10 @@ export async function requireSession() {
   const session = await getSession();
   if (!session) {
     throw new AuthError(401, "Unauthorized");
+  }
+
+  if (session.status === "SUSPENDED") {
+    throw new AuthError(403, "Account Suspended");
   }
 
   return session;
@@ -638,6 +648,14 @@ export async function revokeUserSessions(userId: string, exceptSessionId?: strin
     params
   );
 
+  await Promise.all(sessions.rows.map((row) => deleteSessionCache(row.session_id)));
+}
+
+export async function invalidateUserSessionsCache(userId: string) {
+  const sessions = await dbPool.query<{ session_id: string }>(
+    `SELECT session_id FROM public.auth_session WHERE user_id = $1 AND revoked = FALSE`,
+    [userId]
+  );
   await Promise.all(sessions.rows.map((row) => deleteSessionCache(row.session_id)));
 }
 

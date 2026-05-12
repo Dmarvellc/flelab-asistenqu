@@ -80,7 +80,7 @@ function StatsSection() {
             {stats.map((s, i) => (
               <div
                 key={s.label}
-                className="px-4 py-8 sm:px-10 sm:py-10 text-center relative bg-gray-50/50 rounded-none hover:bg-gray-50 transition-colors duration-300 h-full flex flex-col justify-center items-center"
+                className="px-4 py-8 sm:px-10 sm:py-10 text-center relative bg-white rounded-none hover:bg-gray-50 transition-colors duration-300 h-full flex flex-col justify-center items-center"
               >
                 <div
                   className="absolute inset-0 opacity-20 mask-image-linear-to-b"
@@ -89,7 +89,7 @@ function StatsSection() {
                     backgroundSize: "16px 16px",
                   }}
                 />
-                <p className="relative text-3xl sm:text-5xl font-black text-gray-900 tracking-tight leading-none mb-1 sm:mb-2">
+                <p className="relative text-3xl sm:text-5xl font-black text-black tracking-tight leading-none mb-1 sm:mb-2">
                   {s.value}
                 </p>
                 <p className="relative text-xs sm:text-sm text-gray-400 font-medium">{s.label}</p>
@@ -149,7 +149,7 @@ function SolutionsSection() {
         <div className="mb-10 sm:mb-16">
           <FadeInHeading
             heading={
-              <h2 className="text-3xl sm:text-5xl lg:text-6xl font-black text-gray-900 tracking-tight leading-[1.05] mb-4">
+              <h2 className="text-3xl sm:text-5xl lg:text-6xl font-black text-black tracking-tight leading-[1.05] mb-4">
                 Satu ekosistem,
                 <br />
                 tiga portal.
@@ -308,7 +308,7 @@ function FeaturesSection() {
         <div className="mb-10 sm:mb-16">
           <FadeInHeading
             heading={
-              <h2 className="text-3xl sm:text-5xl lg:text-6xl font-black text-gray-900 tracking-tight leading-[1.05] mb-4">
+              <h2 className="text-3xl sm:text-5xl lg:text-6xl font-black text-black tracking-tight leading-[1.05] mb-4">
                 Semua yang Anda butuhkan.
                 <br />
                 <span className="text-blue-600">Tidak lebih, tidak kurang.</span>
@@ -328,10 +328,10 @@ function FeaturesSection() {
         >
           {features.map((feat) => (
             <div key={feat.title} className="bg-white rounded-none shadow-[0_4px_24px_rgba(0,0,0,0.02)] hover:shadow-[0_8px_32px_rgba(0,0,0,0.04)] transition-shadow duration-300 p-6 sm:p-8 group h-full flex flex-col">
-              <div className="w-10 h-10 bg-gray-50 rounded-none flex items-center justify-center text-gray-900 mb-5 group-hover:bg-blue-50 group-hover:text-blue-600 transition-colors duration-300 shrink-0">
+              <div className="w-10 h-10 bg-gray-50 rounded-none flex items-center justify-center text-black mb-5 group-hover:bg-white group-hover:text-blue-600 transition-colors duration-300 shrink-0">
                 {feat.icon}
               </div>
-              <h3 className="text-base font-bold text-gray-900 mb-2">{feat.title}</h3>
+              <h3 className="text-base font-bold text-black mb-2">{feat.title}</h3>
               <p className="text-gray-400 text-sm leading-relaxed flex-1">{feat.desc}</p>
             </div>
           ))}
@@ -370,7 +370,7 @@ function HowItWorksSection() {
         <div className="mb-10 sm:mb-16">
           <FadeInHeading
             heading={
-              <h2 className="text-3xl sm:text-5xl lg:text-6xl font-black text-gray-900 tracking-tight leading-[1.05] mb-4">
+              <h2 className="text-3xl sm:text-5xl lg:text-6xl font-black text-black tracking-tight leading-[1.05] mb-4">
                 Mulai dalam
                 <br />
                 3 langkah.
@@ -388,7 +388,7 @@ function HowItWorksSection() {
           {steps.map((step) => (
             <div
               key={step.number}
-              className="p-8 sm:p-10 bg-gray-50/50 rounded-none h-full flex flex-col"
+              className="p-8 sm:p-10 bg-white rounded-none h-full flex flex-col"
             >
               <AnimatedStep
                 number={step.number}

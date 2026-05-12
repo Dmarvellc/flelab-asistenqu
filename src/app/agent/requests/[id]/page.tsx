@@ -235,7 +235,7 @@ export default function AgentRequestDetailPage() {
 
                             {request.status === 'APPROVED' && (
                                 <div className="space-y-4">
-                                    <div className="flex items-center gap-2 text-blue-600 bg-blue-50 p-3 rounded border border-blue-100">
+                                    <div className="flex items-center gap-2 text-blue-600 bg-white p-3 rounded border border-gray-200">
                                         <Check className="h-5 w-5" />
                                         <p className="text-sm font-medium">Permintaan disetujui. Silakan unggah data.</p>
                                     </div>

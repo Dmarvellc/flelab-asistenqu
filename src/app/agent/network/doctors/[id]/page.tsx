@@ -114,7 +114,7 @@ function formatTime(time: string): string {
 // ─── Section ────────────────────────────────────────────────
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section className="py-7 sm:py-8 border-t border-gray-100">
+    <section className="py-7 sm:py-8 border-t border-gray-200">
       <h2 className="text-[11px] font-semibold tracking-[0.2em] uppercase text-slate-400 mb-4">{title}</h2>
       {children}
     </section>
@@ -247,9 +247,9 @@ export default function DoctorDetailPage() {
                 <li key={h.id}>
                   <Link
                     href={`/agent/network/hospitals/${h.hospital_id}`}
-                    className="group flex items-start gap-4 sm:gap-5 py-5 border-b border-gray-100 last:border-b-0 hover:bg-slate-50/60 transition-colors -mx-4 px-4 sm:-mx-6 sm:px-6"
+                    className="group flex items-start gap-4 sm:gap-5 py-5 border-b border-gray-200 last:border-b-0 hover:bg-slate-50/60 transition-colors -mx-4 px-4 sm:-mx-6 sm:px-6"
                   >
-                    <div className="h-12 w-12 sm:h-14 sm:w-14 flex items-center justify-center bg-white border border-gray-100 rounded-md shrink-0 p-1.5">
+                    <div className="h-12 w-12 sm:h-14 sm:w-14 flex items-center justify-center bg-white border border-gray-200 rounded-md shrink-0 p-1.5">
                       {logo ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img src={logo} alt="" className="max-h-full max-w-full object-contain" />

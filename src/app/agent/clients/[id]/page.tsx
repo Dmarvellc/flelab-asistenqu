@@ -7,11 +7,12 @@ import {
     Loader2, ArrowLeft, User, FileText, Phone, MapPin,
     Calendar, CreditCard, ShieldCheck, Briefcase, Mail, HeartPulse,
     Wallet, Users, Star, AlertTriangle, CheckCircle2, Clock,
-    Stethoscope, Globe,
+    Stethoscope, Globe, Building2,
 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { ClientRequestsPanel } from "@/components/client-requests/requests-panel";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 type ClientDetail = {
     client_id: string;
@@ -27,6 +28,8 @@ type ClientDetail = {
     marital_status?: string;
     status: string;
     created_at: string;
+    agent_name?: string | null;
+    agency_name?: string | null;
 };
 
 type Beneficiary = { beneficiary_id: string; full_name: string; relationship: string; percentage: string; nik?: string };
@@ -115,12 +118,12 @@ const payLabel: Record<string, string> = {
 };
 const statusStyle = (s?: string) => {
     const map: Record<string, string> = {
-        AKTIF:   "bg-emerald-50 text-emerald-700 border-emerald-200",
-        ACTIVE:  "bg-emerald-50 text-emerald-700 border-emerald-200",
+        AKTIF:   "bg-white text-emerald-700 border-emerald-200",
+        ACTIVE:  "bg-white text-emerald-700 border-emerald-200",
         LAPSE:   "bg-red-50 text-red-700 border-red-200",
-        PAID_UP: "bg-blue-50 text-blue-700 border-blue-200",
+        PAID_UP: "bg-white text-blue-700 border-blue-200",
         SURRENDERED: "bg-gray-100 text-gray-600 border-gray-200",
-        MATURED: "bg-amber-50 text-amber-700 border-amber-200",
+        MATURED: "bg-white text-amber-700 border-amber-200",
     };
     return map[s || "AKTIF"] || "bg-gray-50 text-gray-600 border-gray-200";
 };
@@ -130,7 +133,7 @@ function Stat({ label, value, accent }: { label: string; value: React.ReactNode;
     return (
         <div className="space-y-1">
             <p className="text-[10px] font-bold text-gray-400">{label}</p>
-            <p className={cn("text-sm font-semibold text-gray-900", accent)}>{value}</p>
+            <p className={cn("text-sm font-semibold text-black", accent)}>{value}</p>
         </div>
     );
 }
@@ -138,13 +141,13 @@ function Stat({ label, value, accent }: { label: string; value: React.ReactNode;
 function BenefitItem({ label, value, icon: Icon }: { label: string; value?: string; icon: React.ElementType }) {
     if (!value || parseFloat(value) === 0) return null;
     return (
-        <div className="flex items-center gap-3 p-3 rounded-xl bg-gray-50/60 border border-gray-100">
-            <div className="h-8 w-8 rounded-lg bg-white border border-gray-100 flex items-center justify-center shrink-0">
+        <div className="flex items-center gap-3 p-3 rounded-md bg-white border border-gray-200">
+            <div className="h-8 w-8 rounded-lg bg-white border border-gray-200 flex items-center justify-center shrink-0">
                 <Icon className="w-3.5 h-3.5 text-gray-500" />
             </div>
             <div className="min-w-0 flex-1">
                 <p className="text-[11px] text-gray-500 leading-tight">{label}</p>
-                <p className="text-sm font-semibold text-gray-900 truncate">{idr(value)}</p>
+                <p className="text-sm font-semibold text-black truncate">{idr(value)}</p>
             </div>
         </div>
     );
@@ -155,15 +158,15 @@ function DueCountdown({ contract }: { contract: Contract }) {
     if (!contract.next_due_date) return null;
     const d = daysBetween(contract.next_due_date);
     const grace = contract.grace_period_days || 30;
-    let tone = "bg-emerald-50 text-emerald-700 border-emerald-200";
+    let tone = "bg-white text-emerald-700 border-emerald-200";
     let label = `${d} hari lagi`;
     let Icon = Clock;
     if (d < 0) {
-        tone = d < -grace ? "bg-red-50 text-red-700 border-red-200" : "bg-amber-50 text-amber-700 border-amber-200";
+        tone = d < -grace ? "bg-red-50 text-red-700 border-red-200" : "bg-white text-amber-700 border-amber-200";
         label = `Lewat ${Math.abs(d)} hari${d < -grace ? " • LAPSE" : " • Tenggang"}`;
         Icon = AlertTriangle;
     } else if (d <= 7) {
-        tone = "bg-amber-50 text-amber-700 border-amber-200";
+        tone = "bg-white text-amber-700 border-amber-200";
         Icon = AlertTriangle;
     }
     return (
@@ -223,11 +226,11 @@ export default function ClientDetailPage() {
     }
 
     return (
-        <div className="flex flex-col gap-8 animate-in fade-in duration-500 w-full max-w-6xl mx-auto pb-16">
+        <div className="flex flex-col gap-6 animate-in fade-in duration-500 w-full max-w-6xl mx-auto pb-16">
             {/* ── Header ──────────────────────────── */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-gray-100">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-gray-200">
                 <div className="flex items-center gap-4 min-w-0">
-                    <Button variant="outline" size="icon" onClick={() => router.back()} className="rounded-xl shrink-0 h-10 w-10">
+                    <Button variant="outline" size="icon" onClick={() => router.back()} className="rounded-md shrink-0 h-10 w-10">
                         <ArrowLeft className="h-4 w-4" />
                     </Button>
                     <div className="min-w-0">
@@ -240,288 +243,173 @@ export default function ClientDetailPage() {
                             </span>
                             <span className="text-xs text-gray-500 font-semibold">{contracts.length} polis terdaftar</span>
                         </div>
-                        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900">{client.full_name}</h1>
+                        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-black">{client.full_name}</h1>
                     </div>
                 </div>
-                <Button onClick={() => router.push("/agent/clients/new")} className="gap-2 rounded-xl bg-gray-900 hover:bg-black text-white">
+                <Button onClick={() => router.push("/agent/clients/new")} className="gap-2 rounded-md bg-black hover:bg-black text-white">
                     <FileText className="w-4 h-4" /> Tambah Polis Baru
                 </Button>
             </div>
 
-            <div className="grid gap-6 lg:grid-cols-3">
-                {/* ── Profil Nasabah ────────────── */}
-                <div className="lg:col-span-1 h-fit bg-white rounded-3xl border border-gray-100 overflow-hidden shadow-sm">
-                    <div className="px-6 py-5 border-b border-gray-50 flex items-center justify-between bg-gray-50/30">
-                        <h3 className="font-semibold text-gray-900 text-base flex items-center gap-2">
-                            <User className="w-4 h-4 text-gray-400" /> Profil Nasabah
-                        </h3>
-                    </div>
-                    <div className="p-6 space-y-5">
-                        <div className="grid grid-cols-2 gap-4">
-                            <Stat label="NIK" value={client.id_card || "—"} />
-                            <Stat label="Nomor Paspor" value={client.passport_number || "—"} />
-                            <Stat label="JK" value={<span className="capitalize">{client.gender?.toLowerCase().replace("_"," ") || "—"}</span>} />
-                            <Stat label="Lahir" value={date(client.birth_date)} />
-                            <Stat label="Status" value={<span className="capitalize">{client.marital_status?.toLowerCase().replace("_"," ") || "—"}</span>} />
-                        </div>
-                        <Separator className="bg-gray-100" />
-                        <div className="space-y-3">
-                            <div className="flex items-start gap-3">
-                                <Phone className="w-3.5 h-3.5 text-gray-400 mt-1 shrink-0" />
-                                <div><p className="text-[10px] text-gray-400 font-bold">Telepon</p><p className="text-sm text-gray-900 font-medium">{client.phone_number || "—"}</p></div>
+            <Tabs defaultValue="profile" className="w-full">
+                <TabsList className="bg-transparent border-b border-gray-200 w-full justify-start rounded-none p-0 h-auto space-x-6">
+                    <TabsTrigger value="profile" className="rounded-none border-b-2 border-transparent data-[state=active]:border-black data-[state=active]:text-black text-gray-500 bg-transparent px-2 py-3 shadow-none data-[state=active]:shadow-none font-semibold">Profile & Info</TabsTrigger>
+                    <TabsTrigger value="policies" className="rounded-none border-b-2 border-transparent data-[state=active]:border-black data-[state=active]:text-black text-gray-500 bg-transparent px-2 py-3 shadow-none data-[state=active]:shadow-none font-semibold">Policies</TabsTrigger>
+                    <TabsTrigger value="requests" className="rounded-none border-b-2 border-transparent data-[state=active]:border-black data-[state=active]:text-black text-gray-500 bg-transparent px-2 py-3 shadow-none data-[state=active]:shadow-none font-semibold">Requests</TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="profile" className="mt-6">
+                    <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-200 w-full">
+                        <div className="flex items-center gap-4 mb-10">
+                            <div className="h-12 w-12 rounded-lg bg-black flex items-center justify-center text-white shadow-sm">
+                                <User className="w-6 h-6" />
                             </div>
-                            {client.email && (
-                                <div className="flex items-start gap-3">
-                                    <Mail className="w-3.5 h-3.5 text-gray-400 mt-1 shrink-0" />
-                                    <div><p className="text-[10px] text-gray-400 font-bold">Email</p><p className="text-sm text-gray-900 font-medium break-all">{client.email}</p></div>
-                                </div>
-                            )}
-                            {client.occupation && (
-                                <div className="flex items-start gap-3">
-                                    <Briefcase className="w-3.5 h-3.5 text-gray-400 mt-1 shrink-0" />
-                                    <div><p className="text-[10px] text-gray-400 font-bold">Pekerjaan</p><p className="text-sm text-gray-900 font-medium">{client.occupation}</p></div>
-                                </div>
-                            )}
-                            <div className="flex items-start gap-3">
-                                <MapPin className="w-3.5 h-3.5 text-gray-400 mt-1 shrink-0" />
-                                <div><p className="text-[10px] text-gray-400 font-bold">Domisili</p><p className="text-sm text-gray-900 leading-relaxed">{client.address || "—"}</p></div>
+                            <div>
+                                <h3 className="font-bold text-black text-xl">Profil Klien</h3>
+                                <p className="text-sm text-gray-500">Informasi identitas lengkap</p>
                             </div>
                         </div>
-                    </div>
-                </div>
 
-                {/* ── Polis Detail ─────────────── */}
-                <div className="lg:col-span-2 space-y-5">
-                    {contracts.length === 0 ? (
-                        <div className="bg-white rounded-3xl border border-gray-100 py-16 text-center">
-                            <FileText className="h-10 w-10 text-gray-300 mx-auto mb-4" />
-                            <p className="font-bold text-gray-900">Belum ada polis</p>
-                            <p className="text-sm text-gray-500 mt-1">Tambahkan polis pertama untuk nasabah ini.</p>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-y-12 gap-x-8">
+                            <Stat label="NIK / No. Identitas" value={client.id_card || "—"} />
+                            <Stat label="Email" value={client.email || "—"} />
+                            <Stat label="No. Telepon" value={client.phone_number || "—"} />
+                            <Stat label="Tanggal Lahir" value={date(client.birth_date)} />
+                            
+                            <Stat label="Jenis Kelamin" value={client.gender === "MALE" ? "Laki-laki" : client.gender === "FEMALE" ? "Perempuan" : "—"} />
+                            <Stat label="Pekerjaan" value={client.occupation || "—"} />
+                            <Stat label="Status Pernikahan" value={client.marital_status || "—"} />
+                            <Stat label="Agensi" value={client.agency_name || "—"} />
                         </div>
-                    ) : (
-                        <>
-                            {/* Policy tabs if multiple */}
-                            {contracts.length > 1 && (
-                                <div className="flex gap-2 overflow-x-auto pb-1">
-                                    {contracts.map(c => (
-                                        <button
-                                            key={c.contract_id}
-                                            onClick={() => setActiveContractId(c.contract_id)}
-                                            className={cn(
-                                                "shrink-0 px-4 py-2 rounded-xl text-sm font-semibold border transition-all",
-                                                c.contract_id === activeContract?.contract_id
-                                                    ? "bg-gray-900 text-white border-gray-900"
-                                                    : "bg-white text-gray-600 border-gray-200 hover:border-gray-300"
-                                            )}
-                                        >
-                                            {c.contract_product}
-                                        </button>
-                                    ))}
+
+                        <Separator className="my-10 bg-gray-100" />
+                        
+                        <div>
+                            <h3 className="text-sm font-bold text-gray-400 mb-3 uppercase tracking-wider">Alamat Domisili</h3>
+                            <p className="text-sm font-medium text-black leading-relaxed max-w-4xl">{client.address || "—"}</p>
+                        </div>
+                    </div>
+                </TabsContent>
+
+                <TabsContent value="policies" className="mt-8">
+                    <div className="space-y-8">
+                        {/* Policy Selector */}
+                        <div className="flex gap-6 overflow-x-auto border-b border-gray-200 w-full pb-1">
+                            {contracts.map(c => {
+                                const isActive = c.contract_id === activeContractId;
+                                return (
+                                    <button
+                                        key={c.contract_id}
+                                        onClick={() => setActiveContractId(c.contract_id)}
+                                        className={cn(
+                                            "shrink-0 px-2 py-3 text-sm font-semibold border-b-2 transition-all",
+                                            isActive
+                                                ? "border-black text-black"
+                                                : "border-transparent text-gray-500 hover:text-black hover:border-gray-300"
+                                        )}
+                                    >
+                                        {c.contract_product || c.contract_number}
+                                    </button>
+                                );
+                            })}
+                            {contracts.length === 0 && (
+                                <div className="w-full py-8 text-left">
+                                    <p className="text-sm text-gray-500">Belum ada polis terdaftar untuk klien ini.</p>
                                 </div>
                             )}
-
-                            {activeContract && <PolicyCard contract={activeContract} />}
-                        </>
-                    )}
-                </div>
-            </div>
-
-            {/* ── Permintaan RS ─────────────── */}
-            <div className="bg-white rounded-3xl border border-gray-100 overflow-hidden shadow-sm p-6">
-                {latestClaim?.hospital_id ? (
-                    <ClientRequestsPanel
-                        mode="agent"
-                        clientId={client.client_id}
-                        hospitalId={latestClaim.hospital_id}
-                        claimId={latestClaim.claim_id}
-                    />
-                ) : (
-                    <div className="text-sm text-gray-500">
-                        <p className="font-semibold text-gray-900 mb-1">Permintaan ke Rumah Sakit</p>
-                        <p>Klien belum punya klaim aktif — buat klaim dulu agar bisa mengajukan permintaan ke rumah sakit.</p>
-                    </div>
-                )}
-            </div>
-        </div>
-    );
-}
-
-/* ─── Policy Card ────────────────────────────────────────── */
-function PolicyCard({ contract }: { contract: Contract }) {
-    return (
-        <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
-            {/* Header */}
-            <div className="p-6 border-b border-gray-100 bg-gray-50/50">
-                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-4">
-                    <div className="min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap mb-2">
-                            <h4 className="text-xl font-bold text-gray-900 tracking-tight">{contract.contract_product}</h4>
-                            <span className={cn("inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold border", statusStyle(contract.policy_status))}>
-                                {contract.policy_status || contract.status}
-                            </span>
-                            <DueCountdown contract={contract} />
                         </div>
-                        <p className="text-[13px] text-gray-500">
-                            <span className="">{contract.contract_number}</span>
-                            {contract.insurance_company_name && <> • {contract.insurance_company_name}</>}
-                        </p>
-                    </div>
-                    {contract.policy_url && (
-                        <a href={contract.policy_url} target="_blank" rel="noopener noreferrer">
-                            <Button variant="outline" size="sm" className="gap-2 rounded-xl shrink-0">
-                                <FileText className="h-4 w-4" /> Dokumen Polis
-                            </Button>
-                        </a>
-                    )}
-                </div>
 
-                {/* Key facts */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-white rounded-2xl border border-gray-100">
-                    <Stat label="UP / Jiwa" value={<span className="text-emerald-600">{idr(contract.sum_insured)}</span>} />
-                    <Stat label="Premi" value={<span>{idr(contract.premium_amount)} <span className="text-[10px] text-gray-400">/ {freqLabel[contract.premium_frequency || "MONTHLY"] || "—"}</span></span>} />
-                    <Stat label="Mulai" value={date(contract.contract_startdate)} />
-                    <Stat label="Berakhir" value={date(contract.contract_duedate)} />
-                </div>
-            </div>
-
-            {/* Sections */}
-            <div className="p-6 space-y-6">
-                {/* Jatuh Tempo */}
-                <Section title="Jatuh Tempo & Masa Berlaku" icon={Calendar}>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <Stat label="Terbit" value={date(contract.issue_date)} />
-                        <Stat label="Tgl. Jatuh Tempo" value={contract.due_day ? `Tgl. ${contract.due_day}` : "—"} />
-                        <Stat label="Jatuh Tempo Berikutnya" value={date(contract.next_due_date)} />
-                        <Stat label="Masa Tenggang" value={`${contract.grace_period_days || 0} hari`} />
-                        <Stat label="Jangka Polis" value={contract.policy_term_years ? `${contract.policy_term_years} tahun` : "—"} />
-                        <Stat label="Masa Bayar Premi" value={contract.premium_payment_term ? `${contract.premium_payment_term} tahun` : "—"} />
-                        <Stat label="Underwriting" value={contract.underwriting_status || "—"} />
-                        <Stat label="Pemulihan" value={contract.reinstatement_period ? `${contract.reinstatement_period} bulan` : "—"} />
-                    </div>
-                </Section>
-
-                {/* Cakupan */}
-                <Section title="Cakupan Pertanggungan" icon={Globe}>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <Stat label="Area" value={contract.coverage_area || "—"} />
-                        <Stat label="Plan Kamar" value={contract.room_plan || "—"} />
-                        <Stat label="Limit Tahunan" value={idr(contract.annual_limit)} />
-                        <Stat label="Limit Seumur Hidup" value={idr(contract.lifetime_limit)} />
-                        <Stat label="Deductible" value={idr(contract.deductible)} />
-                        <Stat label="Co-Insurance" value={contract.coinsurance_pct ? `${contract.coinsurance_pct}%` : "—"} />
-                        <Stat label="Masa Tunggu" value={`${contract.waiting_period_days || 0} hari`} />
-                        <Stat label="Pre-Existing" value={contract.pre_existing_covered === "YES" ? "Ya" : contract.pre_existing_covered === "AFTER_2_YEARS" ? "Setelah 2th" : "Tidak"} />
-                    </div>
-                    {contract.cashless_network && (
-                        <div className="mt-3 flex items-center gap-2 text-sm">
-                            <Stethoscope className="w-3.5 h-3.5 text-gray-400" />
-                            <span className="text-gray-600">Jaringan Cashless:</span>
-                            <span className="font-semibold text-gray-900">{contract.cashless_network}</span>
-                        </div>
-                    )}
-                </Section>
-
-                {/* Manfaat */}
-                <Section title="Manfaat Polis" icon={HeartPulse}>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
-                        <BenefitItem label="Jiwa (UP)" value={contract.benefit_life} icon={ShieldCheck} />
-                        <BenefitItem label="Kecelakaan (ADB)" value={contract.benefit_accidental_death} icon={AlertTriangle} />
-                        <BenefitItem label="Cacat Tetap Total" value={contract.benefit_disability} icon={AlertTriangle} />
-                        <BenefitItem label="Penyakit Kritis" value={contract.benefit_critical} icon={HeartPulse} />
-                        <BenefitItem label="Rawat Inap / Hari" value={contract.benefit_hospitalization} icon={Stethoscope} />
-                        <BenefitItem label="ICU / Hari" value={contract.benefit_icu} icon={Stethoscope} />
-                        <BenefitItem label="Pembedahan" value={contract.benefit_surgery} icon={Stethoscope} />
-                        <BenefitItem label="Rawat Jalan" value={contract.benefit_outpatient} icon={Stethoscope} />
-                        <BenefitItem label="Santunan Harian" value={contract.benefit_daily_cash} icon={Wallet} />
-                        <BenefitItem label="Melahirkan" value={contract.benefit_maternity} icon={HeartPulse} />
-                        <BenefitItem label="Gigi" value={contract.benefit_dental} icon={HeartPulse} />
-                        <BenefitItem label="Kacamata" value={contract.benefit_optical} icon={HeartPulse} />
-                        <BenefitItem label="Ambulance" value={contract.benefit_ambulance} icon={AlertTriangle} />
-                        <BenefitItem label="Medical Check-Up" value={contract.benefit_medical_checkup} icon={CheckCircle2} />
-                    </div>
-                    {contract.riders && contract.riders.length > 0 && (
-                        <div className="mt-4 pt-4 border-t border-gray-100">
-                            <p className="text-[10px] font-bold text-gray-400 mb-2 flex items-center gap-1.5"><Star className="w-3 h-3" /> Rider Tambahan</p>
-                            <div className="space-y-1.5">
-                                {contract.riders.map(r => (
-                                    <div key={r.rider_id} className="flex items-center justify-between text-sm px-3 py-2 rounded-lg bg-gray-50 border border-gray-100">
-                                        <span className="font-medium text-gray-900">{r.rider_name}</span>
-                                        <span className="text-gray-600">{idr(r.coverage)}</span>
+                        {activeContract && (
+                            <div className="space-y-8 animate-in fade-in duration-500">
+                                {/* Policy Header */}
+                                <div className="relative">
+                                    <div className="absolute top-0 right-0">
+                                        <DueCountdown contract={activeContract} />
                                     </div>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-                </Section>
+                                    
+                                    <div className="flex items-center gap-3 mb-3">
+                                        <ShieldCheck className="w-5 h-5 text-emerald-500" />
+                                        <span className="text-[11px] font-bold text-emerald-600 uppercase tracking-wider">Polis Aktif</span>
+                                    </div>
+                                    <h2 className="text-2xl sm:text-3xl font-bold text-black mb-2">{activeContract.contract_product}</h2>
+                                    <p className="text-sm text-gray-500 font-medium mb-10">{activeContract.insurance_company_name}</p>
 
-                {/* Pembayaran / Autodebet */}
-                <Section title="Metode Pembayaran" icon={Wallet}>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <Stat label="Metode" value={payLabel[contract.payment_method || ""] || "—"} />
-                        <Stat label={contract.payment_method === "AUTODEBET_KK" ? "Penerbit KK" : "Bank"} value={contract.bank_name || "—"} />
-                        <Stat
-                            label={contract.payment_method === "AUTODEBET_KK" ? "4 Digit Terakhir" : "No. Rekening"}
-                            value={contract.account_number ? <span className="">{"••••" + contract.account_number.slice(-4)}</span> : "—"}
-                        />
-                        <Stat label="Pemilik" value={contract.account_holder_name || "—"} />
-                        {contract.card_network && <Stat label="Jaringan Kartu" value={contract.card_network} />}
-                        {contract.card_expiry && <Stat label="Exp Kartu" value={<span className="">{contract.card_expiry}</span>} />}
-                        {contract.autodebet_start_date && <Stat label="Autodebet Mulai" value={date(contract.autodebet_start_date)} />}
-                        {contract.autodebet_end_date && (
-                            <Stat
-                                label="Exp Autodebet"
-                                value={<span className={daysBetween(contract.autodebet_end_date) < 30 ? "text-amber-600" : ""}>{date(contract.autodebet_end_date)}</span>}
-                            />
-                        )}
-                        {contract.autodebet_mandate_ref && <Stat label="Ref. Mandat" value={<span className="text-xs">{contract.autodebet_mandate_ref}</span>} />}
-                        {contract.billing_cycle_day && <Stat label="Tgl. Tagih" value={`Tgl. ${contract.billing_cycle_day}`} />}
-                        {contract.virtual_account_number && <Stat label="No. VA" value={<span className="">{contract.virtual_account_number}</span>} />}
-                    </div>
-                </Section>
+                                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-8">
+                                        <Stat label="Uang Pertanggungan" value={idr(activeContract.sum_insured)} accent="text-black text-base" />
+                                        <Stat label="Premi" value={`${idr(activeContract.premium_amount)} / ${freqLabel[activeContract.premium_frequency || ""] || activeContract.premium_frequency}`} accent="text-base" />
+                                        <Stat label="Metode Bayar" value={payLabel[activeContract.payment_method || ""] || activeContract.payment_method} accent="text-base" />
+                                        <Stat label="Jatuh Tempo" value={date(activeContract.next_due_date)} accent="text-base" />
+                                    </div>
+                                </div>
 
-                {/* Ahli Waris */}
-                {contract.beneficiaries && contract.beneficiaries.length > 0 && (
-                    <Section title="Ahli Waris / Penerima Manfaat" icon={Users}>
-                        <div className="space-y-2">
-                            {contract.beneficiaries.map(b => (
-                                <div key={b.beneficiary_id} className="flex items-center justify-between p-3 rounded-xl bg-gray-50/60 border border-gray-100">
+                                <Separator className="bg-gray-100" />
+
+                                {/* Benefits */}
+                                <div className="grid sm:grid-cols-2 gap-10">
                                     <div>
-                                        <p className="text-sm font-semibold text-gray-900">{b.full_name}</p>
-                                        <p className="text-xs text-gray-500 capitalize">{b.relationship?.toLowerCase().replace("_", " ")}</p>
+                                        <h3 className="text-xs font-bold text-gray-400 mb-5 uppercase tracking-wider flex items-center gap-2">
+                                            <HeartPulse className="w-4 h-4" /> Manfaat Utama
+                                        </h3>
+                                        <div className="space-y-4">
+                                            <BenefitItem label="Jiwa" value={activeContract.benefit_life} icon={Star} />
+                                            <BenefitItem label="Kecelakaan" value={activeContract.benefit_accidental_death} icon={AlertTriangle} />
+                                            <BenefitItem label="Cacat" value={activeContract.benefit_disability} icon={User} />
+                                            <BenefitItem label="Penyakit Kritis" value={activeContract.benefit_critical} icon={HeartPulse} />
+                                        </div>
                                     </div>
-                                    <div className="text-right">
-                                        <p className="text-sm font-bold text-gray-900">{parseFloat(b.percentage || "0")}%</p>
-                                        {b.nik && <p className="text-[10px] text-gray-400">{b.nik}</p>}
+
+                                    <div>
+                                        <h3 className="text-xs font-bold text-gray-400 mb-5 uppercase tracking-wider flex items-center gap-2">
+                                            <Building2 className="w-4 h-4" /> Rawat Inap
+                                        </h3>
+                                        <div className="space-y-4">
+                                            <BenefitItem label="Kamar" value={activeContract.room_plan} icon={Building2} />
+                                            <BenefitItem label="Limit Tahunan" value={activeContract.annual_limit} icon={Wallet} />
+                                            <BenefitItem label="Limit Seumur Hidup" value={activeContract.lifetime_limit} icon={Globe} />
+                                            <BenefitItem label="ICU" value={activeContract.benefit_icu} icon={Clock} />
+                                        </div>
                                     </div>
                                 </div>
-                            ))}
-                        </div>
-                    </Section>
-                )}
 
-                {/* Tertanggung Berbeda */}
-                {contract.insured && (
-                    <Section title="Tertanggung (Beda dari Pemegang Polis)" icon={ShieldCheck}>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                            <Stat label="Nama" value={contract.insured.full_name} />
-                            <Stat label="NIK" value={contract.insured.nik || "—"} />
-                            <Stat label="Lahir" value={date(contract.insured.birth_date)} />
-                            <Stat label="Hubungan" value={<span className="capitalize">{contract.insured.relationship?.toLowerCase().replace("_"," ")}</span>} />
-                        </div>
-                    </Section>
-                )}
-            </div>
-        </div>
-    );
-}
+                                <Separator className="bg-gray-100" />
 
-function Section({ title, icon: Icon, children }: { title: string; icon: React.ElementType; children: React.ReactNode }) {
-    return (
-        <div>
-            <h5 className="text-[11px] font-bold text-gray-500 mb-3 flex items-center gap-1.5">
-                <Icon className="w-3.5 h-3.5" /> {title}
-            </h5>
-            {children}
+                                {/* Additional Info */}
+                                <div>
+                                    <h3 className="text-xs font-bold text-gray-400 mb-6 uppercase tracking-wider flex items-center gap-2">
+                                        <FileText className="w-4 h-4" /> Detail Tambahan
+                                    </h3>
+                                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-y-8 gap-x-6">
+                                        <Stat label="Masa Tunggu" value={`${activeContract.waiting_period_days || 0} Hari`} />
+                                        <Stat label="Pre-existing" value={activeContract.pre_existing_covered || "—"} />
+                                        <Stat label="Cashless" value={activeContract.cashless_network || "—"} />
+                                        <Stat label="Area Cover" value={activeContract.coverage_area || "—"} />
+                                        <Stat label="Deductible" value={idr(activeContract.deductible)} />
+                                        <Stat label="Coinsurance" value={activeContract.coinsurance_pct ? `${activeContract.coinsurance_pct}%` : "—"} />
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </TabsContent>
+
+                <TabsContent value="requests" className="mt-6">
+                    <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-8 w-full">
+                        {latestClaim?.hospital_id ? (
+                            <ClientRequestsPanel
+                                mode="agent"
+                                clientId={client.client_id}
+                                hospitalId={latestClaim.hospital_id}
+                                claimId={latestClaim.claim_id}
+                            />
+                        ) : (
+                            <div className="text-sm text-gray-500">
+                                <h3 className="text-lg font-semibold text-black mb-2">Permintaan Klien</h3>
+                                <p>Klien belum memiliki riwayat klaim aktif. Buat klaim terlebih dahulu untuk mulai mengajukan permintaan data ke rumah sakit.</p>
+                            </div>
+                        )}
+                    </div>
+                </TabsContent>
+            </Tabs>
         </div>
     );
 }

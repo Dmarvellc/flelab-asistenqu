@@ -20,7 +20,7 @@ import { Logo } from "@/components/ui/logo"
 import { I18nProvider, useTranslation } from "@/components/providers/i18n-provider"
 import { useAgencyBranding } from "@/components/providers/agency-branding-provider"
 import { CommandPalette } from "@/components/agent/command-palette"
-import { AIAssistantWidget } from "@/components/agent/ai-assistant-widget"
+import { useBusy } from "@/components/ui/busy-overlay-provider"
 
 
 export function AgentLayoutClient({ children, initialBadges, serverUserName }: { children: React.ReactNode, initialBadges: { pendingContracts: number, pendingRequests: number, totalClaims: number }, serverUserName: string | null }) {
@@ -28,6 +28,7 @@ export function AgentLayoutClient({ children, initialBadges, serverUserName }: {
     const router = useRouter();
     const { t, lang, setLang } = useTranslation();
     const branding = useAgencyBranding();
+    const { run } = useBusy();
     // Determine base path (supports /{slug}/agent or /agent)
     const pathSegments = pathname.split("/").filter(Boolean);
     const isSlugRoute = pathSegments.length >= 2 && pathSegments[1] === "agent" && pathSegments[0] !== "agent";
@@ -41,15 +42,17 @@ export function AgentLayoutClient({ children, initialBadges, serverUserName }: {
     const isPublicPage = pathname.endsWith("/login") || pathname.endsWith("/register");
 
     const handleLogout = useCallback(async () => {
-        try {
-            await fetch("/api/auth/logout?from=agent", { method: "POST" });
-        } catch (e) {
-            console.error("Logout failed", e);
-        }
-        localStorage.removeItem("user");
-        setIsAuthorized(false);
-        router.push(`${basePath}/login`);
-    }, [router, basePath]);
+        await run(async () => {
+            try {
+                await fetch("/api/auth/logout?from=agent", { method: "POST" });
+            } catch (e) {
+                console.error("Logout failed", e);
+            }
+            localStorage.removeItem("user");
+            setIsAuthorized(false);
+            router.push(`${basePath}/login`);
+        }, "Keluar…");
+    }, [router, basePath, run]);
 
     useEffect(() => {
         if (isPublicPage) {
@@ -194,7 +197,7 @@ export function AgentLayoutClient({ children, initialBadges, serverUserName }: {
 
     return (
         <>
-            <DashboardLayout fabInset sidebar={sidebar} isCollapsed={false} header={
+            <DashboardLayout sidebar={sidebar} isCollapsed={false} header={
                 <DashboardHeader mobileSidebar={sidebar} actions={<Notifications />}>
                     <Link href={basePath}>
                         {branding.logoUrl ? (
@@ -214,7 +217,6 @@ export function AgentLayoutClient({ children, initialBadges, serverUserName }: {
                 {children}
             </DashboardLayout>
             <CommandPalette isOpen={isCommandOpen} setIsOpen={setIsCommandOpen} />
-            <AIAssistantWidget />
         </>
     )
 }

@@ -308,14 +308,14 @@ export default function HospitalClaimDetailPage() {
 
     return (
         <div className="flex flex-col gap-8 animate-in fade-in duration-500 w-full">
-            <div className="flex items-center gap-4 pb-6 border-b border-gray-100">
+            <div className="flex items-center gap-4 pb-6 border-b border-gray-200">
                 <Link href="/hospital/claims">
-                    <Button variant="outline" size="icon" className="rounded-xl shrink-0">
+                    <Button variant="outline" size="icon" className="rounded-md shrink-0">
                         <ArrowLeft className="h-4 w-4" />
                     </Button>
                 </Link>
                 <div className="min-w-0 flex-1">
-                    <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900">Detail Klaim Masuk</h1>
+                    <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-black">Detail Klaim Masuk</h1>
                     <div className="flex items-center gap-2 mt-1">
                         <p className="text-sm text-gray-500">ID: {claim.claim_id}</p>
                         {getStatusBadge(claim.status)}
@@ -466,7 +466,7 @@ export default function HospitalClaimDetailPage() {
                         </CardHeader>
                         <CardContent className="space-y-4">
                             {approvalBlockers.length > 0 && ['SUBMITTED', 'INFO_SUBMITTED', 'INFO_REQUESTED'].includes(claim.status) && (
-                                <div className="rounded-md border border-amber-300 bg-amber-50 p-3 space-y-2">
+                                <div className="rounded-md border border-amber-300 bg-white p-3 space-y-2">
                                     <p className="text-sm font-semibold text-amber-800 flex items-center gap-2">
                                         <AlertTriangle className="h-4 w-4" />
                                         Kelengkapan belum memenuhi aturan RS
@@ -685,13 +685,13 @@ export default function HospitalClaimDetailPage() {
             </div>
 
             {/* Audit Trail / Riwayat Klaim */}
-            <div className="bg-white rounded-3xl border border-gray-100 overflow-hidden shadow-sm p-6">
+            <div className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm p-6">
                 <ClaimTimeline claimId={claim.claim_id} />
             </div>
 
             {/* Permintaan klien — jejak digital (naik kelas, perpanjang rawat, dll.) */}
             {claim.client_id && claim.hospital_id && (
-                <div className="bg-white rounded-3xl border border-gray-100 overflow-hidden shadow-sm p-6">
+                <div className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm p-6">
                     <ClientRequestsPanel
                         mode="hospital"
                         clientId={claim.client_id}

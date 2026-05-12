@@ -126,6 +126,63 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
 }
 
 /**
+ * PATCH /api/developer/hospitals/[id] — update hospital editable fields
+ */
+export async function PATCH(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const role = await getRoleFromCookies();
+  if (!role || !allowed.has(role)) {
+    return NextResponse.json({ error: "Akses ditolak." }, { status: 403 });
+  }
+
+  const { id: rawId } = await params;
+  const parsed = hospitalIdSchema.safeParse(rawId);
+  if (!parsed.success) {
+    return NextResponse.json({ error: "ID tidak valid." }, { status: 400 });
+  }
+  const hospitalId = parsed.data;
+
+  const body = await req.json().catch(() => ({}));
+  const { name, address, phone, email, city } = body as Record<string, string | undefined>;
+
+  if (!name?.trim()) {
+    return NextResponse.json({ error: "Nama rumah sakit wajib diisi." }, { status: 400 });
+  }
+
+  const client = await dbPool.connect();
+  try {
+    const { rowCount } = await client.query(
+      `UPDATE public.hospital SET
+          name    = $1,
+          address = $2,
+          phone   = $3,
+          email   = $4,
+          city    = $5
+       WHERE hospital_id = $6`,
+      [
+        name.trim(),
+        address?.trim() || null,
+        phone?.trim() || null,
+        email?.trim() || null,
+        city?.trim() || null,
+        hospitalId,
+      ]
+    );
+    if ((rowCount ?? 0) === 0) {
+      return NextResponse.json({ error: "Rumah sakit tidak ditemukan." }, { status: 404 });
+    }
+    return NextResponse.json({ success: true });
+  } catch (err) {
+    console.error("developer.hospitals.PATCH", err);
+    return NextResponse.json({ error: "Gagal menyimpan perubahan." }, { status: 500 });
+  } finally {
+    client.release();
+  }
+}
+
+/**
  * DELETE /api/developer/hospitals/[id]
  *
  * Safely removes a hospital and every tight dependency:

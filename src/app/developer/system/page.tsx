@@ -54,8 +54,8 @@ function latencyColor(ms: number) {
 }
 
 function latencyBg(ms: number) {
-    if (ms < 50) return "bg-emerald-50 border-emerald-200";
-    if (ms < 150) return "bg-amber-50 border-amber-200";
+    if (ms < 50) return "bg-white border-emerald-200";
+    if (ms < 150) return "bg-white border-amber-200";
     return "bg-red-50 border-red-200";
 }
 
@@ -67,13 +67,13 @@ function latencyLabel(ms: number) {
 
 /* ─── Metric Card ────────────────────────────────────────────────── */
 function MetricCard({
-    label, value, sub, icon: Icon, color = "text-gray-900", bg = "bg-white", loading,
+    label, value, sub, icon: Icon, color = "text-black", bg = "bg-white", loading,
 }: {
     label: string; value: string | number | undefined; sub?: string
     icon: React.ElementType; color?: string; bg?: string; loading?: boolean
 }) {
     return (
-        <div className={`${bg} rounded-2xl border border-gray-100 shadow-sm p-5 flex flex-col gap-2`}>
+        <div className={`${bg} rounded-md border border-gray-200 shadow-sm p-5 flex flex-col gap-2`}>
             <div className="flex items-center justify-between">
                 <span className="text-xs font-semibold uppercase tracking-widest text-gray-400">{label}</span>
                 <Icon className={`h-4 w-4 ${color}`} />
@@ -91,9 +91,9 @@ function MetricCard({
 function MiniTooltip({ active, payload, label }: { active?: boolean; payload?: { value: number }[]; label?: string }) {
     if (!active || !payload?.length) return null;
     return (
-        <div className="bg-white border border-gray-100 shadow-lg rounded-xl px-3 py-2 text-xs">
+        <div className="bg-white border border-gray-200 shadow-lg rounded-md px-3 py-2 text-xs">
             <p className="text-gray-400 mb-0.5">{label}</p>
-            <p className="font-bold text-gray-900">{payload[0].value}</p>
+            <p className="font-bold text-black">{payload[0].value}</p>
         </div>
     );
 }
@@ -132,11 +132,11 @@ export default function SystemHealthPage() {
             {/* ── Header ──────────────────────────────────────────── */}
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-gray-900 rounded-2xl flex items-center justify-center shadow-md">
+                    <div className="w-10 h-10 bg-black rounded-md flex items-center justify-center shadow-md">
                         <Server className="h-5 w-5 text-white" />
                     </div>
                     <div>
-                        <h1 className="text-2xl font-black tracking-tight text-gray-900">System Health</h1>
+                        <h1 className="text-2xl font-black tracking-tight text-black">System Health</h1>
                         <p className="text-sm text-gray-400">
                             {lastUpdate ? `Updated ${fmtRelative(lastUpdate.toISOString())}` : "Loading…"}
                         </p>
@@ -145,7 +145,7 @@ export default function SystemHealthPage() {
                 <div className="flex items-center gap-3">
                     <button
                         onClick={() => { setLoading(true); fetchHealth(); }}
-                        className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-all"
+                        className="flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium text-gray-500 hover:text-black hover:bg-gray-100 transition-all"
                     >
                         <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
                         Refresh
@@ -155,9 +155,9 @@ export default function SystemHealthPage() {
 
             {/* ── Status Banner ────────────────────────────────────── */}
             {!loading && data && (
-                <div className={`rounded-2xl border px-5 py-4 flex items-center gap-4 ${data.dbLatency < 150
-                    ? "bg-emerald-50 border-emerald-200"
-                    : "bg-amber-50 border-amber-200"
+                <div className={`rounded-md border px-5 py-4 flex items-center gap-4 ${data.dbLatency < 150
+                    ? "bg-white border-emerald-200"
+                    : "bg-white border-amber-200"
                     }`}>
                     <div className={`w-3 h-3 rounded-full ${data.dbLatency < 150 ? "bg-emerald-500 animate-pulse" : "bg-amber-500 animate-pulse"}`} />
                     <div className="flex-1">
@@ -169,9 +169,9 @@ export default function SystemHealthPage() {
                         </p>
                     </div>
                     <span className={`text-xs font-bold px-3 py-1 rounded-full ${data.dbLatency < 50
-                        ? "bg-emerald-100 text-emerald-700"
+                        ? "bg-gray-100 text-emerald-700"
                         : data.dbLatency < 150
-                            ? "bg-amber-100 text-amber-700"
+                            ? "bg-gray-100 text-amber-700"
                             : "bg-red-100 text-red-700"
                         }`}>
                         {latencyLabel(data.dbLatency)}
@@ -219,16 +219,16 @@ export default function SystemHealthPage() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
                 {/* User Growth 7d */}
-                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+                <div className="bg-white rounded-md border border-gray-200 shadow-sm p-6">
                     <div className="flex items-center justify-between mb-5">
                         <div>
-                            <h2 className="text-sm font-bold text-gray-900">User Registrations</h2>
+                            <h2 className="text-sm font-bold text-black">User Registrations</h2>
                             <p className="text-xs text-gray-400 mt-0.5">Last 7 days</p>
                         </div>
                         <Users className="h-4 w-4 text-gray-300" />
                     </div>
                     {loading ? (
-                        <div className="h-40 bg-gray-50 rounded-xl animate-pulse" />
+                        <div className="h-40 bg-gray-50 rounded-md animate-pulse" />
                     ) : userGrowth.length === 0 ? (
                         <div className="h-40 flex items-center justify-center text-sm text-gray-400">No data</div>
                     ) : (
@@ -245,16 +245,16 @@ export default function SystemHealthPage() {
                 </div>
 
                 {/* Claims Growth 7d */}
-                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+                <div className="bg-white rounded-md border border-gray-200 shadow-sm p-6">
                     <div className="flex items-center justify-between mb-5">
                         <div>
-                            <h2 className="text-sm font-bold text-gray-900">Claims Activity</h2>
+                            <h2 className="text-sm font-bold text-black">Claims Activity</h2>
                             <p className="text-xs text-gray-400 mt-0.5">Last 7 days</p>
                         </div>
                         <FileText className="h-4 w-4 text-gray-300" />
                     </div>
                     {loading ? (
-                        <div className="h-40 bg-gray-50 rounded-xl animate-pulse" />
+                        <div className="h-40 bg-gray-50 rounded-md animate-pulse" />
                     ) : claimsGrowth.length === 0 ? (
                         <div className="h-40 flex items-center justify-center text-sm text-gray-400">No claims data</div>
                     ) : (
@@ -272,10 +272,10 @@ export default function SystemHealthPage() {
             </div>
 
             {/* ── Database Tables ───────────────────────────────────── */}
-            <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
+            <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
                 <div className="px-6 py-4 border-b border-gray-50 flex items-center justify-between">
                     <div>
-                        <h2 className="text-sm font-bold text-gray-900">Database Tables</h2>
+                        <h2 className="text-sm font-bold text-black">Database Tables</h2>
                         <p className="text-xs text-gray-400 mt-0.5">Row counts & storage usage</p>
                     </div>
                     <Database className="h-4 w-4 text-gray-300" />
@@ -306,7 +306,7 @@ export default function SystemHealthPage() {
                                     return (data?.tableSizes ?? []).map((t, i) => {
                                         const pct = Math.round((Number(t.row_count) / maxRows) * 100);
                                         return (
-                                            <tr key={t.table_name} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
+                                            <tr key={t.table_name} className="border-b border-gray-50 hover:bg-white transition-colors">
                                                 <td className="px-6 py-3">
                                                     <div className="flex items-center gap-2">
                                                         <span className="w-1.5 h-1.5 rounded-full bg-blue-400 shrink-0" />
@@ -314,7 +314,7 @@ export default function SystemHealthPage() {
                                                     </div>
                                                 </td>
                                                 <td className="px-6 py-3 text-right">
-                                                    <span className="text-xs font-bold text-gray-900 tabular-nums">
+                                                    <span className="text-xs font-bold text-black tabular-nums">
                                                         {Number(t.row_count).toLocaleString()}
                                                     </span>
                                                 </td>
@@ -343,30 +343,30 @@ export default function SystemHealthPage() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
                 {/* Top Agents */}
-                <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
+                <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
                     <div className="px-6 py-4 border-b border-gray-50">
-                        <h2 className="text-sm font-bold text-gray-900">Top Agents by Claims</h2>
+                        <h2 className="text-sm font-bold text-black">Top Agents by Claims</h2>
                         <p className="text-xs text-gray-400 mt-0.5">Most active agents on platform</p>
                     </div>
                     <div>
                         {loading ? (
                             <div className="p-6 space-y-3">
                                 {Array.from({ length: 5 }).map((_, i) => (
-                                    <div key={i} className="h-10 bg-gray-50 rounded-xl animate-pulse" />
+                                    <div key={i} className="h-10 bg-gray-50 rounded-md animate-pulse" />
                                 ))}
                             </div>
                         ) : (data?.topAgents ?? []).length === 0 ? (
                             <div className="py-12 text-center text-sm text-gray-400">No agent data</div>
                         ) : (
                             (data?.topAgents ?? []).map((agent, i) => (
-                                <div key={agent.email} className="flex items-center gap-4 px-6 py-3 border-t border-gray-50 first:border-t-0 hover:bg-gray-50/50 transition-colors">
+                                <div key={agent.email} className="flex items-center gap-4 px-6 py-3 border-t border-gray-50 first:border-t-0 hover:bg-white transition-colors">
                                     <span className="text-xs font-black text-gray-300 w-5 tabular-nums">{i + 1}</span>
                                     <div className="flex-1 min-w-0">
                                         <p className="text-sm font-semibold text-gray-800 truncate">{agent.full_name ?? agent.email}</p>
                                         <p className="text-xs text-gray-400 truncate">{agent.full_name ? agent.email : "—"}</p>
                                     </div>
                                     <div className="flex items-center gap-2">
-                                        <span className="text-xs font-black text-gray-900 tabular-nums">{agent.claim_count}</span>
+                                        <span className="text-xs font-black text-black tabular-nums">{agent.claim_count}</span>
                                         <span className="text-xs text-gray-400">claims</span>
                                     </div>
                                 </div>
@@ -376,23 +376,23 @@ export default function SystemHealthPage() {
                 </div>
 
                 {/* Agency Overview */}
-                <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
+                <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
                     <div className="px-6 py-4 border-b border-gray-50">
-                        <h2 className="text-sm font-bold text-gray-900">Agency Overview</h2>
+                        <h2 className="text-sm font-bold text-black">Agency Overview</h2>
                         <p className="text-xs text-gray-400 mt-0.5">Top agencies by agent count</p>
                     </div>
                     <div>
                         {loading ? (
                             <div className="p-6 space-y-3">
                                 {Array.from({ length: 5 }).map((_, i) => (
-                                    <div key={i} className="h-10 bg-gray-50 rounded-xl animate-pulse" />
+                                    <div key={i} className="h-10 bg-gray-50 rounded-md animate-pulse" />
                                 ))}
                             </div>
                         ) : (data?.agencyStats ?? []).length === 0 ? (
                             <div className="py-12 text-center text-sm text-gray-400">No agency data</div>
                         ) : (
                             (data?.agencyStats ?? []).map((agency, i) => (
-                                <div key={agency.agency_id} className="flex items-center gap-4 px-6 py-3 border-t border-gray-50 first:border-t-0 hover:bg-gray-50/50 transition-colors">
+                                <div key={agency.agency_id} className="flex items-center gap-4 px-6 py-3 border-t border-gray-50 first:border-t-0 hover:bg-white transition-colors">
                                     <span className="text-xs font-black text-gray-300 w-5 tabular-nums">{i + 1}</span>
                                     <div className="flex-1 min-w-0">
                                         <p className="text-sm font-semibold text-gray-800 truncate">{agency.name}</p>
@@ -400,7 +400,7 @@ export default function SystemHealthPage() {
                                     </div>
                                     <div className="flex items-center gap-1.5">
                                         <Users className="h-3 w-3 text-gray-300" />
-                                        <span className="text-xs font-bold text-gray-900 tabular-nums">{agency.agent_count}</span>
+                                        <span className="text-xs font-bold text-black tabular-nums">{agency.agent_count}</span>
                                     </div>
                                 </div>
                             ))

@@ -177,7 +177,7 @@ function LogoStrip({
 }) {
   if (hospitals.length === 0) return null
   return (
-    <div className="border-b border-gray-100 -mx-4 px-4 sm:-mx-6 sm:px-6">
+    <div className="border-b border-gray-200 -mx-4 px-4 sm:-mx-6 sm:px-6">
       <div className="flex items-center gap-1 overflow-x-auto py-4 scrollbar-hide">
         {hospitals.slice(0, 30).map((h) => {
           const logo = h.logo_url && !isFakeAvatar(h.logo_url) ? h.logo_url : clearbitLogo(h.website)
@@ -216,7 +216,7 @@ function DoctorRow({ doctor }: { doctor: MarketplaceDoctor }) {
   return (
     <Link
       href={`/agent/network/doctors/${doctor.id}`}
-      className="group flex items-start gap-4 sm:gap-6 py-5 sm:py-6 border-b border-gray-100 hover:bg-slate-50/60 transition-colors -mx-4 px-4 sm:-mx-6 sm:px-6"
+      className="group flex items-start gap-4 sm:gap-6 py-5 sm:py-6 border-b border-gray-200 hover:bg-slate-50/60 transition-colors -mx-4 px-4 sm:-mx-6 sm:px-6"
     >
       {photo ? (
         // eslint-disable-next-line @next/next/no-img-element
@@ -276,9 +276,9 @@ function HospitalRow({ hospital }: { hospital: NetworkHospital }) {
   return (
     <Link
       href={`/agent/network/hospitals/${hospital.hospital_id}`}
-      className="group flex items-center gap-4 sm:gap-6 py-5 border-b border-gray-100 hover:bg-slate-50/60 transition-colors -mx-4 px-4 sm:-mx-6 sm:px-6"
+      className="group flex items-center gap-4 sm:gap-6 py-5 border-b border-gray-200 hover:bg-slate-50/60 transition-colors -mx-4 px-4 sm:-mx-6 sm:px-6"
     >
-      <div className="h-12 w-12 sm:h-14 sm:w-14 flex items-center justify-center bg-white border border-gray-100 rounded-md shrink-0 p-1.5">
+      <div className="h-12 w-12 sm:h-14 sm:w-14 flex items-center justify-center bg-white border border-gray-200 rounded-md shrink-0 p-1.5">
         {logo ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={logo} alt="" className="max-h-full max-w-full object-contain" />
@@ -330,8 +330,8 @@ function HospitalRow({ hospital }: { hospital: NetworkHospital }) {
 function GeneraliRow({ provider }: { provider: GeneraliProvider }) {
   const cc = provider.country === "MALAYSIA" ? "MY" : "SG"
   return (
-    <div className="flex items-center gap-4 sm:gap-6 py-5 border-b border-gray-100 -mx-4 px-4 sm:-mx-6 sm:px-6">
-      <div className="h-12 w-12 sm:h-14 sm:w-14 flex items-center justify-center bg-white border border-gray-100 rounded-md shrink-0">
+    <div className="flex items-center gap-4 sm:gap-6 py-5 border-b border-gray-200 -mx-4 px-4 sm:-mx-6 sm:px-6">
+      <div className="h-12 w-12 sm:h-14 sm:w-14 flex items-center justify-center bg-white border border-gray-200 rounded-md shrink-0">
         <Building2 className="h-4 w-4 text-slate-300" />
       </div>
       <div className="flex-1 min-w-0">
@@ -354,7 +354,7 @@ function GeneraliRow({ provider }: { provider: GeneraliProvider }) {
 // ─── Skeletons ──────────────────────────────────────────────
 function RowSkeleton() {
   return (
-    <div className="flex items-center gap-4 py-5 border-b border-gray-100 -mx-4 px-4 sm:-mx-6 sm:px-6 animate-pulse">
+    <div className="flex items-center gap-4 py-5 border-b border-gray-200 -mx-4 px-4 sm:-mx-6 sm:px-6 animate-pulse">
       <div className="h-14 w-14 rounded-full bg-slate-100 shrink-0" />
       <div className="flex-1 space-y-2">
         <div className="h-3 bg-slate-100 rounded w-1/4" />

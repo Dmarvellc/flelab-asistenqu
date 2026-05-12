@@ -7,25 +7,29 @@ import { LayoutDashboard, Settings, LogOut, Users, UserCog, FileText, GitPullReq
 import Link from "next/link"
 import { Logo } from "@/components/ui/logo"
 import { CommandPalette } from "@/components/admin-agency/command-palette"
-import { useTranslation } from "@/components/providers/i18n-provider";
 import { AIAgencyAssistantWidget } from "@/components/admin-agency/ai-assistant-widget";
+import { useTranslation } from "@/components/providers/i18n-provider";
 import { Notifications } from "@/components/dashboard/notifications";
+import { useBusy } from "@/components/ui/busy-overlay-provider";
 
 export function AdminAgencyLayoutClient({ children }: { children: React.ReactNode }) {
   const { t } = useTranslation();
   const pathname = usePathname();
   const router = useRouter();
+  const { run } = useBusy();
   const [isCommandOpen, setIsCommandOpen] = useState(false);
 
   const handleLogout = useCallback(async () => {
-    try {
-      await fetch("/api/auth/logout?from=admin-agency", { method: "POST" });
-    } catch (e) {
-      console.error("Logout failed", e);
-    }
-    router.push("/admin-agency/login");
-    router.refresh();
-  }, [router]);
+    await run(async () => {
+      try {
+        await fetch("/api/auth/logout?from=admin-agency", { method: "POST" });
+      } catch (e) {
+        console.error("Logout failed", e);
+      }
+      router.push("/admin-agency/login");
+      router.refresh();
+    }, "Keluar…");
+  }, [router, run]);
 
   const sidebar = (
     <DashboardSidebar>
@@ -99,7 +103,7 @@ export function AdminAgencyLayoutClient({ children }: { children: React.ReactNod
 
   return (
     <>
-      <DashboardLayout fabInset sidebar={sidebar} isCollapsed={false} header={
+      <DashboardLayout sidebar={sidebar} isCollapsed={false} header={
         <DashboardHeader mobileSidebar={sidebar} actions={<Notifications />}>
           <Link href="/admin-agency">
             <Logo height={20} />

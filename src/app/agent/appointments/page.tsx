@@ -61,7 +61,7 @@ const statusConfig: Record<string, { label: string; icon: React.ReactNode; class
     SCHEDULED: {
         label: "Terjadwal",
         icon: <Clock className="h-3.5 w-3.5" />,
-        className: "bg-blue-50 text-blue-700 border border-blue-200",
+        className: "bg-white text-blue-700 border border-blue-200",
     },
     CONFIRMED: {
         label: "Dikonfirmasi",
@@ -276,9 +276,9 @@ export default function AppointmentsPage() {
     return (
         <div className="flex flex-col gap-8 animate-in fade-in duration-500 w-full">
             {/* Header */}
-            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 pb-6 border-b border-gray-100">
+            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 pb-6 border-b border-gray-200">
                 <div className="min-w-0">
-                    <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900">Jadwal Dokter</h1>
+                    <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-black">Jadwal Dokter</h1>
                     <p className="mt-1.5 text-sm text-gray-500">
                         Booking jadwal dan kirim notifikasi kunjungan ke rumah sakit.
                     </p>
@@ -294,7 +294,7 @@ export default function AppointmentsPage() {
                     </Button>
                     <Button
                         onClick={() => setIsDialogOpen(true)}
-                        className="bg-black hover:bg-gray-900 text-white gap-2 shadow-sm"
+                        className="bg-black hover:bg-black text-white gap-2 shadow-sm"
                     >
                         <Plus className="h-4 w-4" />
                         Buat Jadwal
@@ -310,21 +310,21 @@ export default function AppointmentsPage() {
                     { label: "Dikonfirmasi", value: appointments.filter(a => a.status === "CONFIRMED").length },
                     { label: "Visit LOG", value: appointments.filter(a => a.appointment_type === "VISIT_LOG").length },
                 ].map(stat => (
-                    <div key={stat.label} className="bg-white rounded-3xl border border-gray-100 p-8 shadow-sm hover:shadow-lg transition-all duration-300">
-                        <p className="text-4xl font-bold tabular-nums text-gray-900 tracking-tight">{stat.value}</p>
+                    <div key={stat.label} className="bg-white rounded-lg border border-gray-200 p-8 shadow-sm hover:shadow-lg transition-all duration-300">
+                        <p className="text-4xl font-bold tabular-nums text-black tracking-tight">{stat.value}</p>
                         <p className="text-[15px] font-medium text-gray-500 mt-2">{stat.label}</p>
                     </div>
                 ))}
             </div>
 
             {/* Toolbar */}
-            <div className="bg-white rounded-3xl border border-gray-100 overflow-hidden shadow-sm flex flex-col">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 p-4 sm:p-8 border-b border-gray-50 bg-gray-50/30">
+            <div className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm flex flex-col">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 p-4 sm:p-8 border-b border-gray-50 bg-white">
                     <div className="relative flex-1 max-w-xs">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                         <Input
                             placeholder="Cari nasabah atau RS..."
-                            className="pl-10 bg-gray-50 border-gray-100 text-sm rounded-xl focus:bg-white"
+                            className="pl-10 bg-gray-50 border-gray-200 text-sm rounded-md focus:bg-white"
                             value={search}
                             onChange={e => setSearch(e.target.value)}
                         />
@@ -353,11 +353,11 @@ export default function AppointmentsPage() {
                     </div>
                 ) : filtered.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-40 gap-3">
-                        <div className="h-12 w-12 rounded-2xl bg-gray-50 border border-gray-100 flex items-center justify-center">
+                        <div className="h-12 w-12 rounded-md bg-gray-50 border border-gray-200 flex items-center justify-center">
                             <Calendar className="h-5 w-5 text-gray-300" />
                         </div>
                         <div className="text-center">
-                            <p className="text-xl font-bold text-gray-900 mb-2">Belum ada jadwal</p>
+                            <p className="text-xl font-bold text-black mb-2">Belum ada jadwal</p>
                             <p className="text-base text-gray-500">Buat jadwal atau Visit LOG untuk nasabah Anda</p>
                         </div>
                     </div>
@@ -365,7 +365,7 @@ export default function AppointmentsPage() {
                     <div className="divide-y divide-gray-50">
                         {upcoming.length > 0 && (
                             <div>
-                                <div className="px-8 py-4 bg-gray-50/50">
+                                <div className="px-8 py-4 bg-white">
                                     <p className="text-[13px] font-bold text-gray-500">Mendatang ({upcoming.length})</p>
                                 </div>
                                 {upcoming.map((apt, i) => (
@@ -382,7 +382,7 @@ export default function AppointmentsPage() {
                         )}
                         {past.length > 0 && (
                             <div>
-                                <div className="px-8 py-4 bg-gray-50/50 border-t border-gray-50">
+                                <div className="px-8 py-4 bg-white border-t border-gray-50">
                                     <p className="text-[13px] font-bold text-gray-500">Riwayat ({past.length})</p>
                                 </div>
                                 {past.map((apt, i) => (
@@ -415,7 +415,7 @@ export default function AppointmentsPage() {
                         <div className="space-y-1.5">
                             <Label className="text-xs font-semibold text-muted-foreground">Nasabah *</Label>
                             <Select value={form.client_id} onValueChange={v => setForm({ ...form, client_id: v })}>
-                                <SelectTrigger className="rounded-xl">
+                                <SelectTrigger className="rounded-md">
                                     <SelectValue placeholder="Pilih nasabah..." />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -428,7 +428,7 @@ export default function AppointmentsPage() {
                         <div className="space-y-1.5">
                             <Label className="text-xs font-semibold text-muted-foreground">Rumah Sakit</Label>
                             <Select value={form.hospital_id} onValueChange={v => setForm({ ...form, hospital_id: v })}>
-                                <SelectTrigger className="rounded-xl">
+                                <SelectTrigger className="rounded-md">
                                     <SelectValue placeholder="Pilih rumah sakit..." />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -441,17 +441,17 @@ export default function AppointmentsPage() {
                         <div className="grid grid-cols-2 gap-3">
                             <div className="space-y-1.5">
                                 <Label className="text-xs font-semibold text-muted-foreground">Tanggal *</Label>
-                                <Input type="date" value={form.appointment_date} onChange={e => setForm({ ...form, appointment_date: e.target.value })} className="rounded-xl" />
+                                <Input type="date" value={form.appointment_date} onChange={e => setForm({ ...form, appointment_date: e.target.value })} className="rounded-md" />
                             </div>
                             <div className="space-y-1.5">
                                 <Label className="text-xs font-semibold text-muted-foreground">Waktu</Label>
-                                <Input type="time" value={form.appointment_time} onChange={e => setForm({ ...form, appointment_time: e.target.value })} className="rounded-xl" />
+                                <Input type="time" value={form.appointment_time} onChange={e => setForm({ ...form, appointment_time: e.target.value })} className="rounded-md" />
                             </div>
                         </div>
                         <div className="space-y-1.5">
                             <Label className="text-xs font-semibold text-muted-foreground">Jenis Jadwal</Label>
                             <Select value={form.appointment_type} onValueChange={v => setForm({ ...form, appointment_type: v })}>
-                                <SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger>
+                                <SelectTrigger className="rounded-md"><SelectValue /></SelectTrigger>
                                 <SelectContent>
                                     {Object.entries(typeLabels).filter(([v]) => v !== "VISIT_LOG").map(([val, label]) => (
                                         <SelectItem key={val} value={val}>{label}</SelectItem>
@@ -461,12 +461,12 @@ export default function AppointmentsPage() {
                         </div>
                         <div className="space-y-1.5">
                             <Label className="text-xs font-semibold text-muted-foreground">Catatan</Label>
-                            <Textarea placeholder="Catatan tambahan..." value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} className="rounded-xl resize-none" rows={3} />
+                            <Textarea placeholder="Catatan tambahan..." value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} className="rounded-md resize-none" rows={3} />
                         </div>
                     </div>
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Batal</Button>
-                        <Button onClick={handleCreate} disabled={submitting} className="bg-black text-white hover:bg-gray-900">
+                        <Button onClick={handleCreate} disabled={submitting} className="bg-black text-white hover:bg-black">
                             {submitting ? "Menyimpan..." : "Buat Jadwal"}
                         </Button>
                     </DialogFooter>
@@ -482,7 +482,7 @@ export default function AppointmentsPage() {
                             Buat Visit LOG
                         </DialogTitle>
                     </DialogHeader>
-                    <div className="rounded-xl bg-blue-50 border border-blue-100 p-3 mb-2">
+                    <div className="rounded-md bg-white border border-gray-200 p-3 mb-2">
                         <p className="text-xs text-blue-700 leading-relaxed">
                             Visit LOG adalah notifikasi ke rumah sakit bahwa Anda akan mengirim pasien. Jika pasien perlu rawat inap, LOG ini bisa langsung dikonversi ke klaim.
                         </p>
@@ -491,7 +491,7 @@ export default function AppointmentsPage() {
                         <div className="space-y-1.5">
                             <Label className="text-xs font-semibold text-muted-foreground">Nasabah *</Label>
                             <Select value={logForm.client_id} onValueChange={v => setLogForm({ ...logForm, client_id: v })}>
-                                <SelectTrigger className="rounded-xl">
+                                <SelectTrigger className="rounded-md">
                                     <SelectValue placeholder="Pilih nasabah..." />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -504,7 +504,7 @@ export default function AppointmentsPage() {
                         <div className="space-y-1.5">
                             <Label className="text-xs font-semibold text-muted-foreground">Rumah Sakit *</Label>
                             <Select value={logForm.hospital_id} onValueChange={v => setLogForm({ ...logForm, hospital_id: v })}>
-                                <SelectTrigger className="rounded-xl">
+                                <SelectTrigger className="rounded-md">
                                     <SelectValue placeholder="Pilih rumah sakit..." />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -517,11 +517,11 @@ export default function AppointmentsPage() {
                         <div className="grid grid-cols-2 gap-3">
                             <div className="space-y-1.5">
                                 <Label className="text-xs font-semibold text-muted-foreground">Tanggal Kunjungan *</Label>
-                                <Input type="date" value={logForm.appointment_date} onChange={e => setLogForm({ ...logForm, appointment_date: e.target.value })} className="rounded-xl" />
+                                <Input type="date" value={logForm.appointment_date} onChange={e => setLogForm({ ...logForm, appointment_date: e.target.value })} className="rounded-md" />
                             </div>
                             <div className="space-y-1.5">
                                 <Label className="text-xs font-semibold text-muted-foreground">Perkiraan Waktu</Label>
-                                <Input type="time" value={logForm.appointment_time} onChange={e => setLogForm({ ...logForm, appointment_time: e.target.value })} className="rounded-xl" />
+                                <Input type="time" value={logForm.appointment_time} onChange={e => setLogForm({ ...logForm, appointment_time: e.target.value })} className="rounded-md" />
                             </div>
                         </div>
                         <div className="space-y-1.5">
@@ -530,7 +530,7 @@ export default function AppointmentsPage() {
                                 placeholder="Contoh: Demam tinggi 3 hari, nyeri dada, sesak napas. Kemungkinan perlu rawat inap..."
                                 value={logForm.notes}
                                 onChange={e => setLogForm({ ...logForm, notes: e.target.value })}
-                                className="rounded-xl resize-none"
+                                className="rounded-md resize-none"
                                 rows={4}
                             />
                         </div>
@@ -573,7 +573,7 @@ function AppointmentRow({
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.04 }}
             className={cn(
-                "flex flex-col sm:flex-row sm:items-center gap-6 p-6 sm:px-8 bg-white border-b border-gray-50 last:border-0 hover:bg-gray-50/60 transition-colors",
+                "flex flex-col sm:flex-row sm:items-center gap-6 p-6 sm:px-8 bg-white border-b border-gray-50 last:border-0 hover:bg-white transition-colors",
                 isPast && "opacity-70 grayscale-[20%]",
                 isVisitLog && !isPast && "border-l-2 border-l-blue-300"
             )}
@@ -581,7 +581,7 @@ function AppointmentRow({
             {/* Date Block */}
             <div className="flex-shrink-0 w-14 text-center">
                 <div className={cn(
-                    "rounded-xl py-2 px-1",
+                    "rounded-md py-2 px-1",
                     isPast ? "bg-gray-100" : isVisitLog ? "bg-blue-600" : "bg-black"
                 )}>
                     <p className={cn("text-xs font-medium", isPast ? "text-gray-500" : "text-white/70")}>
@@ -596,9 +596,9 @@ function AppointmentRow({
             {/* Info */}
             <div className="flex-1 min-w-0">
                 <div className="flex items-start gap-2 flex-wrap">
-                    <p className="text-sm font-semibold text-gray-900">{apt.client_name}</p>
+                    <p className="text-sm font-semibold text-black">{apt.client_name}</p>
                     {isVisitLog && (
-                        <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">VISIT LOG</span>
+                        <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-gray-100 text-blue-700">VISIT LOG</span>
                     )}
                     {apt.claim_number && (
                         <span className="text-xs text-gray-400">{apt.claim_number}</span>

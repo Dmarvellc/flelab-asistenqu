@@ -77,7 +77,8 @@ export function ClaimsList({ role, claims: propClaims }: ClaimsListProps) {
           role === 'admin_agency' ? `/admin-agency/claims/${claim.claim_id}` :
             role === 'hospital' ? `/hospital/claims/${claim.claim_id}` :
               role === 'agent' ? `/agent/claims/${claim.claim_id}` :
-                '#';
+                role === 'developer' ? `/developer/claims/${claim.claim_id}` :
+                  '#';
 
         return (
           <div

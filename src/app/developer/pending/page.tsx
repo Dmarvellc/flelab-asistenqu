@@ -171,38 +171,38 @@ export default function PendingApprovalsPage() {
 
             {/* Header */}
             <div>
-                <h1 className="text-2xl font-black tracking-tight text-gray-900">Pending Approvals</h1>
+                <h1 className="text-2xl font-black tracking-tight text-black">Pending Approvals</h1>
                 <p className="text-sm text-gray-400 mt-1">
                     Review and approve new user registrations with uploaded documents.
                 </p>
             </div>
 
             {/* Deprecation banner */}
-            <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 flex gap-3 items-start">
+            <div className="rounded-md border border-amber-200 bg-white px-4 py-3 flex gap-3 items-start">
                 <AlertCircle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
                 <div className="text-sm">
                     <p className="font-semibold text-amber-900">Halaman ini akan dipensiunkan.</p>
                     <p className="text-amber-800 mt-0.5">
                         Approval per-agen sekarang ditangani admin agency lewat invitation flow di{" "}
-                        <span className="text-xs bg-amber-100 px-1.5 py-0.5 rounded">/admin-agency/team</span>.
+                        <span className="text-xs bg-gray-100 px-1.5 py-0.5 rounded">/admin-agency/team</span>.
                         Halaman ini hanya untuk membersihkan akun-akun lama yang masih berstatus PENDING.
                     </p>
                 </div>
             </div>
 
             {/* Table Card */}
-            <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
+            <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
 
                 {/* Toolbar */}
                 <div className="px-5 py-4 border-b border-gray-50 flex items-center justify-between gap-3">
                     <div className="flex items-center gap-2.5">
-                        <span className="text-sm font-bold text-gray-900">Menunggu Persetujuan</span>
-                        <span className="bg-amber-100 text-amber-700 text-[11px] font-bold px-2 py-0.5 rounded-full tabular-nums">
+                        <span className="text-sm font-bold text-black">Menunggu Persetujuan</span>
+                        <span className="bg-gray-100 text-amber-700 text-[11px] font-bold px-2 py-0.5 rounded-full tabular-nums">
                             {filteredPending.length}
                         </span>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
-                        <div className="flex items-center gap-1 bg-gray-50 border border-gray-200 rounded-xl px-2 py-1.5 transition-all">
+                        <div className="flex items-center gap-1 bg-gray-50 border border-gray-200 rounded-md px-2 py-1.5 transition-all">
                             <button
                                 onClick={() => { if (searchOpen) { setSearchOpen(false); setSearch(""); } else setSearchOpen(true); }}
                                 className="p-0.5 rounded-md text-gray-400 hover:text-gray-700 transition-colors"
@@ -222,7 +222,7 @@ export default function PendingApprovalsPage() {
                         </div>
                         <button
                             onClick={() => { setLoading(true); fetchPending(); }}
-                            className="p-2 rounded-xl text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-all"
+                            className="p-2 rounded-md text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-all"
                         >
                             <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
                         </button>
@@ -267,15 +267,15 @@ export default function PendingApprovalsPage() {
                                     return (
                                         <tr
                                             key={user.user_id}
-                                            className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors group/row"
+                                            className="border-b border-gray-50 hover:bg-white transition-colors group/row"
                                         >
                                             <td className="px-5 py-4">
-                                                <p className="text-sm font-medium text-gray-900 truncate max-w-[220px]">{user.email}</p>
+                                                <p className="text-sm font-medium text-black truncate max-w-[220px]">{user.email}</p>
                                             </td>
                                             <td className="px-5 py-4">
                                                 <div className="flex items-center gap-2">
                                                     <span className="text-sm text-gray-700">{user.full_name || "—"}</span>
-                                                    <div className="w-4 h-4 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center shrink-0" title="Documents Uploaded">
+                                                    <div className="w-4 h-4 bg-gray-100 text-emerald-600 rounded-full flex items-center justify-center shrink-0" title="Documents Uploaded">
                                                         <CheckCircle2 className="w-2.5 h-2.5" />
                                                     </div>
                                                 </div>
@@ -294,7 +294,7 @@ export default function PendingApprovalsPage() {
                                             <td className="w-24 pr-5 py-4 text-right">
                                                 <button
                                                     onClick={() => { setSelectedUser(user); setIsDetailOpen(true); }}
-                                                    className="opacity-0 group-hover/row:opacity-100 translate-x-1.5 group-hover/row:translate-x-0 transition-all duration-150 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-gray-900 text-white hover:bg-gray-800"
+                                                    className="opacity-0 group-hover/row:opacity-100 translate-x-1.5 group-hover/row:translate-x-0 transition-all duration-150 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-black text-white hover:bg-gray-800"
                                                 >
                                                     Review <ArrowRight className="h-3 w-3" />
                                                 </button>

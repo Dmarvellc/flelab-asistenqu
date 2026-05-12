@@ -35,7 +35,7 @@ const STEPS = [
 /* ─── Helper Components ──────────────────────────────────────────── */
 function Section({ title, icon: Icon, children }: { title: string; icon: React.ElementType; children: React.ReactNode }) {
     return (
-        <div className="rounded-xl border border-border/60 p-5 space-y-4 bg-muted/20">
+        <div className="rounded-md border border-border/60 p-5 space-y-4 bg-muted/20">
             <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
                 <Icon className="w-3.5 h-3.5" /> {title}
             </h3>
@@ -503,7 +503,7 @@ export default function NewClientPage() {
     return (
         <div className="flex flex-col h-full w-full">
             {draftRestored && (
-                <div className="flex items-center justify-between gap-3 px-4 py-2.5 mb-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-sm">
+                <div className="flex items-center justify-between gap-3 px-4 py-2.5 mb-3 rounded-md bg-white border border-amber-200 text-amber-800 text-sm">
                     <div className="flex items-center gap-2">
                         <RotateCcw className="w-4 h-4 shrink-0" />
                         <span className="font-medium">Draft tersimpan dipulihkan.</span>
@@ -533,7 +533,7 @@ export default function NewClientPage() {
                             const Icon = step.icon;
                             return (
                                 <div key={step.id} className={cn(
-                                    "flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200",
+                                    "flex items-center gap-3 px-3 py-2.5 rounded-md transition-all duration-200",
                                     isActive ? "bg-black text-white shadow-sm" : isCompleted ? "text-foreground bg-muted/40" : "text-muted-foreground"
                                 )}>
                                     <div className={cn(
@@ -573,7 +573,7 @@ export default function NewClientPage() {
                                         onDragLeave={() => setIsDragActive(false)}
                                         onDrop={handleDrop}
                                         className={cn(
-                                            "relative flex flex-col items-center justify-center space-y-5 py-14 border-2 border-dashed rounded-2xl transition-all bg-muted/5",
+                                            "relative flex flex-col items-center justify-center space-y-5 py-14 border-2 border-dashed rounded-md transition-all bg-muted/5",
                                             !file && "cursor-pointer hover:bg-muted/10",
                                             isDragActive ? "border-black bg-black/5 scale-[1.01]" :
                                             aiError ? "border-red-500 bg-red-50/10" : "border-muted-foreground/25 hover:border-black/50"
@@ -583,7 +583,7 @@ export default function NewClientPage() {
 
                                         {!file ? (
                                             <>
-                                                <div className={cn("w-20 h-20 rounded-2xl flex items-center justify-center shadow-inner transition-all",
+                                                <div className={cn("w-20 h-20 rounded-md flex items-center justify-center shadow-inner transition-all",
                                                     isDragActive ? "bg-black text-white scale-110" : "bg-muted")}>
                                                     <Upload className={cn("w-8 h-8 transition-all", isDragActive ? "animate-bounce" : "text-muted-foreground")} />
                                                 </div>
@@ -605,15 +605,15 @@ export default function NewClientPage() {
                                             <div className="w-full max-w-xl flex flex-col items-center gap-4">
                                                 {filePreview ? (
                                                     /* eslint-disable-next-line @next/next/no-img-element */
-                                                    <img src={filePreview} alt={file.name} className="max-h-64 rounded-xl border shadow-md object-contain" />
+                                                    <img src={filePreview} alt={file.name} className="max-h-64 rounded-md border shadow-md object-contain" />
                                                 ) : (
-                                                    <div className="w-48 h-56 rounded-xl border-2 border-border bg-rose-50 flex flex-col items-center justify-center gap-2 shadow-sm">
+                                                    <div className="w-48 h-56 rounded-md border-2 border-border bg-rose-50 flex flex-col items-center justify-center gap-2 shadow-sm">
                                                         <FileText className="w-14 h-14 text-rose-400" />
                                                         <span className="text-[10px] font-bold tracking-wider text-rose-700 uppercase">PDF</span>
                                                     </div>
                                                 )}
-                                                <div className="flex items-center gap-3 bg-white border px-4 py-3 rounded-xl shadow-sm w-full">
-                                                    <div className="bg-emerald-100 p-2 rounded-full shrink-0"><CheckCircle2 className="w-4 h-4 text-emerald-600" /></div>
+                                                <div className="flex items-center gap-3 bg-white border px-4 py-3 rounded-md shadow-sm w-full">
+                                                    <div className="bg-gray-100 p-2 rounded-full shrink-0"><CheckCircle2 className="w-4 h-4 text-emerald-600" /></div>
                                                     <div className="text-left min-w-0 flex-1">
                                                         <p className="text-sm font-medium truncate">{file.name}</p>
                                                         <p className="text-xs text-muted-foreground">{(file.size / 1024 / 1024).toFixed(2)} MB • {file.type || "unknown"}</p>
@@ -1469,7 +1469,7 @@ export default function NewClientPage() {
                                         <p className="text-muted-foreground text-sm">Pastikan semua data sudah benar sebelum disimpan.</p>
                                     </div>
 
-                                    <div className="w-full max-w-3xl bg-muted/20 rounded-xl p-6 text-left space-y-5 border border-border/50">
+                                    <div className="w-full max-w-3xl bg-muted/20 rounded-md p-6 text-left space-y-5 border border-border/50">
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                             {/* Data Klien */}
                                             <div className="space-y-3">
@@ -1564,7 +1564,7 @@ export default function NewClientPage() {
                     <Button
                         variant="ghost" onClick={prevStep}
                         disabled={currentStep === 1 || isLoading}
-                        className="h-9 px-4 text-muted-foreground hover:text-foreground rounded-xl text-sm gap-1.5"
+                        className="h-9 px-4 text-muted-foreground hover:text-foreground rounded-md text-sm gap-1.5"
                     >
                         <ArrowLeft className="w-4 h-4" /> Kembali
                     </Button>
@@ -1575,7 +1575,7 @@ export default function NewClientPage() {
                     <Button
                         onClick={nextStep}
                         disabled={isLoading}
-                        className="h-10 px-6 bg-black hover:bg-gray-900 text-white rounded-xl font-semibold text-sm gap-2"
+                        className="h-10 px-6 bg-black hover:bg-black text-white rounded-md font-semibold text-sm gap-2"
                     >
                         {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Lanjut <ArrowRight className="w-4 h-4" /></>}
                     </Button>

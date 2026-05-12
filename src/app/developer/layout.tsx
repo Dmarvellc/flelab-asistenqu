@@ -23,5 +23,9 @@ export default async function DeveloperLayout({
     redirect("/developer/login");
   }
 
+  if (session.status === "SUSPENDED") {
+    redirect("/suspended");
+  }
+
   return <DeveloperLayoutClient>{children}</DeveloperLayoutClient>;
 }

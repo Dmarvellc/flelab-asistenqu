@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { AuthError, requireRole, revokeSession, revokeUserSessions } from "@/lib/auth";
+import { AuthError, requireRole, revokeSession, revokeUserSessions, invalidateUserSessionsCache } from "@/lib/auth";
 import { dbPool } from "@/lib/db";
 import { roles } from "@/lib/rbac";
 
@@ -94,8 +94,14 @@ export async function PATCH(request: Request, props: { params: Promise<{ id: str
       const existingUser = existingUserRes.rows[0];
       const nextRole = body.role ?? existingUser.role;
       const nextStatus = body.status ?? existingUser.status;
+      
+      // If we are suspending, we don't want to revoke sessions immediately because 
+      // we want the AuthWatcher to see the SUSPENDED status and redirect to /suspended.
+      // But we still need to clear the session cache to force a DB check.
       shouldRevokeSessions =
-        existingUser.role !== nextRole || existingUser.status !== nextStatus;
+        existingUser.role !== nextRole || (existingUser.status !== nextStatus && nextStatus !== 'SUSPENDED');
+      
+      const shouldClearCacheForSuspend = (existingUser.status !== nextStatus && nextStatus === 'SUSPENDED');
 
       const updateRes = await client.query(
         `UPDATE public.app_user
@@ -130,6 +136,13 @@ export async function PATCH(request: Request, props: { params: Promise<{ id: str
         } else {
           await revokeUserSessions(userId);
         }
+      } else if (shouldClearCacheForSuspend) {
+        // Just clear cache so next request hits DB and sees the new SUSPENDED status
+        await client.query(
+          `UPDATE public.auth_session SET user_status = 'SUSPENDED' WHERE user_id = $1`,
+          [userId]
+        );
+        await invalidateUserSessionsCache(userId);
       }
 
       return NextResponse.json(updateRes.rows[0]);

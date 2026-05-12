@@ -23,15 +23,15 @@ export default async function AgencyAgentsPage() {
 
     return (
         <div className="flex flex-col gap-8 animate-in fade-in duration-500 w-full">
-            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 pb-6 border-b border-gray-100">
+            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 pb-6 border-b border-gray-200">
                 <div className="min-w-0">
-                    <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900">
+                    <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-black">
                         Manajemen Agen
                     </h1>
                     <p className="mt-1.5 text-sm text-gray-500 max-w-xl">
                         Undang, setujui, dan pantau agen yang mewakili agensi Anda. Untuk operator internal
                         (Admin/Manager), buka{" "}
-                        <Link href="/admin-agency/team" className="text-gray-900 underline decoration-dotted underline-offset-2 font-semibold hover:text-violet-700">
+                        <Link href="/admin-agency/team" className="text-black underline decoration-dotted underline-offset-2 font-semibold hover:text-violet-700">
                             Staff Internal
                         </Link>.
                     </p>
@@ -42,7 +42,7 @@ export default async function AgencyAgentsPage() {
             <AgentInvitePanel />
 
             {/* Agents table */}
-            <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
+            <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
                 <AgentsDataTable agents={agents} />
             </div>
         </div>

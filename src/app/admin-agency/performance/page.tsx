@@ -13,7 +13,7 @@ export default async function AdminAgentPerformancePage() {
         return (
             <div className="flex flex-col items-center justify-center min-h-[50vh] gap-4">
                 <Users className="h-12 w-12 text-gray-200" />
-                <h1 className="text-xl font-bold text-gray-900">Agensi Tidak Ditemukan</h1>
+                <h1 className="text-xl font-bold text-black">Agensi Tidak Ditemukan</h1>
                 <p className="text-gray-500 text-sm">Akun ini belum terafiliasi dengan agensi manapun.</p>
             </div>
         );

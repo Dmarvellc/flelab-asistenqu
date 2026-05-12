@@ -58,7 +58,7 @@ function FieldRow({
                     editElement
                 ) : (
                     <p className={cn(
-                        "text-sm text-gray-900",
+                        "text-sm text-black",
                         mono && "tracking-wide",
                         !value && "text-gray-400 italic"
                     )}>
@@ -250,14 +250,14 @@ export default function AgentSettingsPage() {
     if (error && !profile) {
         return (
             <div className="flex h-[60vh] w-full flex-col items-center justify-center gap-4">
-                <div className="h-14 w-14 rounded-2xl bg-gray-50 border border-gray-100 flex items-center justify-center">
+                <div className="h-14 w-14 rounded-md bg-gray-50 border border-gray-200 flex items-center justify-center">
                     <AlertCircle className="h-6 w-6 text-gray-400" />
                 </div>
                 <div className="text-center">
                     <p className="font-semibold text-gray-800">Gagal memuat profil</p>
                     <p className="text-sm text-gray-500 mt-1">{error}</p>
                 </div>
-                <Button onClick={fetchProfile} variant="outline" className="gap-2 rounded-xl">
+                <Button onClick={fetchProfile} variant="outline" className="gap-2 rounded-md">
                     <RefreshCw className="h-4 w-4" />
                     Coba Lagi
                 </Button>
@@ -289,21 +289,21 @@ export default function AgentSettingsPage() {
     return (
         <div className="flex flex-col gap-8 animate-in fade-in duration-500 w-full max-w-5xl">
             {/* Header */}
-            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 pb-6 border-b border-gray-100">
+            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 pb-6 border-b border-gray-200">
                 <div className="min-w-0">
                     <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider flex items-center gap-1.5 mb-1">
                         <User className="h-3.5 w-3.5" />
                         Profil &amp; Akun
                     </p>
-                    <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900">Pengaturan</h1>
+                    <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-black">Pengaturan</h1>
                     <p className="mt-1.5 text-sm text-gray-500">Kelola informasi akun dan data diri Anda dalam satu tempat.</p>
                 </div>
             </div>
 
             {/* Profile Header Card */}
-            <div className="bg-white rounded-3xl border border-gray-100 p-8 shadow-sm flex flex-col sm:flex-row items-start sm:items-center gap-6 hover:shadow-lg transition-all duration-300">
+            <div className="bg-white rounded-lg border border-gray-200 p-8 shadow-sm flex flex-col sm:flex-row items-start sm:items-center gap-6 hover:shadow-lg transition-all duration-300">
                 <div className="flex-1 min-w-0 flex flex-col gap-1">
-                    <h2 className="text-2xl font-bold text-gray-900">
+                    <h2 className="text-2xl font-bold text-black">
                         {profile.full_name || "Nama belum diisi"}
                     </h2>
                     <p className="text-base font-medium text-gray-500">{profile.email}</p>
@@ -315,7 +315,7 @@ export default function AgentSettingsPage() {
                 {!isEditing && (
                     <button
                         onClick={() => { handleStartEdit(); setActiveSection('personal'); }}
-                        className="bg-gray-50 hover:bg-gray-100 text-gray-900 text-[15px] font-semibold h-12 px-6 rounded-2xl transition-all shadow-sm border border-gray-200 flex items-center gap-2 mt-4 sm:mt-0"
+                        className="bg-gray-50 hover:bg-gray-100 text-black text-[15px] font-semibold h-12 px-6 rounded-md transition-all shadow-sm border border-gray-200 flex items-center gap-2 mt-4 sm:mt-0"
                     >
                         <Edit2 className="h-4 w-4" />
                         Ubah Data
@@ -324,7 +324,7 @@ export default function AgentSettingsPage() {
             </div>
 
             {/* Section Tabs */}
-            <div className="flex items-center gap-1 bg-gray-50 p-1 rounded-xl w-fit">
+            <div className="flex items-center gap-1 bg-gray-50 p-1 rounded-md w-fit">
                 {sections.map(({ key, label, icon: Icon }) => (
                     <button
                         key={key}
@@ -332,7 +332,7 @@ export default function AgentSettingsPage() {
                         className={cn(
                             "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200",
                             activeSection === key
-                                ? "bg-white text-gray-900 shadow-sm"
+                                ? "bg-white text-black shadow-sm"
                                 : "text-gray-500 hover:text-gray-700"
                         )}
                     >
@@ -344,10 +344,10 @@ export default function AgentSettingsPage() {
 
             {/* Section: Personal Info */}
             {activeSection === 'personal' && (
-                <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden flex flex-col">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 sm:p-8 border-b border-gray-50 bg-gray-50/30 gap-6">
+                <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden flex flex-col">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 sm:p-8 border-b border-gray-50 bg-white gap-6">
                         <div className="flex flex-col gap-1">
-                            <h3 className="text-xl font-bold text-gray-900">Informasi Pribadi</h3>
+                            <h3 className="text-xl font-bold text-black">Informasi Pribadi</h3>
                             <p className="text-[14px] font-medium text-gray-500">Ubah dan lengkapi data identitas serta kontak Anda</p>
                         </div>
                         {isEditing && (
@@ -355,7 +355,7 @@ export default function AgentSettingsPage() {
                                 <button
                                     onClick={handleCancel}
                                     disabled={saving}
-                                    className="bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 text-[14px] font-semibold h-11 px-5 rounded-xl transition-all shadow-sm flex items-center gap-2"
+                                    className="bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 text-[14px] font-semibold h-11 px-5 rounded-md transition-all shadow-sm flex items-center gap-2"
                                 >
                                     <X className="h-4 w-4" />
                                     Batal
@@ -363,7 +363,7 @@ export default function AgentSettingsPage() {
                                 <button
                                     onClick={handleSave}
                                     disabled={saving}
-                                    className="bg-gray-900 hover:bg-black text-white text-[14px] font-semibold h-11 px-5 rounded-xl transition-all shadow-md flex items-center gap-2"
+                                    className="bg-black hover:bg-black text-white text-[14px] font-semibold h-11 px-5 rounded-md transition-all shadow-md flex items-center gap-2"
                                 >
                                     {saving ? (
                                         <Loader2 className="h-4 w-4 animate-spin" />
@@ -378,7 +378,7 @@ export default function AgentSettingsPage() {
 
                     <div className="p-4 sm:p-8">
                         {editDraftRestored && isEditing && (
-                            <div className="flex items-center justify-between gap-3 px-4 py-2.5 mb-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-sm">
+                            <div className="flex items-center justify-between gap-3 px-4 py-2.5 mb-4 rounded-md bg-white border border-amber-200 text-amber-800 text-sm">
                                 <div className="flex items-center gap-2">
                                     <RotateCcw className="w-4 h-4 shrink-0" />
                                     <span className="font-medium">Perubahan yang belum disimpan dipulihkan.</span>
@@ -404,7 +404,7 @@ export default function AgentSettingsPage() {
                                     value={editForm.fullName}
                                     onChange={(e) => setEditForm({ ...editForm, fullName: e.target.value })}
                                     placeholder="Nama lengkap"
-                                    className="rounded-xl border-gray-200 text-sm focus:border-gray-400 max-w-sm"
+                                    className="rounded-md border-gray-200 text-sm focus:border-gray-400 max-w-sm"
                                 />
                             }
                         />
@@ -418,7 +418,7 @@ export default function AgentSettingsPage() {
                                     value={editForm.phone}
                                     onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
                                     placeholder="+62..."
-                                    className="rounded-xl border-gray-200 text-sm focus:border-gray-400 max-w-sm"
+                                    className="rounded-md border-gray-200 text-sm focus:border-gray-400 max-w-sm"
                                 />
                             }
                         />
@@ -433,7 +433,7 @@ export default function AgentSettingsPage() {
                                     value={editForm.nik}
                                     onChange={(e) => setEditForm({ ...editForm, nik: e.target.value })}
                                     placeholder="16 Digit NIK"
-                                    className="rounded-xl border-gray-200 text-sm focus:border-gray-400 max-w-sm"
+                                    className="rounded-md border-gray-200 text-sm focus:border-gray-400 max-w-sm"
                                 />
                             }
                         />
@@ -447,7 +447,7 @@ export default function AgentSettingsPage() {
                                     type="date"
                                     value={editForm.birthDate}
                                     onChange={(e) => setEditForm({ ...editForm, birthDate: e.target.value })}
-                                    className="rounded-xl border-gray-200 text-sm focus:border-gray-400 max-w-[200px]"
+                                    className="rounded-md border-gray-200 text-sm focus:border-gray-400 max-w-[200px]"
                                 />
                             }
                         />
@@ -458,10 +458,10 @@ export default function AgentSettingsPage() {
                             isEditing={isEditing}
                             editElement={
                                 <Select value={editForm.gender} onValueChange={(val) => setEditForm({ ...editForm, gender: val })}>
-                                    <SelectTrigger className="rounded-xl border-gray-200 text-sm max-w-[200px]">
+                                    <SelectTrigger className="rounded-md border-gray-200 text-sm max-w-[200px]">
                                         <SelectValue placeholder="Pilih..." />
                                     </SelectTrigger>
-                                    <SelectContent className="rounded-xl">
+                                    <SelectContent className="rounded-md">
                                         <SelectItem value="LAKI-LAKI">Laki-laki</SelectItem>
                                         <SelectItem value="PEREMPUAN">Perempuan</SelectItem>
                                     </SelectContent>
@@ -478,7 +478,7 @@ export default function AgentSettingsPage() {
                                     value={editForm.address}
                                     onChange={(e) => setEditForm({ ...editForm, address: e.target.value })}
                                     placeholder="Alamat lengkap"
-                                    className="rounded-xl border-gray-200 text-sm focus:border-gray-400 min-h-[80px] max-w-sm"
+                                    className="rounded-md border-gray-200 text-sm focus:border-gray-400 min-h-[80px] max-w-sm"
                                 />
                             }
                         />
@@ -488,20 +488,20 @@ export default function AgentSettingsPage() {
 
             {/* Section: Agency */}
             {activeSection === 'agency' && (
-                <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden flex flex-col">
-                    <div className="p-8 border-b border-gray-50 bg-gray-50/30">
-                        <h3 className="text-xl font-bold text-gray-900">Pengaturan Agensi</h3>
+                <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden flex flex-col">
+                    <div className="p-8 border-b border-gray-50 bg-white">
+                        <h3 className="text-xl font-bold text-black">Pengaturan Agensi</h3>
                         <p className="text-[14px] font-medium text-gray-500 mt-1">Informasi agensi tempat Anda bernaung saat ini</p>
                     </div>
 
                     <div className="p-8 space-y-8">
-                        <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl border border-gray-100">
-                            <div className="h-12 w-12 rounded-xl bg-gray-900 flex items-center justify-center">
+                        <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-md border border-gray-200">
+                            <div className="h-12 w-12 rounded-md bg-black flex items-center justify-center">
                                 <Building2 className="h-5 w-5 text-white" />
                             </div>
                             <div className="flex-1 min-w-0">
                                 <p className="text-xs text-gray-400 mb-0.5">Agensi Saat Ini</p>
-                                <p className="font-semibold text-gray-900 text-lg">
+                                <p className="font-semibold text-black text-lg">
                                     {profile.agency_name || "Belum ada agensi"}
                                 </p>
                                 {profile.agency_address && (
@@ -522,15 +522,15 @@ export default function AgentSettingsPage() {
                             <Button
                                 variant="outline"
                                 onClick={() => setShowTransferForm(true)}
-                                className="gap-2 rounded-xl border-gray-200 hover:border-gray-300"
+                                className="gap-2 rounded-md border-gray-200 hover:border-gray-300"
                             >
                                 <ArrowRight className="h-4 w-4" />
                                 Pindah Agensi
                             </Button>
                         ) : (
-                            <div className="border border-gray-100 rounded-2xl p-5 space-y-4 bg-gray-50/50">
+                            <div className="border border-gray-200 rounded-md p-5 space-y-4 bg-white">
                                 <div className="flex items-center justify-between">
-                                    <h4 className="font-semibold text-gray-900">Formulir Pindah Agensi</h4>
+                                    <h4 className="font-semibold text-black">Formulir Pindah Agensi</h4>
                                     <button
                                         onClick={() => setShowTransferForm(false)}
                                         className="h-7 w-7 rounded-lg flex items-center justify-center text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
@@ -547,10 +547,10 @@ export default function AgentSettingsPage() {
                                         value={transferForm.agencyId}
                                         onValueChange={(val) => setTransferForm({ ...transferForm, agencyId: val })}
                                     >
-                                        <SelectTrigger className="rounded-xl border-gray-200 bg-white">
+                                        <SelectTrigger className="rounded-md border-gray-200 bg-white">
                                             <SelectValue placeholder="Pilih agensi tujuan..." />
                                         </SelectTrigger>
-                                        <SelectContent className="rounded-xl">
+                                        <SelectContent className="rounded-md">
                                             {agencies.filter(a => a.agency_id !== profile.agency_id).map(agency => (
                                                 <SelectItem key={agency.agency_id} value={agency.agency_id}>
                                                     {agency.name}
@@ -568,7 +568,7 @@ export default function AgentSettingsPage() {
                                         placeholder="Jelaskan alasan Anda pindah..."
                                         value={transferForm.reason}
                                         onChange={(e) => setTransferForm({ ...transferForm, reason: e.target.value })}
-                                        className="rounded-xl border-gray-200 bg-white resize-none min-h-[80px]"
+                                        className="rounded-md border-gray-200 bg-white resize-none min-h-[80px]"
                                     />
                                 </div>
 
@@ -576,7 +576,7 @@ export default function AgentSettingsPage() {
                                     <Button
                                         variant="ghost"
                                         onClick={() => setShowTransferForm(false)}
-                                        className="rounded-xl text-gray-500"
+                                        className="rounded-md text-gray-500"
                                         disabled={transferLoading}
                                     >
                                         Batal
@@ -584,7 +584,7 @@ export default function AgentSettingsPage() {
                                     <Button
                                         onClick={handleTransferSubmit}
                                         disabled={transferLoading || !transferForm.agencyId}
-                                        className="gap-2 rounded-xl bg-black hover:bg-gray-900"
+                                        className="gap-2 rounded-md bg-black hover:bg-black"
                                     >
                                         {transferLoading && <Loader2 className="h-4 w-4 animate-spin" />}
                                         Ajukan Pindah

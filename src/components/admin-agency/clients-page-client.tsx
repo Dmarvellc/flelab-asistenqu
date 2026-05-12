@@ -8,6 +8,8 @@ import { AgencyClient, AgencyAgent } from "@/services/admin-agency";
 import { ClientsTable } from "@/components/admin/clients-table";
 import { ClientImportPanel } from "@/components/admin-agency/client-import-panel";
 import { cn } from "@/lib/utils";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { StatCard, StatsGrid } from "@/components/dashboard/page-shell";
 
 type Tab = "all" | "unassigned" | "import";
 
@@ -28,7 +30,6 @@ export function ClientsPageClient({ allClients, unassignedClients, agents }: Pro
   const router = useRouter();
 
   const onImportSuccess = useCallback(() => {
-    // Setelah import berhasil, switch ke tab unassigned dan refresh data
     setTab("unassigned");
     router.refresh();
   }, [router]);
@@ -39,125 +40,96 @@ export function ClientsPageClient({ allClients, unassignedClients, agents }: Pro
   };
 
   return (
-    <div className="flex flex-col gap-6 animate-in fade-in duration-500 w-full">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 pb-6 border-b border-gray-100">
-        <div className="min-w-0">
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900">
-            Manajemen Klien
-          </h1>
-          <p className="mt-1.5 text-sm text-gray-500">
-            Kelola, impor, dan distribusikan klien ke agen agensi Anda.
-          </p>
-        </div>
-
-        <div className="shrink-0 flex items-center gap-3">
-          {/* Badge unassigned */}
-          {unassignedClients.length > 0 && (
-            <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
-              <UserX className="w-4 h-4 text-amber-600" />
-              <span className="text-sm font-semibold text-amber-700">
-                {unassignedClients.length} klien belum ditugaskan
-              </span>
-            </div>
-          )}
-
-          {/* Tombol tambah klien */}
-          <Link
-            href="/agent/clients/new"
-            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors"
-          >
-            <UserPlus className="w-4 h-4" />
-            Tambah Klien
-          </Link>
-        </div>
-      </div>
-
-      {/* Tabs */}
-      <div className="flex gap-1 bg-gray-100/80 p-1 rounded-xl w-fit">
-        {TABS.map((t) => {
-          const count = t.countKey ? counts[t.countKey] : undefined;
-          const isActive = tab === t.id;
-          return (
-            <button
-              key={t.id}
-              onClick={() => setTab(t.id)}
-              className={cn(
-                "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all",
-                isActive
-                  ? "bg-white text-gray-900 shadow-sm"
-                  : "text-gray-500 hover:text-gray-700",
-              )}
-            >
-              <t.icon className="w-4 h-4" />
-              {t.label}
-              {count !== undefined && count > 0 && (
-                <span
-                  className={cn(
-                    "text-xs px-1.5 py-0.5 rounded-full font-semibold",
-                    t.id === "unassigned"
-                      ? "bg-amber-100 text-amber-700"
-                      : "bg-gray-200 text-gray-600",
-                  )}
-                >
-                  {count}
+    <PageShell>
+      <PageHeader
+        title="Manajemen Klien"
+        description="Kelola, impor, dan distribusikan klien ke agen agensi Anda."
+        actions={
+          <>
+            {unassignedClients.length > 0 && (
+              <div className="flex items-center gap-1.5 border border-gray-200 rounded-lg px-3 py-1.5">
+                <UserX className="w-4 h-4 text-gray-500" />
+                <span className="text-sm font-medium text-gray-700">
+                  {unassignedClients.length} belum ditugaskan
                 </span>
-              )}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Tab content */}
-      <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
-        {tab === "all" && (
-          <>
-            <div className="px-6 py-5 border-b border-gray-50 bg-gray-50/30">
-              <h2 className="text-base font-bold text-gray-900">Direktori Klien</h2>
-              <p className="text-xs font-medium text-gray-500 mt-0.5">
-                Total {allClients.length} klien di bawah agensi ini.
-              </p>
-            </div>
-            <div className="overflow-x-auto">
-              <ClientsTable clients={allClients} agents={agents} />
-            </div>
+              </div>
+            )}
+            <Link
+              href="/agent/clients/new"
+              className="flex items-center gap-2 bg-gray-900 hover:bg-black text-white text-sm font-medium h-9 px-4 rounded-lg transition-colors"
+            >
+              <UserPlus className="w-4 h-4" />
+              Tambah Klien
+            </Link>
           </>
-        )}
+        }
+      />
 
-        {tab === "unassigned" && (
-          <>
-            <div className="px-6 py-5 border-b border-gray-50 bg-amber-50/30">
-              <h2 className="text-base font-bold text-gray-900">Klien Belum Ditugaskan</h2>
-              <p className="text-xs font-medium text-gray-500 mt-0.5">
-                {unassignedClients.length === 0
-                  ? "Semua klien sudah ditugaskan ke agen."
-                  : `${unassignedClients.length} klien menunggu assignment ke agen.`}
-              </p>
+      <StatsGrid cols={3}>
+        <StatCard label="Total Klien" value={counts.allClients ?? 0} icon={Users} />
+        <StatCard label="Belum Ditugaskan" value={counts.unassignedClients ?? 0} icon={UserX} />
+        <StatCard label="Total Agen" value={agents.length} icon={Users} />
+      </StatsGrid>
+
+      <Tabs defaultValue="all" className="w-full mt-6" onValueChange={(v) => setTab(v as Tab)}>
+        <TabsList className="bg-transparent border-b border-gray-200 w-full justify-start rounded-none p-0 h-auto space-x-6 mb-6">
+          {TABS.map((t) => {
+            const count = t.countKey ? counts[t.countKey] : undefined;
+            return (
+              <TabsTrigger
+                key={t.id}
+                value={t.id}
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-black data-[state=active]:text-black text-gray-500 bg-transparent px-2 py-3 shadow-none data-[state=active]:shadow-none font-semibold flex items-center gap-2"
+              >
+                <t.icon className="w-4 h-4" />
+                {t.label}
+                {count !== undefined && count > 0 && (
+                  <span className="text-[10px] px-1.5 py-0.5 rounded-full font-bold bg-gray-100 text-gray-600">
+                    {count}
+                  </span>
+                )}
+              </TabsTrigger>
+            );
+          })}
+        </TabsList>
+
+        <TabsContent value="all" className="mt-0">
+          <div className="bg-white rounded-md border border-gray-200 overflow-hidden">
+            <div className="overflow-x-auto">
+              <ClientsTable clients={allClients} agents={agents} baseUrl="/admin-agency/clients" />
             </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="unassigned" className="mt-0">
+          <div className="bg-white rounded-md border border-gray-200 overflow-hidden">
             <div className="overflow-x-auto">
               <ClientsTable
                 clients={unassignedClients}
                 agents={agents}
                 showBulkAssign
+                baseUrl="/admin-agency/clients"
               />
             </div>
-          </>
-        )}
+          </div>
+        </TabsContent>
 
-        {tab === "import" && (
-          <div className="px-6 py-6">
-            <div className="max-w-xl">
-              <h2 className="text-base font-bold text-gray-900 mb-1">Import Data Klien (CSV)</h2>
-              <p className="text-xs text-gray-500 mb-6">
-                Upload file CSV untuk mengimpor data klien secara massal.
-                Klien tanpa kolom <code className="bg-gray-100 px-1 rounded">agent_email</code> akan masuk
-                ke tab "Belum Ditugaskan" dan bisa di-assign setelah import.
-              </p>
-              <ClientImportPanel onSuccess={onImportSuccess} />
+        <TabsContent value="import" className="mt-0">
+          <div className="bg-white rounded-md border border-gray-200 overflow-hidden">
+            <div className="px-8 py-8">
+              <div className="max-w-xl">
+                <p className="text-lg font-bold text-black mb-2">Import Data Klien (CSV)</p>
+                <p className="text-sm text-gray-500 mb-8">
+                  Upload file CSV untuk mengimpor data klien secara massal.
+                  Klien tanpa kolom <code className="bg-gray-100 px-1 rounded text-black font-medium">agent_email</code> akan masuk
+                  ke tab "Belum Ditugaskan" dan bisa di-assign setelah import.
+                </p>
+                <ClientImportPanel onSuccess={onImportSuccess} />
+              </div>
             </div>
           </div>
-        )}
-      </div>
-    </div>
+        </TabsContent>
+      </Tabs>
+    </PageShell>
   );
 }

@@ -7,6 +7,7 @@ import {
     ChevronsUpDown, ChevronUp, ChevronDown,
     Users, FileText,
     Plus, X, Loader2, Copy, Check, Building2, UserPlus, Send, Trash2, Mail,
+    Eye, Pencil, Save,
 } from "lucide-react";
 
 /* ─── Types ──────────────────────────────────────────────────────── */
@@ -20,6 +21,42 @@ interface Agency {
     admins: number;
     total_claims: number;
     approved_claims: number;
+}
+
+interface AgencyDetail {
+    agency_id: string;
+    name: string;
+    address: string | null;
+    slug: string | null;
+    created_at: string;
+}
+
+interface AgencyStats {
+    agents: number;
+    admins: number;
+    total_claims: number;
+    pending_claims: number;
+}
+
+function DetailRow({ label, value, mono = false, onCopy }: { label: string; value: string; mono?: boolean; onCopy?: () => void }) {
+    const [copied, setCopied] = useState(false);
+    const handleCopy = () => {
+        if (!onCopy) return;
+        navigator.clipboard.writeText(value);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 1500);
+    };
+    return (
+        <div className="flex items-start justify-between gap-3 py-2 border-b border-gray-50 last:border-0">
+            <span className="text-xs font-medium text-gray-500 shrink-0 w-28">{label}</span>
+            <span className={`text-xs text-black text-right break-all ${mono ? "font-mono" : ""}`}>{value}</span>
+            {onCopy && (
+                <button onClick={handleCopy} className="shrink-0 p-1 rounded hover:bg-gray-100">
+                    {copied ? <Check className="h-3 w-3 text-gray-500" /> : <Copy className="h-3 w-3 text-gray-400" />}
+                </button>
+            )}
+        </div>
+    );
 }
 
 function fmtDate(iso: string) {
@@ -71,6 +108,15 @@ export default function AgenciesPage() {
     const [copied, setCopied] = useState(false);
     const { run } = useBusy();
 
+    /* Detail / Edit modal */
+    const [detailOpen, setDetailOpen] = useState(false);
+    const [detailAgency, setDetailAgency] = useState<Agency | null>(null);
+    const [detailData, setDetailData] = useState<{ agency: AgencyDetail; stats: AgencyStats } | null>(null);
+    const [detailLoading, setDetailLoading] = useState(false);
+    const [editMode, setEditMode] = useState(false);
+    const [editForm, setEditForm] = useState({ name: "", address: "" });
+    const [editError, setEditError] = useState<string | null>(null);
+
     /* Per-row invite modal */
     const [rowInviteAgency, setRowInviteAgency] = useState<Agency | null>(null);
     const [rowInviteForm, setRowInviteForm] = useState({ email: "", fullName: "" });
@@ -82,6 +128,43 @@ export default function AgenciesPage() {
     /* Delete confirm */
     const [deleteTarget, setDeleteTarget] = useState<Agency | null>(null);
     const [deleteBusy, setDeleteBusy] = useState(false);
+
+    const openDetail = async (agency: Agency) => {
+        setDetailAgency(agency);
+        setDetailData(null);
+        setDetailLoading(true);
+        setEditMode(false);
+        setEditError(null);
+        setDetailOpen(true);
+        try {
+            const res = await fetch(`/api/developer/agencies/${agency.agency_id}`);
+            const json = await res.json();
+            if (res.ok) {
+                setDetailData(json);
+                setEditForm({ name: json.agency.name ?? "", address: json.agency.address ?? "" });
+            }
+        } catch { /* silent */ } finally { setDetailLoading(false); }
+    };
+
+    const saveEdit = async () => {
+        if (!detailAgency) return;
+        setEditError(null);
+        await run(async () => {
+            const res = await fetch(`/api/developer/agencies/${detailAgency.agency_id}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ name: editForm.name, address: editForm.address }),
+            });
+            const json = await res.json();
+            if (!res.ok) { setEditError(json.error || "Gagal menyimpan."); return; }
+            setEditMode(false);
+            setDetailData(prev => prev ? {
+                ...prev,
+                agency: { ...prev.agency, name: editForm.name.trim().toUpperCase(), address: editForm.address.trim() || null }
+            } : null);
+            fetchAgencies();
+        }, "Menyimpan…");
+    };
 
     function resetCreateModal() {
         setCreateOpen(false); setCreateStep(1); setCreateBusy(false); setCreateError(null);
@@ -207,17 +290,17 @@ export default function AgenciesPage() {
                 {/* Header */}
                 <div className="flex items-center justify-between gap-3 flex-wrap">
                     <div className="flex items-center gap-3 min-w-0">
-                        <div className="w-10 h-10 bg-violet-600 rounded-2xl flex items-center justify-center shadow-md shrink-0">
+                        <div className="w-10 h-10 bg-violet-600 rounded-md flex items-center justify-center shadow-md shrink-0">
                             <Briefcase className="h-5 w-5 text-white" />
                         </div>
                         <div className="min-w-0">
-                            <h1 className="text-xl sm:text-2xl font-black tracking-tight text-gray-900">Agencies</h1>
+                            <h1 className="text-xl sm:text-2xl font-black tracking-tight text-black">Agencies</h1>
                             <p className="text-xs sm:text-sm text-gray-400 truncate">{total} agencies on platform</p>
                         </div>
                     </div>
                     <button
                         onClick={() => { resetCreateModal(); setCreateOpen(true); }}
-                        className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold bg-gray-900 text-white hover:bg-gray-800 shadow-md transition-all"
+                        className="flex items-center gap-2 px-4 py-2.5 rounded-md text-sm font-semibold bg-black text-white hover:bg-gray-800 shadow-md transition-all"
                     >
                         <Plus className="h-4 w-4" />
                         Buat Agency
@@ -231,7 +314,7 @@ export default function AgenciesPage() {
                         { label: "Active Agents", value: totalAgents, icon: Users, color: "text-blue-600" },
                         { label: "Total Claims", value: totalClaims, icon: FileText, color: "text-emerald-600" },
                     ].map(({ label, value, icon: Icon, color }) => (
-                        <div key={label} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+                        <div key={label} className="bg-white rounded-md border border-gray-200 shadow-sm p-5">
                             <div className="flex items-center justify-between mb-2">
                                 <span className="text-xs font-semibold uppercase tracking-widest text-gray-400">{label}</span>
                                 <Icon className={`h-4 w-4 ${color}`} />
@@ -245,7 +328,7 @@ export default function AgenciesPage() {
                 </div>
 
                 {/* Table Card */}
-                <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
+                <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
 
                     {/* Toolbar */}
                     <div className="px-5 py-4 border-b border-gray-50 flex items-center justify-between gap-3">
@@ -259,13 +342,13 @@ export default function AgenciesPage() {
                                 </div>
                             ) : (
                                 <>
-                                    <span className="text-sm font-bold text-gray-900">Agencies</span>
+                                    <span className="text-sm font-bold text-black">Agencies</span>
                                     <span className="bg-gray-100 text-gray-500 text-[11px] font-bold px-2 py-0.5 rounded-full tabular-nums">{total}</span>
                                 </>
                             )}
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
-                            <div className="flex items-center gap-1 bg-gray-50 border border-gray-200 rounded-xl px-2 py-1.5 transition-all">
+                            <div className="flex items-center gap-1 bg-gray-50 border border-gray-200 rounded-md px-2 py-1.5 transition-all">
                                 <button
                                     onClick={() => { if (searchOpen) { setSearchOpen(false); setSearch(""); setPage(1); } else setSearchOpen(true); }}
                                     className="p-0.5 rounded-md text-gray-400 hover:text-gray-700 transition-colors"
@@ -283,7 +366,7 @@ export default function AgenciesPage() {
                                     />
                                 </div>
                             </div>
-                            <button onClick={() => { setLoading(true); fetchAgencies(); }} className="p-2 rounded-xl text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-all">
+                            <button onClick={() => { setLoading(true); fetchAgencies(); }} className="p-2 rounded-md text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-all">
                                 <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
                             </button>
                         </div>
@@ -297,7 +380,7 @@ export default function AgenciesPage() {
                                     <th className="w-10 pl-5 py-3.5">
                                         <button
                                             onClick={toggleAll}
-                                            className={`w-[15px] h-[15px] rounded-[3px] border flex items-center justify-center transition-all ${allSelected || someSelected ? "bg-gray-900 border-gray-900" : "border-gray-300 hover:border-gray-500"}`}
+                                            className={`w-[15px] h-[15px] rounded-[3px] border flex items-center justify-center transition-all ${allSelected || someSelected ? "bg-black border-gray-900" : "border-gray-300 hover:border-gray-500"}`}
                                         >
                                             {allSelected ? (
                                                 <svg width="9" height="7" viewBox="0 0 9 7" fill="none"><path d="M1 3.5L3.5 6L8 1" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
@@ -345,30 +428,30 @@ export default function AgenciesPage() {
                                         return (
                                             <tr
                                                 key={agency.agency_id}
-                                                className={`border-b border-gray-50 group/row transition-colors ${isSelected ? "bg-gray-50/70" : "hover:bg-gray-50/50"}`}
+                                                className={`border-b border-gray-50 group/row transition-colors ${isSelected ? "bg-gray-50/70" : "hover:bg-white"}`}
                                             >
                                                 <td className="w-10 pl-5 py-4">
                                                     <button
                                                         onClick={() => toggleRow(agency.agency_id)}
-                                                        className={`w-[15px] h-[15px] rounded-[3px] border flex items-center justify-center transition-all ${isSelected ? "bg-gray-900 border-gray-900" : "border-gray-300 opacity-0 group-hover/row:opacity-100 hover:border-gray-500"}`}
+                                                        className={`w-[15px] h-[15px] rounded-[3px] border flex items-center justify-center transition-all ${isSelected ? "bg-black border-gray-900" : "border-gray-300 opacity-0 group-hover/row:opacity-100 hover:border-gray-500"}`}
                                                     >
                                                         {isSelected && <svg width="9" height="7" viewBox="0 0 9 7" fill="none"><path d="M1 3.5L3.5 6L8 1" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>}
                                                     </button>
                                                 </td>
                                                 <td className="px-5 py-4">
                                                     <div>
-                                                        <p className="font-semibold text-gray-900">{agency.name}</p>
+                                                        <p className="font-semibold text-black">{agency.name}</p>
                                                         {agency.address && <p className="text-xs text-gray-400 truncate max-w-[220px]">{agency.address}</p>}
                                                     </div>
                                                 </td>
                                                 <td className="px-5 py-4 text-right">
                                                     <div className="flex flex-col items-end gap-0.5">
-                                                        <span className="font-bold text-gray-900 tabular-nums">{Number(agency.active_agents).toLocaleString()}</span>
+                                                        <span className="font-bold text-black tabular-nums">{Number(agency.active_agents).toLocaleString()}</span>
                                                         <span className="text-xs text-gray-400">{Number(agency.total_agents)} total</span>
                                                     </div>
                                                 </td>
                                                 <td className="px-5 py-4 text-right">
-                                                    <span className="font-bold text-gray-900 tabular-nums">{Number(agency.total_claims).toLocaleString()}</span>
+                                                    <span className="font-bold text-black tabular-nums">{Number(agency.total_claims).toLocaleString()}</span>
                                                 </td>
                                                 <td className="px-5 py-4">
                                                     <div className="flex flex-col items-center gap-1.5">
@@ -391,14 +474,21 @@ export default function AgenciesPage() {
                                                         <span className="text-[10px] text-gray-400">{relDate(agency.created_at)}</span>
                                                     </div>
                                                 </td>
-                                                <td className="w-20 pr-5 py-4 text-right">
+                                                <td className="w-24 pr-5 py-4 text-right">
                                                     <div className="flex items-center justify-end gap-1 opacity-0 group-hover/row:opacity-100 translate-x-1.5 group-hover/row:translate-x-0 transition-all duration-150">
+                                                        <button
+                                                            onClick={() => openDetail(agency)}
+                                                            title="Lihat Detail"
+                                                            className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+                                                        >
+                                                            <Eye className="h-3.5 w-3.5 text-gray-400" />
+                                                        </button>
                                                         <button
                                                             onClick={() => { setRowInviteAgency(agency); setRowInviteForm({ email: "", fullName: "" }); setRowInviteResult(null); setRowInviteError(null); setRowInviteCopied(false); }}
                                                             title="Invite Master Admin"
-                                                            className="p-1.5 rounded-lg hover:bg-violet-50 transition-colors"
+                                                            className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
                                                         >
-                                                            <Mail className="h-3.5 w-3.5 text-violet-500" />
+                                                            <Mail className="h-3.5 w-3.5 text-gray-400" />
                                                         </button>
                                                         <button
                                                             onClick={() => setDeleteTarget(agency)}
@@ -424,11 +514,11 @@ export default function AgenciesPage() {
                         </p>
                         {totalPages > 1 && (
                             <div className="flex items-center gap-1.5">
-                                <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1 || loading} className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-all border border-gray-200">
+                                <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1 || loading} className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium text-gray-500 hover:text-black hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-all border border-gray-200">
                                     <ChevronLeft className="h-3 w-3" /> Prev
                                 </button>
                                 <span className="text-xs text-gray-400 px-1">{page} / {totalPages}</span>
-                                <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages || loading} className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-all border border-gray-200">
+                                <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages || loading} className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium text-gray-500 hover:text-black hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-all border border-gray-200">
                                     Next <ChevronRight className="h-3 w-3" />
                                 </button>
                             </div>
@@ -441,12 +531,12 @@ export default function AgenciesPage() {
             {/* Create Agency 2-step modal */}
             {createOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 animate-in fade-in duration-200">
-                    <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg p-6 sm:p-7 animate-in zoom-in-95 duration-200">
+                    <div className="bg-white rounded-lg shadow-2xl w-full max-w-lg p-6 sm:p-7 animate-in zoom-in-95 duration-200">
                         <div className="flex items-center justify-between mb-1">
                             <p className="text-[11px] uppercase tracking-widest text-gray-400 font-bold">Langkah {createStep} / 2</p>
                             <button onClick={resetCreateModal} className="text-gray-400 hover:text-gray-600 p-1 -m-1"><X className="h-5 w-5" /></button>
                         </div>
-                        <h3 className="text-xl font-bold text-gray-900 mb-1">
+                        <h3 className="text-xl font-bold text-black mb-1">
                             {createStep === 1 ? "Buat Organisasi Agency" : "Undang Master Admin"}
                         </h3>
                         <p className="text-sm text-gray-500 mb-5">
@@ -458,16 +548,16 @@ export default function AgenciesPage() {
                             <div className="space-y-4">
                                 <div className="space-y-1.5">
                                     <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">Nama Agency *</label>
-                                    <input value={agencyForm.name} onChange={e => setAgencyForm(f => ({ ...f, name: e.target.value.toUpperCase() }))} placeholder="PT ASURANSI SEHAT SEJAHTERA" className="w-full h-11 px-4 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900/10 focus:border-gray-400 uppercase tracking-wide" />
+                                    <input value={agencyForm.name} onChange={e => setAgencyForm(f => ({ ...f, name: e.target.value.toUpperCase() }))} placeholder="PT ASURANSI SEHAT SEJAHTERA" className="w-full h-11 px-4 rounded-md border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900/10 focus:border-gray-400 uppercase tracking-wide" />
                                 </div>
                                 <div className="space-y-1.5">
                                     <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">Alamat (opsional)</label>
-                                    <input value={agencyForm.address} onChange={e => setAgencyForm(f => ({ ...f, address: e.target.value }))} placeholder="Jl. Sudirman No. 1, Jakarta" className="w-full h-11 px-4 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900/10 focus:border-gray-400" />
+                                    <input value={agencyForm.address} onChange={e => setAgencyForm(f => ({ ...f, address: e.target.value }))} placeholder="Jl. Sudirman No. 1, Jakarta" className="w-full h-11 px-4 rounded-md border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900/10 focus:border-gray-400" />
                                 </div>
                                 {createError && <p className="text-xs text-rose-700 bg-rose-50 border border-rose-100 rounded-lg px-3 py-2">{createError}</p>}
                                 <div className="flex justify-end gap-2 pt-2">
-                                    <button onClick={resetCreateModal} className="px-4 py-2 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-100">Batal</button>
-                                    <button onClick={submitCreateAgency} disabled={createBusy || !agencyForm.name.trim()} className="flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-semibold bg-gray-900 text-white hover:bg-gray-800 disabled:opacity-40">
+                                    <button onClick={resetCreateModal} className="px-4 py-2 rounded-md text-sm font-medium text-gray-600 hover:bg-gray-100">Batal</button>
+                                    <button onClick={submitCreateAgency} disabled={createBusy || !agencyForm.name.trim()} className="flex items-center gap-2 px-5 py-2 rounded-md text-sm font-semibold bg-black text-white hover:bg-gray-800 disabled:opacity-40">
                                         {createBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Building2 className="h-4 w-4" />}
                                         Buat Agency & Lanjut
                                     </button>
@@ -478,11 +568,11 @@ export default function AgenciesPage() {
                             <div className="space-y-4">
                                 <div className="space-y-1.5">
                                     <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">Email Master Admin *</label>
-                                    <input type="email" value={inviteForm.email} onChange={e => setInviteForm(f => ({ ...f, email: e.target.value }))} placeholder="admin@agency.com" className="w-full h-11 px-4 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900/10 focus:border-gray-400" />
+                                    <input type="email" value={inviteForm.email} onChange={e => setInviteForm(f => ({ ...f, email: e.target.value }))} placeholder="admin@agency.com" className="w-full h-11 px-4 rounded-md border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900/10 focus:border-gray-400" />
                                 </div>
                                 <div className="space-y-1.5">
                                     <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">Nama Lengkap (opsional)</label>
-                                    <input value={inviteForm.fullName} onChange={e => setInviteForm(f => ({ ...f, fullName: e.target.value }))} placeholder="Nama lengkap" className="w-full h-11 px-4 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900/10 focus:border-gray-400" />
+                                    <input value={inviteForm.fullName} onChange={e => setInviteForm(f => ({ ...f, fullName: e.target.value }))} placeholder="Nama lengkap" className="w-full h-11 px-4 rounded-md border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900/10 focus:border-gray-400" />
                                 </div>
                                 <p className="text-[11px] text-gray-500 flex items-start gap-1.5">
                                     <UserPlus className="h-3 w-3 mt-0.5 shrink-0" />
@@ -490,8 +580,8 @@ export default function AgenciesPage() {
                                 </p>
                                 {createError && <p className="text-xs text-rose-700 bg-rose-50 border border-rose-100 rounded-lg px-3 py-2">{createError}</p>}
                                 <div className="flex justify-end gap-2 pt-2">
-                                    <button onClick={resetCreateModal} className="px-4 py-2 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-100">Lewati</button>
-                                    <button onClick={submitInviteMaster} disabled={createBusy || !inviteForm.email.trim()} className="flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-semibold bg-gray-900 text-white hover:bg-gray-800 disabled:opacity-40">
+                                    <button onClick={resetCreateModal} className="px-4 py-2 rounded-md text-sm font-medium text-gray-600 hover:bg-gray-100">Lewati</button>
+                                    <button onClick={submitInviteMaster} disabled={createBusy || !inviteForm.email.trim()} className="flex items-center gap-2 px-5 py-2 rounded-md text-sm font-semibold bg-black text-white hover:bg-gray-800 disabled:opacity-40">
                                         {createBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                                         Buat Undangan
                                     </button>
@@ -500,20 +590,20 @@ export default function AgenciesPage() {
                         )}
                         {createStep === 2 && inviteResult && (
                             <div className="space-y-4">
-                                <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-4">
+                                <div className="bg-white border border-gray-200 rounded-md p-4">
                                     <p className="text-sm font-semibold text-emerald-900 mb-1">Undangan dibuat</p>
                                     <p className="text-xs text-emerald-700">Kirim link ke <span className="font-semibold">{inviteResult.email}</span>. Berlaku sampai {new Date(inviteResult.expiresAt).toLocaleString("id-ID", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}.</p>
                                 </div>
                                 <div className="flex items-stretch gap-2">
-                                    <div className="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-xs text-gray-700 break-all">{inviteResult.inviteUrl}</div>
-                                    <button onClick={async () => { await navigator.clipboard.writeText(inviteResult.inviteUrl); setCopied(true); setTimeout(() => setCopied(false), 2000); }} className="flex items-center gap-1.5 px-4 rounded-xl text-sm font-semibold bg-gray-900 text-white hover:bg-gray-800 shrink-0">
+                                    <div className="flex-1 bg-gray-50 border border-gray-200 rounded-md px-3 py-2.5 text-xs text-gray-700 break-all">{inviteResult.inviteUrl}</div>
+                                    <button onClick={async () => { await navigator.clipboard.writeText(inviteResult.inviteUrl); setCopied(true); setTimeout(() => setCopied(false), 2000); }} className="flex items-center gap-1.5 px-4 rounded-md text-sm font-semibold bg-black text-white hover:bg-gray-800 shrink-0">
                                         {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                                         {copied ? "Tersalin" : "Salin"}
                                     </button>
                                 </div>
-                                <p className="text-[11px] text-amber-700 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2">Link ini hanya muncul sekali. Pastikan disalin sebelum menutup panel.</p>
+                                <p className="text-[11px] text-amber-700 bg-white border border-gray-200 rounded-lg px-3 py-2">Link ini hanya muncul sekali. Pastikan disalin sebelum menutup panel.</p>
                                 <div className="flex justify-end pt-2">
-                                    <button onClick={resetCreateModal} className="px-5 py-2 rounded-xl text-sm font-semibold bg-gray-900 text-white hover:bg-gray-800">Selesai</button>
+                                    <button onClick={resetCreateModal} className="px-5 py-2 rounded-md text-sm font-semibold bg-black text-white hover:bg-gray-800">Selesai</button>
                                 </div>
                             </div>
                         )}
@@ -524,27 +614,27 @@ export default function AgenciesPage() {
             {/* Per-row Invite Modal */}
             {rowInviteAgency && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 animate-in fade-in duration-200">
-                    <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg p-6 sm:p-7 animate-in zoom-in-95 duration-200">
+                    <div className="bg-white rounded-lg shadow-2xl w-full max-w-lg p-6 sm:p-7 animate-in zoom-in-95 duration-200">
                         <div className="flex items-center justify-between mb-1">
                             <p className="text-[11px] uppercase tracking-widest text-gray-400 font-bold">Undang Master Admin</p>
                             <button onClick={() => setRowInviteAgency(null)} className="text-gray-400 hover:text-gray-600 p-1 -m-1"><X className="h-5 w-5" /></button>
                         </div>
-                        <h3 className="text-xl font-bold text-gray-900 mb-1">{rowInviteAgency.name}</h3>
+                        <h3 className="text-xl font-bold text-black mb-1">{rowInviteAgency.name}</h3>
                         <p className="text-sm text-gray-500 mb-5">Undang user yang akan jadi master admin organisasi ini.</p>
                         {!rowInviteResult ? (
                             <div className="space-y-4">
                                 <div className="space-y-1.5">
                                     <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">Email Master Admin *</label>
-                                    <input type="email" value={rowInviteForm.email} onChange={e => setRowInviteForm(f => ({ ...f, email: e.target.value }))} placeholder="admin@agency.com" className="w-full h-11 px-4 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900/10 focus:border-gray-400" />
+                                    <input type="email" value={rowInviteForm.email} onChange={e => setRowInviteForm(f => ({ ...f, email: e.target.value }))} placeholder="admin@agency.com" className="w-full h-11 px-4 rounded-md border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900/10 focus:border-gray-400" />
                                 </div>
                                 <div className="space-y-1.5">
                                     <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">Nama Lengkap (opsional)</label>
-                                    <input value={rowInviteForm.fullName} onChange={e => setRowInviteForm(f => ({ ...f, fullName: e.target.value }))} placeholder="Nama lengkap" className="w-full h-11 px-4 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900/10 focus:border-gray-400" />
+                                    <input value={rowInviteForm.fullName} onChange={e => setRowInviteForm(f => ({ ...f, fullName: e.target.value }))} placeholder="Nama lengkap" className="w-full h-11 px-4 rounded-md border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900/10 focus:border-gray-400" />
                                 </div>
                                 {rowInviteError && <p className="text-xs text-rose-700 bg-rose-50 border border-rose-100 rounded-lg px-3 py-2">{rowInviteError}</p>}
                                 <div className="flex justify-end gap-2 pt-2">
-                                    <button onClick={() => setRowInviteAgency(null)} className="px-4 py-2 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-100">Batal</button>
-                                    <button onClick={submitRowInvite} disabled={rowInviteBusy || !rowInviteForm.email.trim()} className="flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-semibold bg-gray-900 text-white hover:bg-gray-800 disabled:opacity-40">
+                                    <button onClick={() => setRowInviteAgency(null)} className="px-4 py-2 rounded-md text-sm font-medium text-gray-600 hover:bg-gray-100">Batal</button>
+                                    <button onClick={submitRowInvite} disabled={rowInviteBusy || !rowInviteForm.email.trim()} className="flex items-center gap-2 px-5 py-2 rounded-md text-sm font-semibold bg-black text-white hover:bg-gray-800 disabled:opacity-40">
                                         {rowInviteBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                                         Buat Undangan
                                     </button>
@@ -552,21 +642,122 @@ export default function AgenciesPage() {
                             </div>
                         ) : (
                             <div className="space-y-4">
-                                <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-4">
+                                <div className="bg-white border border-gray-200 rounded-md p-4">
                                     <p className="text-sm font-semibold text-emerald-900 mb-1">Undangan dibuat ✓</p>
                                     <p className="text-xs text-emerald-700">Kirim link ke <span className="font-semibold">{rowInviteResult.email}</span>. Berlaku sampai {new Date(rowInviteResult.expiresAt).toLocaleString("id-ID", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}.</p>
                                 </div>
                                 <div className="flex items-stretch gap-2">
-                                    <div className="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-xs text-gray-700 break-all">{rowInviteResult.inviteUrl}</div>
-                                    <button onClick={async () => { await navigator.clipboard.writeText(rowInviteResult!.inviteUrl); setRowInviteCopied(true); setTimeout(() => setRowInviteCopied(false), 2000); }} className="flex items-center gap-1.5 px-4 rounded-xl text-sm font-semibold bg-gray-900 text-white hover:bg-gray-800 shrink-0">
+                                    <div className="flex-1 bg-gray-50 border border-gray-200 rounded-md px-3 py-2.5 text-xs text-gray-700 break-all">{rowInviteResult.inviteUrl}</div>
+                                    <button onClick={async () => { await navigator.clipboard.writeText(rowInviteResult!.inviteUrl); setRowInviteCopied(true); setTimeout(() => setRowInviteCopied(false), 2000); }} className="flex items-center gap-1.5 px-4 rounded-md text-sm font-semibold bg-black text-white hover:bg-gray-800 shrink-0">
                                         {rowInviteCopied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                                         {rowInviteCopied ? "Tersalin" : "Salin"}
                                     </button>
                                 </div>
-                                <p className="text-[11px] text-amber-700 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2">Link ini hanya muncul sekali. Pastikan disalin sebelum menutup panel.</p>
+                                <p className="text-[11px] text-amber-700 bg-white border border-gray-200 rounded-lg px-3 py-2">Link ini hanya muncul sekali. Pastikan disalin sebelum menutup panel.</p>
                                 <div className="flex justify-end pt-2">
-                                    <button onClick={() => setRowInviteAgency(null)} className="px-5 py-2 rounded-xl text-sm font-semibold bg-gray-900 text-white hover:bg-gray-800">Selesai</button>
+                                    <button onClick={() => setRowInviteAgency(null)} className="px-5 py-2 rounded-md text-sm font-semibold bg-black text-white hover:bg-gray-800">Selesai</button>
                                 </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
+
+            {/* Detail / Edit Modal */}
+            {detailOpen && detailAgency && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 animate-in fade-in duration-200">
+                    <div className="bg-white rounded-md shadow-2xl w-full max-w-lg overflow-hidden flex flex-col animate-in zoom-in-95 duration-200">
+                        {/* Header */}
+                        <div className="px-6 py-5 border-b border-gray-200 flex items-center justify-between gap-4">
+                            <div className="min-w-0">
+                                <h3 className="text-base font-bold text-black truncate">
+                                    {editMode ? "Edit Agency" : (detailData?.agency.name ?? detailAgency.name)}
+                                </h3>
+                                {!editMode && (
+                                    <p className="text-xs text-gray-500 truncate">{detailData?.agency.address || detailAgency.address || "Alamat belum diisi"}</p>
+                                )}
+                            </div>
+                            <div className="flex items-center gap-2 shrink-0">
+                                {!editMode && !detailLoading && (
+                                    <button
+                                        onClick={() => setEditMode(true)}
+                                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-gray-200 hover:bg-gray-50 transition-colors"
+                                    >
+                                        <Pencil className="h-3 w-3" /> Edit
+                                    </button>
+                                )}
+                                <button onClick={() => { setDetailOpen(false); setEditMode(false); setEditError(null); }} className="text-gray-400 hover:text-gray-600 p-1 -m-1">
+                                    <X className="h-5 w-5" />
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Body */}
+                        <div className="px-6 py-5 space-y-4 overflow-y-auto max-h-[60vh]">
+                            {detailLoading ? (
+                                <div className="flex items-center justify-center py-12 text-sm text-gray-400">
+                                    <Loader2 className="h-4 w-4 animate-spin mr-2" /> Memuat…
+                                </div>
+                            ) : editMode ? (
+                                <div className="space-y-4">
+                                    <div className="space-y-1.5">
+                                        <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">Nama Agency *</label>
+                                        <input
+                                            value={editForm.name}
+                                            onChange={e => setEditForm(f => ({ ...f, name: e.target.value.toUpperCase() }))}
+                                            className="w-full h-10 px-3 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900/10 focus:border-gray-400 uppercase"
+                                        />
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">Alamat</label>
+                                        <input
+                                            value={editForm.address}
+                                            onChange={e => setEditForm(f => ({ ...f, address: e.target.value }))}
+                                            className="w-full h-10 px-3 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900/10 focus:border-gray-400"
+                                        />
+                                    </div>
+                                    {editError && <p className="text-xs text-red-700 bg-red-50 border border-red-100 rounded-lg px-3 py-2">{editError}</p>}
+                                </div>
+                            ) : detailData ? (
+                                <div className="space-y-4">
+                                    <div className="grid grid-cols-2 gap-3">
+                                        {[
+                                            { label: "Agents", value: detailData.stats.agents },
+                                            { label: "Admins", value: detailData.stats.admins },
+                                            { label: "Total Klaim", value: detailData.stats.total_claims },
+                                            { label: "Klaim Pending", value: detailData.stats.pending_claims },
+                                        ].map(({ label, value }) => (
+                                            <div key={label} className="rounded-md border border-gray-200 bg-white px-4 py-3">
+                                                <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 mb-1">{label}</p>
+                                                <p className="text-xl font-bold text-black tabular-nums">{value.toLocaleString()}</p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <div>
+                                        <DetailRow label="Agency ID" value={detailData.agency.agency_id} mono onCopy={() => {}} />
+                                        <DetailRow label="Slug" value={detailData.agency.slug || "—"} />
+                                        <DetailRow label="Dibuat" value={fmtDate(detailData.agency.created_at)} />
+                                    </div>
+                                </div>
+                            ) : null}
+                        </div>
+
+                        {/* Footer */}
+                        {editMode && (
+                            <div className="px-6 py-4 border-t border-gray-200 flex justify-end gap-2 bg-gray-50/40">
+                                <button
+                                    onClick={() => { setEditMode(false); setEditError(null); }}
+                                    className="px-4 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100"
+                                >
+                                    Batal
+                                </button>
+                                <button
+                                    onClick={saveEdit}
+                                    disabled={!editForm.name.trim()}
+                                    className="flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-semibold bg-black text-white hover:bg-gray-800 disabled:opacity-40"
+                                >
+                                    <Save className="h-4 w-4" /> Simpan
+                                </button>
                             </div>
                         )}
                     </div>
@@ -576,21 +767,21 @@ export default function AgenciesPage() {
             {/* Delete Confirmation */}
             {deleteTarget && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 animate-in fade-in duration-200">
-                    <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md p-6 animate-in zoom-in-95 duration-200">
+                    <div className="bg-white rounded-lg shadow-2xl w-full max-w-md p-6 animate-in zoom-in-95 duration-200">
                         <div className="flex items-center gap-3 mb-4">
-                            <div className="w-10 h-10 bg-red-50 rounded-2xl flex items-center justify-center shrink-0">
+                            <div className="w-10 h-10 bg-red-50 rounded-md flex items-center justify-center shrink-0">
                                 <Trash2 className="h-5 w-5 text-red-500" />
                             </div>
                             <div>
-                                <h3 className="text-base font-bold text-gray-900">Hapus Agency</h3>
+                                <h3 className="text-base font-bold text-black">Hapus Agency</h3>
                                 <p className="text-sm text-gray-500">{deleteTarget.name}</p>
                             </div>
                         </div>
                         <p className="text-sm text-gray-600 mb-1">Apakah kamu yakin ingin menghapus agency ini?</p>
-                        <p className="text-xs text-amber-700 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2 mb-5">Users yang terhubung <strong>tidak</strong> akan dihapus, tapi akan di-detach dari agency ini.</p>
+                        <p className="text-xs text-amber-700 bg-white border border-gray-200 rounded-lg px-3 py-2 mb-5">Users yang terhubung <strong>tidak</strong> akan dihapus, tapi akan di-detach dari agency ini.</p>
                         <div className="flex justify-end gap-2">
-                            <button onClick={() => setDeleteTarget(null)} disabled={deleteBusy} className="px-4 py-2 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-100">Batal</button>
-                            <button onClick={handleDeleteAgency} disabled={deleteBusy} className="flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-semibold bg-red-600 text-white hover:bg-red-700 disabled:opacity-40">
+                            <button onClick={() => setDeleteTarget(null)} disabled={deleteBusy} className="px-4 py-2 rounded-md text-sm font-medium text-gray-600 hover:bg-gray-100">Batal</button>
+                            <button onClick={handleDeleteAgency} disabled={deleteBusy} className="flex items-center gap-2 px-5 py-2 rounded-md text-sm font-semibold bg-red-600 text-white hover:bg-red-700 disabled:opacity-40">
                                 {deleteBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
                                 Ya, Hapus
                             </button>

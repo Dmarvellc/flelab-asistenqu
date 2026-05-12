@@ -20,6 +20,10 @@ export default async function AdminAgencyLayout({ children }: { children: React.
     redirect("/admin-agency/login");
   }
 
+  if (session.status === "SUSPENDED") {
+    redirect("/suspended");
+  }
+
   return (
     <I18nProvider>
       <AdminAgencyLayoutClient>{children}</AdminAgencyLayoutClient>

@@ -45,7 +45,7 @@ const TYPE_META: Record<ReminderType, { label: string; Icon: React.ElementType; 
 
 const SEV_META: Record<ReminderSeverity, { label: string; cls: string }> = {
     OVERDUE:  { label: "TERLAMBAT",    cls: "bg-red-600 text-white" },
-    TODAY:    { label: "HARI INI",     cls: "bg-gray-900 text-white" },
+    TODAY:    { label: "HARI INI",     cls: "bg-black text-white" },
     SOON:     { label: "7 HARI",       cls: "bg-amber-500 text-white" },
     UPCOMING: { label: "MENDATANG",    cls: "bg-gray-100 text-gray-600" },
 };
@@ -146,13 +146,13 @@ export default function RemindersPage() {
     return (
         <div className="flex flex-col gap-8 animate-in fade-in duration-500 w-full">
             {/* Header */}
-            <div className="flex items-start justify-between gap-3 pb-6 border-b border-gray-100">
+            <div className="flex items-start justify-between gap-3 pb-6 border-b border-gray-200">
                 <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-2xl bg-gray-900 flex items-center justify-center shrink-0 shadow-md">
+                    <div className="w-10 h-10 rounded-md bg-black flex items-center justify-center shrink-0 shadow-md">
                         <Bell className="h-5 w-5 text-white" />
                     </div>
                     <div>
-                        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900">Pengingat</h1>
+                        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-black">Pengingat</h1>
                         <p className="text-sm text-gray-500">
                             Ulang tahun, jatuh tempo, autodebet, dan renewal dari klien Anda
                         </p>
@@ -162,7 +162,7 @@ export default function RemindersPage() {
                     <select
                         value={horizon}
                         onChange={e => setHorizon(parseInt(e.target.value))}
-                        className="text-xs font-medium bg-white border border-gray-200 rounded-xl px-3 py-2 text-gray-700 outline-none hover:border-gray-300"
+                        className="text-xs font-medium bg-white border border-gray-200 rounded-md px-3 py-2 text-gray-700 outline-none hover:border-gray-300"
                     >
                         <option value={7}>7 hari</option>
                         <option value={14}>14 hari</option>
@@ -172,7 +172,7 @@ export default function RemindersPage() {
                     </select>
                     <button
                         onClick={load}
-                        className="p-2 rounded-xl text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-all"
+                        className="p-2 rounded-md text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-all"
                         title="Refresh"
                     >
                         <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
@@ -190,8 +190,8 @@ export default function RemindersPage() {
                         <button
                             key={t}
                             onClick={() => setFilter(active ? "ALL" : t)}
-                            className={`text-left p-3 rounded-2xl border transition-all ${
-                                active ? "bg-gray-900 border-gray-900 shadow-md" : "bg-white border-gray-100 hover:border-gray-200"
+                            className={`text-left p-3 rounded-md border transition-all ${
+                                active ? "bg-black border-gray-900 shadow-md" : "bg-white border-gray-200 hover:border-gray-200"
                             }`}
                         >
                             <div className="flex items-center justify-between mb-1.5">
@@ -202,7 +202,7 @@ export default function RemindersPage() {
                                     {meta.label.split(" ")[0]}
                                 </span>
                             </div>
-                            <p className={`text-2xl font-black tabular-nums ${active ? "text-white" : "text-gray-900"}`}>{count}</p>
+                            <p className={`text-2xl font-black tabular-nums ${active ? "text-white" : "text-black"}`}>{count}</p>
                             <p className={`text-[11px] ${active ? "text-white/70" : "text-gray-500"}`}>{meta.label}</p>
                         </button>
                     );
@@ -219,7 +219,7 @@ export default function RemindersPage() {
                             key={key}
                             onClick={() => setFilter(key)}
                             className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all ${
-                                active ? "bg-gray-900 text-white" : "bg-white text-gray-600 border border-gray-200 hover:border-gray-300"
+                                active ? "bg-black text-white" : "bg-white text-gray-600 border border-gray-200 hover:border-gray-300"
                             }`}
                         >
                             <Icon className="h-3.5 w-3.5" />
@@ -232,7 +232,7 @@ export default function RemindersPage() {
 
             {/* Body */}
             {error && (
-                <div className="flex items-center gap-2 p-4 rounded-xl bg-red-50 border border-red-100 text-sm text-red-700">
+                <div className="flex items-center gap-2 p-4 rounded-md bg-red-50 border border-red-100 text-sm text-red-700">
                     <AlertTriangle className="h-4 w-4" /> {error}
                 </div>
             )}
@@ -244,7 +244,7 @@ export default function RemindersPage() {
             )}
 
             {data && filtered.length === 0 && (
-                <div className="text-center py-16 bg-white rounded-3xl border border-gray-100">
+                <div className="text-center py-16 bg-white rounded-lg border border-gray-200">
                     <Inbox className="h-10 w-10 text-gray-200 mx-auto mb-3" />
                     <p className="text-sm font-medium text-gray-700">Tidak ada pengingat</p>
                     <p className="text-xs text-gray-400 mt-1">Semua aman untuk {horizon} hari ke depan.</p>
@@ -282,14 +282,14 @@ function ReminderRow({ item }: { item: ReminderItem }) {
     const wa = item.phone ? buildWaLink(item.phone, item.client_name, item.type, item) : null;
 
     return (
-        <div className="flex items-center gap-3 bg-white rounded-2xl border border-gray-100 p-3 sm:p-4 hover:border-gray-200 hover:shadow-sm transition-all group">
-            <div className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 ${meta.tone} ring-2 ring-white ${meta.ring}`}>
+        <div className="flex items-center gap-3 bg-white rounded-md border border-gray-200 p-3 sm:p-4 hover:border-gray-200 hover:shadow-sm transition-all group">
+            <div className={`w-11 h-11 rounded-md flex items-center justify-center shrink-0 ${meta.tone} ring-2 ring-white ${meta.ring}`}>
                 <meta.Icon className="h-4.5 w-4.5" />
             </div>
 
             <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2 flex-wrap">
-                    <p className="font-semibold text-gray-900 text-sm truncate">{item.client_name}</p>
+                    <p className="font-semibold text-black text-sm truncate">{item.client_name}</p>
                     <span className={`text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-full ${sev.cls}`}>
                         {sev.label}
                     </span>
@@ -311,7 +311,7 @@ function ReminderRow({ item }: { item: ReminderItem }) {
                         target="_blank"
                         rel="noopener noreferrer"
                         title={`WhatsApp ${item.client_name}`}
-                        className="p-2 rounded-xl text-emerald-600 hover:bg-emerald-50 transition-all"
+                        className="p-2 rounded-md text-emerald-600 hover:bg-white transition-all"
                     >
                         <MessageCircle className="h-4 w-4" />
                     </a>
@@ -320,7 +320,7 @@ function ReminderRow({ item }: { item: ReminderItem }) {
                     <a
                         href={`tel:${item.phone}`}
                         title={`Telepon ${item.client_name}`}
-                        className="hidden sm:inline-flex p-2 rounded-xl text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-all"
+                        className="hidden sm:inline-flex p-2 rounded-md text-gray-500 hover:text-black hover:bg-gray-100 transition-all"
                     >
                         <Phone className="h-4 w-4" />
                     </a>
@@ -329,7 +329,7 @@ function ReminderRow({ item }: { item: ReminderItem }) {
                     <Link
                         href={item.href}
                         title="Buka detail"
-                        className="p-2 rounded-xl text-gray-400 hover:text-gray-900 hover:bg-gray-100 transition-all"
+                        className="p-2 rounded-md text-gray-400 hover:text-black hover:bg-gray-100 transition-all"
                     >
                         <ArrowUpRight className="h-4 w-4" />
                     </Link>

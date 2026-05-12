@@ -22,6 +22,10 @@ export default async function AgentLayout(props: { children: React.ReactNode }) 
     redirect("/agent/login");
   }
 
+  if (session.status === "SUSPENDED") {
+    redirect("/suspended");
+  }
+
   const userId = session.userId;
 
   let initialBadges = { pendingContracts: 0, pendingRequests: 0, totalClaims: 0 };

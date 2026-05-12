@@ -162,7 +162,7 @@ export default function HospitalPatientsPage() {
     const getStatusBadge = (status: string) => {
         switch (status) {
             case 'PENDING': return <Badge variant="outline" className="bg-yellow-100 text-yellow-800 border-yellow-200">Menunggu</Badge>;
-            case 'APPROVED': return <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-200">Disetujui</Badge>;
+            case 'APPROVED': return <Badge variant="outline" className="bg-gray-100 text-blue-800 border-blue-200">Disetujui</Badge>;
             case 'REJECTED': return <Badge variant="outline" className="bg-red-100 text-red-800 border-red-200">Ditolak</Badge>;
             case 'COMPLETED': return <Badge variant="outline" className="bg-green-100 text-green-800 border-green-200">Selesai</Badge>;
             default: return <Badge variant="outline">{status}</Badge>;
@@ -171,9 +171,9 @@ export default function HospitalPatientsPage() {
 
     return (
         <div className="flex flex-col gap-8 animate-in fade-in duration-500 w-full">
-            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 pb-6 border-b border-gray-100">
+            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 pb-6 border-b border-gray-200">
                 <div className="min-w-0">
-                    <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900">Data Pasien</h1>
+                    <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-black">Data Pasien</h1>
                     <p className="mt-1.5 text-sm text-gray-500">
                         Kelola permintaan data pasien ke agen asuransi.
                     </p>

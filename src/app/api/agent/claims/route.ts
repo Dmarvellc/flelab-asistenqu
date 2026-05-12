@@ -34,7 +34,7 @@ async function fetchAgentClaimRows(userId: string) {
       SELECT
         c.claim_id,
         c.claim_number,
-        c.claim_date,
+        c.claim_date::text,
         c.status,
         c.stage,
         c.total_amount,

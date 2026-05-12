@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,7 +11,6 @@ import { WrongPortalAlert, type WrongPortalInfo } from "@/components/auth/wrong-
 import { Logo } from "@/components/ui/logo";
 
 export default function AdminAgencyLoginPage() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -55,8 +54,7 @@ export default function AdminAgencyLoginPage() {
         return;
       }
 
-      router.push("/admin-agency");
-      router.refresh();
+      window.location.href = "/admin-agency";
     } catch (err) {
       console.error(err);
       setError("Terjadi kesalahan jaringan. Periksa koneksi internet Anda lalu coba lagi.");
@@ -76,18 +74,18 @@ export default function AdminAgencyLoginPage() {
         <Logo height={40} />
       </div>
 
-      <div className="w-full max-w-sm animate-in fade-in slide-in-from-bottom-4 duration-700 relative z-10 bg-white p-8 rounded-3xl shadow-2xl shadow-black/5 border border-white/20">
+      <div className="w-full max-w-sm animate-in fade-in slide-in-from-bottom-4 duration-700 relative z-10 bg-white p-8 rounded-lg shadow-2xl shadow-black/5 border border-white/20">
 
         {/* Logo */}
         <div className="flex flex-col items-center mb-8">
-          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Login Portal Agency</h1>
+          <h1 className="text-2xl font-bold text-black tracking-tight">Login Portal Agency</h1>
           <p className="text-sm text-gray-500 mt-2 text-center">Masuk ke dashboard manajemen operasional agensi untuk melanjutkan.</p>
         </div>
 
         {wrongPortal && <WrongPortalAlert info={wrongPortal} />}
 
         {error && (
-          <div className="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-4 mb-6 animate-in zoom-in-95 duration-200">
+          <div className="flex items-start gap-3 rounded-md border border-red-200 bg-red-50 p-4 mb-6 animate-in zoom-in-95 duration-200">
             <AlertCircle className="h-5 w-5 text-red-500 mt-0.5 shrink-0" />
             <p className="text-sm text-red-700 font-medium">{error}</p>
           </div>
@@ -106,7 +104,7 @@ export default function AdminAgencyLoginPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               disabled={loading}
-              className="h-12 rounded-xl border-gray-200 bg-gray-50 text-sm focus:border-black focus:ring-black focus:bg-white transition-all"
+              className="h-12 rounded-md border-gray-200 bg-gray-50 text-sm focus:border-black focus:ring-black focus:bg-white transition-all"
             />
           </div>
 
@@ -122,7 +120,7 @@ export default function AdminAgencyLoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 disabled={loading}
-                className="h-12 pr-12 rounded-xl border-gray-200 bg-gray-50 text-sm focus:border-black focus:ring-black focus:bg-white transition-all"
+                className="h-12 pr-12 rounded-md border-gray-200 bg-gray-50 text-sm focus:border-black focus:ring-black focus:bg-white transition-all"
                 placeholder="••••••••"
               />
               <button
@@ -138,7 +136,7 @@ export default function AdminAgencyLoginPage() {
 
           <Button
             type="submit"
-            className="w-full h-12 rounded-xl bg-black hover:bg-gray-900 text-white font-semibold gap-2 mt-4 transition-all duration-300 shadow-lg shadow-black/10 hover:shadow-black/20 hover:-translate-y-0.5"
+            className="w-full h-12 rounded-md bg-black hover:bg-black text-white font-semibold gap-2 mt-4 transition-all duration-300 shadow-lg shadow-black/10 hover:shadow-black/20 hover:-translate-y-0.5"
             disabled={loading}
           >
             {loading ? (
@@ -155,7 +153,7 @@ export default function AdminAgencyLoginPage() {
           </Button>
         </form>
 
-        <p className="text-center text-sm text-gray-500 mt-8 pt-6 border-t border-gray-100">
+        <p className="text-center text-sm text-gray-500 mt-8 pt-6 border-t border-gray-200">
           Mengalami kendala login?{" "}
           <Link href="#" className="font-semibold text-black hover:underline underline-offset-4 transition-all">
             Hubungi Support

@@ -21,10 +21,12 @@ import {
   Building2,
   UserCheck,
   Box,
+  FileText,
 } from "lucide-react";
 import Link from "next/link";
 import { Logo } from "@/components/ui/logo";
 import { Notifications } from "@/components/dashboard/notifications";
+import { useBusy } from "@/components/ui/busy-overlay-provider";
 
 export function DeveloperLayoutClient({
   children,
@@ -33,14 +35,15 @@ export function DeveloperLayoutClient({
 }) {
   const pathname = usePathname();
   const router = useRouter();
+  const { run } = useBusy();
 
   const handleLogout = useCallback(async () => {
-    await fetch("/api/auth/logout?from=developer", { method: "POST" }).catch(
-      () => { }
-    );
-    router.replace("/developer/login");
-    router.refresh();
-  }, [router]);
+    await run(async () => {
+      await fetch("/api/auth/logout?from=developer", { method: "POST" }).catch(() => {});
+      router.replace("/developer/login");
+      router.refresh();
+    }, "Keluar…");
+  }, [router, run]);
 
   const sidebar = (
     <DashboardSidebar>
@@ -81,6 +84,13 @@ export function DeveloperLayoutClient({
         <div className="px-2 pb-1 pt-4">
           <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 px-2">Pengelolaan</p>
         </div>
+        <NavItem
+          href="/developer/claims"
+          icon={FileText}
+          active={pathname === "/developer/claims"}
+        >
+          Klaim
+        </NavItem>
         <NavItem
           href="/developer/users"
           icon={Users}

@@ -218,17 +218,17 @@ export default function AgentRegisterPage() {
             <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-black/[0.02] rounded-full blur-[100px] translate-x-1/2 -translate-y-1/2 pointer-events-none" />
 
             {/* Language Toggle */}
-            <div className="absolute top-6 right-6 z-50 flex items-center gap-2 bg-white px-3 py-1.5 rounded-full shadow-sm border border-gray-100">
+            <div className="absolute top-6 right-6 z-50 flex items-center gap-2 bg-white px-3 py-1.5 rounded-full shadow-sm border border-gray-200">
                 <Globe className="w-4 h-4 text-gray-500" />
                 <button onClick={() => setLang('en')} className={`text-xs px-2 py-1 rounded-full font-medium transition-colors ${lang === 'en' ? 'bg-black text-white' : 'text-gray-500 hover:text-black'}`}>EN</button>
                 <button onClick={() => setLang('id')} className={`text-xs px-2 py-1 rounded-full font-medium transition-colors ${lang === 'id' ? 'bg-black text-white' : 'text-gray-500 hover:text-black'}`}>ID</button>
             </div>
 
-            <div className="w-full max-w-4xl space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 relative z-10 bg-white p-8 sm:p-12 rounded-3xl shadow-2xl shadow-black/5 border border-white/20 my-10">
+            <div className="w-full max-w-4xl space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 relative z-10 bg-white p-8 sm:p-12 rounded-lg shadow-2xl shadow-black/5 border border-white/20 my-10">
 
                 {/* Header */}
                 <div className="flex flex-col items-center text-center w-full pb-8">
-                    <h1 className="text-xl sm:text-3xl font-bold tracking-tight text-gray-900">{t.registerTitle}</h1>
+                    <h1 className="text-xl sm:text-3xl font-bold tracking-tight text-black">{t.registerTitle}</h1>
                     <p className="text-sm text-gray-500 mt-2 max-w-md">
                         {t.registerSub}
                     </p>
@@ -236,7 +236,7 @@ export default function AgentRegisterPage() {
 
                 <div className="space-y-8">
                     {draftRestored && (
-                        <div className="flex items-center justify-between gap-3 px-4 py-2.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-sm">
+                        <div className="flex items-center justify-between gap-3 px-4 py-2.5 rounded-md bg-white border border-amber-200 text-amber-800 text-sm">
                             <div className="flex items-center gap-2">
                                 <RotateCcw className="w-4 h-4 shrink-0" />
                                 <span className="font-medium">Draft tersimpan dipulihkan.</span>
@@ -248,14 +248,14 @@ export default function AgentRegisterPage() {
                         </div>
                     )}
                     {message && !error && (
-                        <div className="flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-700 animate-in zoom-in-95 duration-200">
+                        <div className="flex items-center gap-3 rounded-md border border-emerald-200 bg-white p-4 text-emerald-700 animate-in zoom-in-95 duration-200">
                             <CheckCircle2 className="h-5 w-5" />
                             <p className="text-sm font-medium">{message}</p>
                         </div>
                     )}
 
                     {error && (
-                        <div className="flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-red-700 animate-in zoom-in-95 duration-200">
+                        <div className="flex items-center gap-3 rounded-md border border-red-200 bg-red-50 p-4 text-red-700 animate-in zoom-in-95 duration-200">
                             <AlertCircle className="h-5 w-5" />
                             <p className="text-sm font-medium">{error}</p>
                         </div>
@@ -265,24 +265,24 @@ export default function AgentRegisterPage() {
 
                         {/* Account Details */}
                         <div className="space-y-6">
-                            <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                            <h3 className="text-lg font-bold text-black flex items-center gap-2">
                                 <span className="bg-gray-100 text-gray-500 w-6 h-6 rounded-full flex items-center justify-center text-xs">1</span>
                                 {lang === 'en' ? "Account Details" : "Informasi Akun"}
                             </h3>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div className="space-y-2">
                                     <Label htmlFor="email" className="text-xs font-semibold uppercase tracking-wider text-gray-500">{t.email}</Label>
-                                    <Input id="email" name="email" type="email" required value={formData.email} onChange={(e) => { handleChange(e); if (fieldErrors.email) setFieldErrors({ ...fieldErrors, email: false }); }} placeholder="nama@email.com" className={cn("h-12 rounded-xl bg-gray-50 border-gray-200 focus:bg-white focus:border-black", fieldErrors.email && "border-red-500 focus-visible:ring-red-500")} />
+                                    <Input id="email" name="email" type="email" required value={formData.email} onChange={(e) => { handleChange(e); if (fieldErrors.email) setFieldErrors({ ...fieldErrors, email: false }); }} placeholder="nama@email.com" className={cn("h-12 rounded-md bg-gray-50 border-gray-200 focus:bg-white focus:border-black", fieldErrors.email && "border-red-500 focus-visible:ring-red-500")} />
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="password" className="text-xs font-semibold uppercase tracking-wider text-gray-500">{t.password}</Label>
-                                    <Input id="password" name="password" type="password" required value={formData.password} onChange={(e) => { handleChange(e); if (fieldErrors.password) setFieldErrors({ ...fieldErrors, password: false }); }} placeholder={lang === 'en' ? "Min. 8 characters" : "Minimal 8 karakter"} className={cn("h-12 rounded-xl bg-gray-50 border-gray-200 focus:bg-white focus:border-black", fieldErrors.password && "border-red-500 focus-visible:ring-red-500")} />
+                                    <Input id="password" name="password" type="password" required value={formData.password} onChange={(e) => { handleChange(e); if (fieldErrors.password) setFieldErrors({ ...fieldErrors, password: false }); }} placeholder={lang === 'en' ? "Min. 8 characters" : "Minimal 8 karakter"} className={cn("h-12 rounded-md bg-gray-50 border-gray-200 focus:bg-white focus:border-black", fieldErrors.password && "border-red-500 focus-visible:ring-red-500")} />
                                 </div>
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="agencyId" className="text-xs font-semibold uppercase tracking-wider text-gray-500">{lang === 'en' ? "Agency" : "Agensi"}</Label>
                                 <Select name="agencyId" value={formData.agencyId} onValueChange={(value) => { handleChange({ target: { name: 'agencyId', value } } as any); if (fieldErrors.agencyId) setFieldErrors({ ...fieldErrors, agencyId: false }); }}>
-                                    <SelectTrigger id="agencyId" className={cn("h-12 rounded-xl bg-gray-50 border-gray-200 focus:bg-white focus:border-black", fieldErrors.agencyId && "border-red-500")}>
+                                    <SelectTrigger id="agencyId" className={cn("h-12 rounded-md bg-gray-50 border-gray-200 focus:bg-white focus:border-black", fieldErrors.agencyId && "border-red-500")}>
                                         <SelectValue placeholder={lang === 'en' ? "Select your Agency" : "Pilih Agensi Anda"} />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -292,19 +292,19 @@ export default function AgentRegisterPage() {
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="referralCode" className="text-xs font-semibold uppercase tracking-wider text-gray-500">{lang === 'en' ? "Referral Code (Optional)" : "Kode Referral (Opsional)"}</Label>
-                                <Input id="referralCode" name="referralCode" type="text" value={formData.referralCode} onChange={handleChange} placeholder={lang === 'en' ? "Enter referral code if any" : "Masukkan kode referral jika ada"} className="h-12 rounded-xl bg-gray-50 border-gray-200 focus:bg-white focus:border-black uppercase" />
+                                <Input id="referralCode" name="referralCode" type="text" value={formData.referralCode} onChange={handleChange} placeholder={lang === 'en' ? "Enter referral code if any" : "Masukkan kode referral jika ada"} className="h-12 rounded-md bg-gray-50 border-gray-200 focus:bg-white focus:border-black uppercase" />
                             </div>
                         </div>
 
                         {/* Personal Details */}
                         <div className="space-y-6">
-                            <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                            <h3 className="text-lg font-bold text-black flex items-center gap-2">
                                 <span className="bg-gray-100 text-gray-500 w-6 h-6 rounded-full flex items-center justify-center text-xs">2</span>
                                 {lang === 'en' ? "Personal Data" : "Data Pribadi"}
                             </h3>
                             <div className="space-y-2">
                                 <Label htmlFor="fullName" className="text-xs font-semibold uppercase tracking-wider text-gray-500">{t.fullName}</Label>
-                                <Input id="fullName" name="fullName" type="text" required value={formData.fullName} onChange={(e) => { handleChange(e); if (fieldErrors.fullName) setFieldErrors({ ...fieldErrors, fullName: false }); }} className={cn("h-12 rounded-xl bg-gray-50 border-gray-200 focus:bg-white focus:border-black", fieldErrors.fullName && "border-red-500 focus-visible:ring-red-500")} />
+                                <Input id="fullName" name="fullName" type="text" required value={formData.fullName} onChange={(e) => { handleChange(e); if (fieldErrors.fullName) setFieldErrors({ ...fieldErrors, fullName: false }); }} className={cn("h-12 rounded-md bg-gray-50 border-gray-200 focus:bg-white focus:border-black", fieldErrors.fullName && "border-red-500 focus-visible:ring-red-500")} />
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -314,23 +314,23 @@ export default function AgentRegisterPage() {
                                         {!nikValidation.valid && <span className="text-xs text-red-500 flex items-center gap-1 font-medium"><AlertTriangle className="w-3 h-3" /> {nikValidation.message}</span>}
                                         {nikValidation.valid && formData.nik.length === 16 && <span className="text-xs text-emerald-600 flex items-center gap-1 font-medium"><CheckCircle2 className="w-3 h-3" /> Valid</span>}
                                     </div>
-                                    <Input id="nik" name="nik" value={formData.nik} onChange={(e) => { const val = e.target.value.replace(/[^0-9]/g, ''); if (val.length <= 16) handleChange({ ...e, target: { ...e.target, name: 'nik', value: val } }); if (fieldErrors.nik) setFieldErrors({ ...fieldErrors, nik: false }); }} className={cn("h-12 rounded-xl bg-gray-50 border-gray-200 focus:bg-white focus:border-black", (!nikValidation.valid || fieldErrors.nik) && "border-red-500 ring-red-500")} placeholder="16 Digit" />
+                                    <Input id="nik" name="nik" value={formData.nik} onChange={(e) => { const val = e.target.value.replace(/[^0-9]/g, ''); if (val.length <= 16) handleChange({ ...e, target: { ...e.target, name: 'nik', value: val } }); if (fieldErrors.nik) setFieldErrors({ ...fieldErrors, nik: false }); }} className={cn("h-12 rounded-md bg-gray-50 border-gray-200 focus:bg-white focus:border-black", (!nikValidation.valid || fieldErrors.nik) && "border-red-500 ring-red-500")} placeholder="16 Digit" />
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="phoneNumber" className="text-xs font-semibold uppercase tracking-wider text-gray-500">{lang === 'en' ? "Phone Number" : "Nomor HP / WhatsApp"}</Label>
-                                    <PhoneInput id="phoneNumber" name="phoneNumber" required value={formData.phoneNumber} onChange={(value) => { setFormData(prev => ({...prev, phoneNumber: value})); if (fieldErrors.phoneNumber) setFieldErrors({ ...fieldErrors, phoneNumber: false }); }} className={cn("h-12 rounded-xl bg-gray-50 border-gray-200 focus:bg-white focus:border-black", fieldErrors.phoneNumber && "border-red-500 focus-visible:ring-red-500")} />
+                                    <PhoneInput id="phoneNumber" name="phoneNumber" required value={formData.phoneNumber} onChange={(value) => { setFormData(prev => ({...prev, phoneNumber: value})); if (fieldErrors.phoneNumber) setFieldErrors({ ...fieldErrors, phoneNumber: false }); }} className={cn("h-12 rounded-md bg-gray-50 border-gray-200 focus:bg-white focus:border-black", fieldErrors.phoneNumber && "border-red-500 focus-visible:ring-red-500")} />
                                 </div>
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div className="space-y-2">
                                     <Label htmlFor="birthDate" className="text-xs font-semibold uppercase tracking-wider text-gray-500">{lang === 'en' ? "Birth Date" : "Tanggal Lahir"}</Label>
-                                    <Input id="birthDate" name="birthDate" type="date" required value={formData.birthDate} onChange={(e) => { handleChange(e); if (fieldErrors.birthDate) setFieldErrors({ ...fieldErrors, birthDate: false }); }} className={cn("h-12 rounded-xl bg-gray-50 border-gray-200 focus:bg-white focus:border-black", ((!nikValidation.valid && nikValidation.message?.includes("Tanggal")) || fieldErrors.birthDate) && "border-red-500")} />
+                                    <Input id="birthDate" name="birthDate" type="date" required value={formData.birthDate} onChange={(e) => { handleChange(e); if (fieldErrors.birthDate) setFieldErrors({ ...fieldErrors, birthDate: false }); }} className={cn("h-12 rounded-md bg-gray-50 border-gray-200 focus:bg-white focus:border-black", ((!nikValidation.valid && nikValidation.message?.includes("Tanggal")) || fieldErrors.birthDate) && "border-red-500")} />
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="gender" className="text-xs font-semibold uppercase tracking-wider text-gray-500">{lang === 'en' ? "Gender" : "Jenis Kelamin"}</Label>
                                     <Select name="gender" value={formData.gender} onValueChange={(value) => { handleChange({ target: { name: 'gender', value } } as any); if (fieldErrors.gender) setFieldErrors({ ...fieldErrors, gender: false }); }}>
-                                        <SelectTrigger id="gender" className={cn("h-12 rounded-xl bg-gray-50 border-gray-200 focus:bg-white focus:border-black", ((!nikValidation.valid && nikValidation.message?.toLowerCase().includes("kelamin")) || fieldErrors.gender) && "border-red-500")}>
+                                        <SelectTrigger id="gender" className={cn("h-12 rounded-md bg-gray-50 border-gray-200 focus:bg-white focus:border-black", ((!nikValidation.valid && nikValidation.message?.toLowerCase().includes("kelamin")) || fieldErrors.gender) && "border-red-500")}>
                                             <SelectValue placeholder="Pilih Jenis Kelamin" />
                                         </SelectTrigger>
                                         <SelectContent>
@@ -344,7 +344,7 @@ export default function AgentRegisterPage() {
 
                         {/* Address Details */}
                         <div className="space-y-6">
-                            <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                            <h3 className="text-lg font-bold text-black flex items-center gap-2">
                                 <span className="bg-gray-100 text-gray-500 w-6 h-6 rounded-full flex items-center justify-center text-xs">3</span>
                                 {lang === 'en' ? "Address" : "Alamat Domisili"}
                                 {addressLoading && <Loader2 className="w-4 h-4 animate-spin text-gray-400" />}
@@ -352,14 +352,14 @@ export default function AgentRegisterPage() {
 
                             <div className="space-y-2">
                                 <Label htmlFor="addressStreet" className="text-xs font-semibold uppercase tracking-wider text-gray-500">{lang === 'en' ? "Street / House No." : "Jalan / No. Rumah"}</Label>
-                                <Input id="addressStreet" name="addressStreet" required value={formData.addressStreet} onChange={(e) => { handleChange(e); if (fieldErrors.addressStreet) setFieldErrors({ ...fieldErrors, addressStreet: false }); }} className={cn("h-12 rounded-xl bg-gray-50 border-gray-200 focus:bg-white focus:border-black", fieldErrors.addressStreet && "border-red-500")} />
+                                <Input id="addressStreet" name="addressStreet" required value={formData.addressStreet} onChange={(e) => { handleChange(e); if (fieldErrors.addressStreet) setFieldErrors({ ...fieldErrors, addressStreet: false }); }} className={cn("h-12 rounded-md bg-gray-50 border-gray-200 focus:bg-white focus:border-black", fieldErrors.addressStreet && "border-red-500")} />
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div className="space-y-2">
                                     <Label htmlFor="provinceId" className="text-xs font-semibold uppercase tracking-wider text-gray-500">{lang === 'en' ? "Province" : "Provinsi"}</Label>
                                     <Select name="provinceId" value={formData.provinceId} onValueChange={(value) => { handleChange({ target: { name: 'provinceId', value } } as any); if (fieldErrors.provinceId) setFieldErrors({ ...fieldErrors, provinceId: false }); }}>
-                                        <SelectTrigger id="provinceId" className={cn("h-12 rounded-xl bg-gray-50 border-gray-200 focus:bg-white focus:border-black", fieldErrors.provinceId && "border-red-500")}>
+                                        <SelectTrigger id="provinceId" className={cn("h-12 rounded-md bg-gray-50 border-gray-200 focus:bg-white focus:border-black", fieldErrors.provinceId && "border-red-500")}>
                                             <SelectValue placeholder="Pilih Provinsi" />
                                         </SelectTrigger>
                                         <SelectContent>{provinces.map(p => <SelectItem key={p.code} value={p.code}>{p.name}</SelectItem>)}</SelectContent>
@@ -368,7 +368,7 @@ export default function AgentRegisterPage() {
                                 <div className="space-y-2">
                                     <Label htmlFor="regencyId" className="text-xs font-semibold uppercase tracking-wider text-gray-500">{lang === 'en' ? "City / Regency" : "Kabupaten / Kota"}</Label>
                                     <Select name="regencyId" value={formData.regencyId} onValueChange={(value) => { handleChange({ target: { name: 'regencyId', value } } as any); if (fieldErrors.regencyId) setFieldErrors({ ...fieldErrors, regencyId: false }); }} disabled={!formData.provinceId}>
-                                        <SelectTrigger id="regencyId" className={cn("h-12 rounded-xl bg-gray-50 border-gray-200 focus:bg-white focus:border-black", fieldErrors.regencyId && "border-red-500")}>
+                                        <SelectTrigger id="regencyId" className={cn("h-12 rounded-md bg-gray-50 border-gray-200 focus:bg-white focus:border-black", fieldErrors.regencyId && "border-red-500")}>
                                             <SelectValue placeholder="Pilih Kabupaten/Kota" />
                                         </SelectTrigger>
                                         <SelectContent>{regencies.map(r => <SelectItem key={r.code} value={r.code}>{r.name}</SelectItem>)}</SelectContent>
@@ -380,7 +380,7 @@ export default function AgentRegisterPage() {
                                 <div className="space-y-2">
                                     <Label htmlFor="districtId" className="text-xs font-semibold uppercase tracking-wider text-gray-500">{lang === 'en' ? "District" : "Kecamatan"}</Label>
                                     <Select name="districtId" value={formData.districtId} onValueChange={(value) => { handleChange({ target: { name: 'districtId', value } } as any); if (fieldErrors.districtId) setFieldErrors({ ...fieldErrors, districtId: false }); }} disabled={!formData.regencyId}>
-                                        <SelectTrigger id="districtId" className={cn("h-12 rounded-xl bg-gray-50 border-gray-200 focus:bg-white focus:border-black", fieldErrors.districtId && "border-red-500")}>
+                                        <SelectTrigger id="districtId" className={cn("h-12 rounded-md bg-gray-50 border-gray-200 focus:bg-white focus:border-black", fieldErrors.districtId && "border-red-500")}>
                                             <SelectValue placeholder="Pilih Kecamatan" />
                                         </SelectTrigger>
                                         <SelectContent>{districts.map(d => <SelectItem key={d.code} value={d.code}>{d.name}</SelectItem>)}</SelectContent>
@@ -389,7 +389,7 @@ export default function AgentRegisterPage() {
                                 <div className="space-y-2">
                                     <Label htmlFor="villageId" className="text-xs font-semibold uppercase tracking-wider text-gray-500">{lang === 'en' ? "Village" : "Kelurahan"}</Label>
                                     <Select name="villageId" value={formData.villageId} onValueChange={(value) => { handleChange({ target: { name: 'villageId', value } } as any); if (fieldErrors.villageId) setFieldErrors({ ...fieldErrors, villageId: false }); }} disabled={!formData.districtId}>
-                                        <SelectTrigger id="villageId" className={cn("h-12 rounded-xl bg-gray-50 border-gray-200 focus:bg-white focus:border-black", fieldErrors.villageId && "border-red-500")}>
+                                        <SelectTrigger id="villageId" className={cn("h-12 rounded-md bg-gray-50 border-gray-200 focus:bg-white focus:border-black", fieldErrors.villageId && "border-red-500")}>
                                             <SelectValue placeholder="Pilih Kelurahan" />
                                         </SelectTrigger>
                                         <SelectContent>{villages.map(v => <SelectItem key={v.code} value={v.code}>{v.name}</SelectItem>)}</SelectContent>
@@ -397,13 +397,13 @@ export default function AgentRegisterPage() {
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="postalCode" className="text-xs font-semibold uppercase tracking-wider text-gray-500">{lang === 'en' ? "Postal Code" : "Kode Pos"}</Label>
-                                    <Input id="postalCode" name="postalCode" value={formData.postalCode} onChange={(e) => { handleChange(e); if (fieldErrors.postalCode) setFieldErrors({ ...fieldErrors, postalCode: false }); }} className={cn("h-12 rounded-xl bg-gray-50 border-gray-200 focus:bg-white focus:border-black", fieldErrors.postalCode && "border-red-500")} />
+                                    <Input id="postalCode" name="postalCode" value={formData.postalCode} onChange={(e) => { handleChange(e); if (fieldErrors.postalCode) setFieldErrors({ ...fieldErrors, postalCode: false }); }} className={cn("h-12 rounded-md bg-gray-50 border-gray-200 focus:bg-white focus:border-black", fieldErrors.postalCode && "border-red-500")} />
                                 </div>
                             </div>
                         </div>
 
-                        <div className="pt-6 border-t border-gray-100">
-                            <Button type="submit" className="w-full h-14 rounded-xl text-base font-bold bg-black hover:bg-gray-900 text-white transition-all shadow-lg hover:shadow-xl hover:-translate-y-1" disabled={loading || !nikValidation.valid}>
+                        <div className="pt-6 border-t border-gray-200">
+                            <Button type="submit" className="w-full h-14 rounded-md text-base font-bold bg-black hover:bg-black text-white transition-all shadow-lg hover:shadow-xl hover:-translate-y-1" disabled={loading || !nikValidation.valid}>
                                 {loading ? (
                                     <><Loader2 className="mr-3 h-5 w-5 animate-spin" /> {t.loading}</>
                                 ) : (

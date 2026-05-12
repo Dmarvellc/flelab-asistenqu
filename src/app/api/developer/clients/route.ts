@@ -29,8 +29,8 @@ export async function GET(request: Request) {
             db.query(
                 `SELECT COUNT(*)::int AS total
                  FROM public.client c
-                 JOIN public.person p ON c.person_id = p.person_id
-                 JOIN public.app_user au ON c.agent_id = au.user_id
+                 LEFT JOIN public.person p ON c.person_id = p.person_id
+                 LEFT JOIN public.app_user au ON c.agent_id = au.user_id
                  LEFT JOIN public.user_person_link upl ON au.user_id = upl.user_id
                  LEFT JOIN public.person ap ON upl.person_id = ap.person_id
                  LEFT JOIN public.agency a ON au.agency_id = a.agency_id
@@ -50,8 +50,8 @@ export async function GET(request: Request) {
                      JOIN public.contract ct ON cl.contract_id = ct.contract_id
                      WHERE ct.client_id = c.client_id) AS total_claims
                  FROM public.client c
-                 JOIN public.person p ON c.person_id = p.person_id
-                 JOIN public.app_user au ON c.agent_id = au.user_id
+                 LEFT JOIN public.person p ON c.person_id = p.person_id
+                 LEFT JOIN public.app_user au ON c.agent_id = au.user_id
                  LEFT JOIN public.user_person_link upl ON au.user_id = upl.user_id
                  LEFT JOIN public.person ap ON upl.person_id = ap.person_id
                  LEFT JOIN public.agency a ON au.agency_id = a.agency_id
