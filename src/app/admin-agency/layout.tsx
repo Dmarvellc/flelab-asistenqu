@@ -10,18 +10,16 @@ export default async function AdminAgencyLayout({ children }: { children: React.
   const pathname = (await headers()).get("x-pathname") ?? "";
   const isPublic = AUTH_PATHS.some((p) => pathname.endsWith(p));
 
-  if (isPublic) {
-    return <I18nProvider>{children}</I18nProvider>;
-  }
+  if (!isPublic) {
+    const session = await getSession({ portal: "admin_agency" });
 
-  const session = await getSession({ portal: "admin_agency" });
+    if (!session) {
+      redirect("/admin-agency/login");
+    }
 
-  if (!session) {
-    redirect("/admin-agency/login");
-  }
-
-  if (session.status === "SUSPENDED") {
-    redirect("/suspended");
+    if (session.status === "SUSPENDED") {
+      redirect("/suspended");
+    }
   }
 
   return (

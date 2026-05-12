@@ -37,6 +37,8 @@ export function DeveloperLayoutClient({
   const router = useRouter();
   const { run } = useBusy();
 
+  const isPublic = ["/login", "/register"].some(p => pathname?.endsWith(p));
+
   const handleLogout = useCallback(async () => {
     await run(async () => {
       await fetch("/api/auth/logout?from=developer", { method: "POST" }).catch(() => {});
@@ -144,6 +146,10 @@ export function DeveloperLayoutClient({
       </SidebarFooter>
     </DashboardSidebar>
   );
+
+  if (isPublic) {
+    return <>{children}</>;
+  }
 
   return (
     <DashboardLayout

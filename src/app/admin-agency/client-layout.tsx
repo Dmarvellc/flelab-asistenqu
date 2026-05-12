@@ -19,6 +19,8 @@ export function AdminAgencyLayoutClient({ children }: { children: React.ReactNod
   const { run } = useBusy();
   const [isCommandOpen, setIsCommandOpen] = useState(false);
 
+  const isPublic = ["/login", "/register"].some(p => pathname?.endsWith(p));
+
   const handleLogout = useCallback(async () => {
     await run(async () => {
       try {
@@ -100,6 +102,15 @@ export function AdminAgencyLayoutClient({ children }: { children: React.ReactNod
       </SidebarFooter>
     </DashboardSidebar>
   )
+
+  if (isPublic) {
+    return (
+      <>
+        {children}
+        <CommandPalette isOpen={isCommandOpen} setIsOpen={setIsCommandOpen} />
+      </>
+    );
+  }
 
   return (
     <>

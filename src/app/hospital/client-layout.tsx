@@ -14,6 +14,8 @@ export function HospitalLayoutClient({ children }: { children: React.ReactNode }
   const router = useRouter();
   const { run } = useBusy();
 
+  const isPublic = ["/login", "/register"].some(p => pathname?.endsWith(p));
+
   const handleLogout = useCallback(async () => {
     await run(async () => {
       try {
@@ -72,6 +74,10 @@ export function HospitalLayoutClient({ children }: { children: React.ReactNode }
       </SidebarFooter>
     </DashboardSidebar>
   )
+
+  if (isPublic) {
+    return <>{children}</>;
+  }
 
   return (
     <DashboardLayout sidebar={sidebar} header={

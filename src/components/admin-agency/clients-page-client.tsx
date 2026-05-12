@@ -9,7 +9,7 @@ import { ClientsTable } from "@/components/admin/clients-table";
 import { ClientImportPanel } from "@/components/admin-agency/client-import-panel";
 import { cn } from "@/lib/utils";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { StatCard, StatsGrid } from "@/components/dashboard/page-shell";
+import { StatCard, StatsGrid, PageShell, PageHeader } from "@/components/dashboard/page-shell";
 
 type Tab = "all" | "unassigned" | "import";
 

@@ -13,19 +13,21 @@ export default async function DeveloperLayout({
   const pathname = (await headers()).get("x-pathname") ?? "";
   const isPublic = AUTH_PATHS.some((p) => pathname.endsWith(p));
 
-  if (isPublic) {
-    return <>{children}</>;
-  }
+  // Skip session check for public routes, but always return DeveloperLayoutClient
+  // to avoid Next.js segment layout cache bugs.
+  if (!isPublic) {
+    const session = await getSession({ portal: "developer" });
 
-  const session = await getSession({ portal: "developer" });
+    if (!session) {
+      redirect("/developer/login");
+    }
 
-  if (!session) {
-    redirect("/developer/login");
-  }
-
-  if (session.status === "SUSPENDED") {
-    redirect("/suspended");
+    if (session.status === "SUSPENDED") {
+      redirect("/suspended");
+    }
   }
 
   return <DeveloperLayoutClient>{children}</DeveloperLayoutClient>;
+
+
 }

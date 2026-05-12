@@ -9,18 +9,16 @@ export default async function HospitalLayout({ children }: { children: React.Rea
   const pathname = (await headers()).get("x-pathname") ?? "";
   const isPublic = AUTH_PATHS.some((p) => pathname.endsWith(p));
 
-  if (isPublic) {
-    return <>{children}</>;
-  }
+  if (!isPublic) {
+    const session = await getSession({ portal: "hospital" });
 
-  const session = await getSession({ portal: "hospital" });
+    if (!session) {
+      redirect("/hospital/login");
+    }
 
-  if (!session) {
-    redirect("/hospital/login");
-  }
-
-  if (session.status === "SUSPENDED") {
-    redirect("/suspended");
+    if (session.status === "SUSPENDED") {
+      redirect("/suspended");
+    }
   }
 
   return <HospitalLayoutClient>{children}</HospitalLayoutClient>;

@@ -12,21 +12,20 @@ export default async function AgentLayout(props: { children: React.ReactNode }) 
   const pathname = (await headers()).get("x-pathname") ?? "";
   const isPublic = AUTH_PATHS.some((p) => pathname.endsWith(p));
 
-  if (isPublic) {
-    return <I18nProvider>{props.children}</I18nProvider>;
+  if (!isPublic) {
+    const session = await getSession({ portal: "agent" });
+
+    if (!session) {
+      redirect("/agent/login");
+    }
+
+    if (session.status === "SUSPENDED") {
+      redirect("/suspended");
+    }
   }
 
-  const session = await getSession({ portal: "agent" });
-
-  if (!session) {
-    redirect("/agent/login");
-  }
-
-  if (session.status === "SUSPENDED") {
-    redirect("/suspended");
-  }
-
-  const userId = session.userId;
+  const session = !isPublic ? await getSession({ portal: "agent" }) : null;
+  const userId = session?.userId;
 
   let initialBadges = { pendingContracts: 0, pendingRequests: 0, totalClaims: 0 };
   let serverUserName: string | null = null;
