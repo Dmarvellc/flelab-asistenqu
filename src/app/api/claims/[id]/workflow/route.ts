@@ -128,7 +128,7 @@ function resolveTransition(params: {
 
       return {
         newStage: "PENDING_HOSPITAL",
-        newStatus: "IN_PROGRESS",
+        newStatus: "SUBMITTED",
         agentNotes: appendNote(claim.agent_notes, notes, "Claim sent to hospital for review."),
         hospitalNotes: claim.hospital_notes,
         adminReviewNotes: claim.admin_review_notes,
@@ -144,7 +144,7 @@ function resolveTransition(params: {
 
       return {
         newStage: "PENDING_AGENT",
-        newStatus: "IN_PROGRESS",
+        newStatus: "SUBMITTED",
         agentNotes: claim.agent_notes,
         hospitalNotes: appendNote(
           claim.hospital_notes,

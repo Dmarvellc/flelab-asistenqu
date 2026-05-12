@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
 
 const claimIdSchema = z.string().uuid();
 const allowedRoles = ["hospital_admin", "super_admin", "developer"] as const;
-import { HOSPITAL_REVIEW_FLOW_STAGES } from "@/lib/hospital-claim-review";
+import { CLAIM_STAGES_PRIMARY_AGENT_WORK } from "@/lib/hospital-claim-review";
 
 const allowedClaimStatusesForInfoRequest = new Set(["SUBMITTED", "INFO_SUBMITTED"]);
 
@@ -259,11 +259,13 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
       throw new HospitalClaimInfoRequestError(404, "Claim not found");
     }
 
+    const onAgentDesk =
+      claim.status === "SUBMITTED" &&
+      !!claim.stage &&
+      CLAIM_STAGES_PRIMARY_AGENT_WORK.has(claim.stage);
+
     const canRequestInfo =
-      allowedClaimStatusesForInfoRequest.has(claim.status) ||
-      (claim.status === "IN_PROGRESS" &&
-        !!claim.stage &&
-        HOSPITAL_REVIEW_FLOW_STAGES.has(claim.stage));
+      allowedClaimStatusesForInfoRequest.has(claim.status) && !onAgentDesk;
 
     if (!canRequestInfo) {
       throw new HospitalClaimInfoRequestError(

@@ -9,7 +9,7 @@ import { PageShell, PageHeader, StatCard, StatsGrid, CardShell, CardHeader } fro
 import { Claim } from "@/lib/claims-data";
 import {
   claimShowsHospitalVerificationActions,
-  HOSPITAL_REVIEW_FLOW_STAGES,
+  CLAIM_STAGES_PRIMARY_AGENT_WORK,
 } from "@/lib/hospital-claim-review";
 
 interface HospitalStats {
@@ -22,19 +22,19 @@ async function getHospitalStats(hospitalId: string | null): Promise<HospitalStat
   if (!hospitalId) return { activeClaimsCount: 0, totalClaimsCount: 0, approvedClaimsCount: 0 };
   const client = await dbPool.connect();
   try {
-    const hospitalReviewStages = Array.from(HOSPITAL_REVIEW_FLOW_STAGES);
+    const agentWorkStages = Array.from(CLAIM_STAGES_PRIMARY_AGENT_WORK);
     const [activeRes, totalRes, approvedRes] = await Promise.all([
       client.query(
         `SELECT COUNT(*)::int AS count FROM public.claim
          WHERE hospital_id = $1 AND status != 'DRAFT'
          AND (
-           status IN ('SUBMITTED', 'INFO_REQUESTED', 'INFO_SUBMITTED')
+           status IN ('INFO_REQUESTED', 'INFO_SUBMITTED')
            OR (
-             status = 'IN_PROGRESS'
-             AND stage = ANY($2::text[])
+             status = 'SUBMITTED'
+             AND (stage IS NULL OR NOT (stage = ANY($2::text[])))
            )
          )`,
-        [hospitalId, hospitalReviewStages]
+        [hospitalId, agentWorkStages]
       ),
       client.query(
         "SELECT COUNT(*)::int AS count FROM public.claim WHERE hospital_id = $1 AND status != 'DRAFT'",
