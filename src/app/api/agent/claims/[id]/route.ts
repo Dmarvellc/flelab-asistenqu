@@ -88,8 +88,20 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
        FROM public.claim c
        JOIN public.client cl ON c.client_id = cl.client_id
        WHERE c.claim_id = $1
-         AND (c.created_by_user_id = $2 OR cl.agent_id = $2 OR c.assigned_agent_id = $2)`,
-      [id, userId]
+         AND (
+           (c.created_by_user_id = $2 OR cl.agent_id = $2 OR c.assigned_agent_id = $2)
+           OR (
+             $3 = 'hospital_admin'
+             AND EXISTS (
+               SELECT 1
+               FROM public.user_role ur
+               WHERE ur.user_id = $2
+                 AND ur.scope_type = 'HOSPITAL'
+                 AND ur.scope_id = c.hospital_id
+             )
+           )
+         )`,
+      [id, userId, session.role]
     );
 
     if (check.rows.length === 0) {
@@ -121,10 +133,17 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 
       const result = await client.query(`
           UPDATE public.claim
-          SET status = $1, updated_at = NOW()
+          SET
+            status = $1,
+            stage = CASE
+              WHEN $1::text = 'SUBMITTED' AND $3::text = 'DRAFT'
+              THEN 'PENDING_HOSPITAL'
+              ELSE stage
+            END,
+            updated_at = NOW()
           WHERE claim_id = $2
-          RETURNING claim_id, status
-        `, [status, id]);
+          RETURNING claim_id, status, stage
+        `, [status, id, currentStatus]);
 
       // Add to timeline
       await client.query(`
@@ -194,10 +213,33 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
 
     const { id } = await params;
 
-    // Check status
+    // Check status — agen (pembuat) atau staff RS atas draft dari portal RS yang sama.
     const check = await client.query(
-      "SELECT status FROM public.claim WHERE claim_id = $1 AND created_by_user_id = $2",
-      [id, userId]
+      `SELECT c.status
+       FROM public.claim c
+       WHERE c.claim_id = $1
+         AND (
+           c.created_by_user_id = $2
+           OR (
+             $3 = 'hospital_admin'
+             AND c.status = 'DRAFT'
+             AND EXISTS (
+               SELECT 1
+               FROM public.user_role ur_act
+               WHERE ur_act.user_id = $2
+                 AND ur_act.scope_type = 'HOSPITAL'
+                 AND ur_act.scope_id = c.hospital_id
+             )
+             AND EXISTS (
+               SELECT 1
+               FROM public.user_role ur_creator
+               WHERE ur_creator.user_id = c.created_by_user_id
+                 AND ur_creator.scope_type = 'HOSPITAL'
+                 AND ur_creator.scope_id = c.hospital_id
+             )
+           )
+         )`,
+      [id, userId, session.role]
     );
 
     if (check.rows.length === 0) {

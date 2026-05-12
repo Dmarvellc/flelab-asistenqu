@@ -11,6 +11,8 @@ export const dynamic = "force-dynamic";
 
 const claimIdSchema = z.string().uuid();
 const allowedRoles = ["hospital_admin", "super_admin", "developer"] as const;
+import { HOSPITAL_REVIEW_FLOW_STAGES } from "@/lib/hospital-claim-review";
+
 const allowedClaimStatusesForInfoRequest = new Set(["SUBMITTED", "INFO_SUBMITTED"]);
 
 const infoRequestFieldSchema = z
@@ -78,6 +80,7 @@ type AllowedRole = (typeof allowedRoles)[number];
 type AuthorizedClaimSummary = {
   claim_id: string;
   status: string;
+  stage: string | null;
   updated_at: string;
 };
 
@@ -139,6 +142,7 @@ async function getAuthorizedHospitalClaim(
       SELECT
         c.claim_id,
         c.status,
+        c.stage,
         c.updated_at
       FROM public.claim c
       WHERE c.claim_id = $1
@@ -255,10 +259,16 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
       throw new HospitalClaimInfoRequestError(404, "Claim not found");
     }
 
-    if (!allowedClaimStatusesForInfoRequest.has(claim.status)) {
+    const canRequestInfo =
+      allowedClaimStatusesForInfoRequest.has(claim.status) ||
+      (claim.status === "IN_PROGRESS" &&
+        !!claim.stage &&
+        HOSPITAL_REVIEW_FLOW_STAGES.has(claim.stage));
+
+    if (!canRequestInfo) {
       throw new HospitalClaimInfoRequestError(
         409,
-        "Additional information can only be requested for submitted claims."
+        "Permintaan data tambahan tidak tersedia pada status atau tahapan klaim ini."
       );
     }
 

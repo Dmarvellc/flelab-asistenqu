@@ -7,6 +7,10 @@ import { CalendarCheck, FileText, Activity } from "lucide-react";
 import Link from "next/link";
 import { PageShell, PageHeader, StatCard, StatsGrid, CardShell, CardHeader } from "@/components/dashboard/page-shell";
 import { Claim } from "@/lib/claims-data";
+import {
+  claimShowsHospitalVerificationActions,
+  HOSPITAL_REVIEW_FLOW_STAGES,
+} from "@/lib/hospital-claim-review";
 
 interface HospitalStats {
   activeClaimsCount: number;
@@ -18,12 +22,19 @@ async function getHospitalStats(hospitalId: string | null): Promise<HospitalStat
   if (!hospitalId) return { activeClaimsCount: 0, totalClaimsCount: 0, approvedClaimsCount: 0 };
   const client = await dbPool.connect();
   try {
+    const hospitalReviewStages = Array.from(HOSPITAL_REVIEW_FLOW_STAGES);
     const [activeRes, totalRes, approvedRes] = await Promise.all([
       client.query(
         `SELECT COUNT(*)::int AS count FROM public.claim
          WHERE hospital_id = $1 AND status != 'DRAFT'
-         AND status IN ('SUBMITTED', 'INFO_REQUESTED', 'INFO_SUBMITTED')`,
-        [hospitalId]
+         AND (
+           status IN ('SUBMITTED', 'INFO_REQUESTED', 'INFO_SUBMITTED')
+           OR (
+             status = 'IN_PROGRESS'
+             AND stage = ANY($2::text[])
+           )
+         )`,
+        [hospitalId, hospitalReviewStages]
       ),
       client.query(
         "SELECT COUNT(*)::int AS count FROM public.claim WHERE hospital_id = $1 AND status != 'DRAFT'",
@@ -58,8 +69,8 @@ export default async function HospitalDashboardPage() {
 
   const { activeClaimsCount, totalClaimsCount, approvedClaimsCount } = stats;
 
-  const activeClaims = (allClaims as Claim[]).filter(c =>
-    ['SUBMITTED', 'INFO_REQUESTED', 'INFO_SUBMITTED'].includes(c.status)
+  const activeClaims = (allClaims as Claim[]).filter((c) =>
+    claimShowsHospitalVerificationActions({ status: c.status, stage: c.stage ?? null })
   );
 
   return (

@@ -31,7 +31,7 @@ const hospitalWorkflowStages = new Set([
 ]);
 
 const actionRoleMatrix: Record<WorkflowAction, readonly Role[]> = {
-  SEND_TO_HOSPITAL: ["agent", "agent_manager", "super_admin", "developer"],
+  SEND_TO_HOSPITAL: ["agent", "agent_manager", "hospital_admin", "super_admin", "developer"],
   SEND_TO_AGENT: ["hospital_admin", "super_admin", "developer"],
   SUBMIT_TO_AGENCY: ["agent", "agent_manager", "super_admin", "developer"],
   APPROVE: ["admin_agency", "insurance_admin", "super_admin", "developer"],
@@ -46,6 +46,8 @@ const actionRoleMatrix: Record<WorkflowAction, readonly Role[]> = {
 
 type AuthorizedClaim = {
   claim_id: string;
+  hospital_id: string | null;
+  created_by_user_id: string | null;
   stage: string | null;
   status: string | null;
   agent_notes: string | null;
@@ -238,6 +240,8 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
       `
         SELECT
           c.claim_id,
+          c.hospital_id,
+          c.created_by_user_id,
           c.stage,
           c.status,
           c.agent_notes,
@@ -286,6 +290,47 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
     }
 
     const claim = claimResult.rows[0];
+
+    if (action === "SEND_TO_HOSPITAL") {
+      const docCountRes = await client.query<{ count: number }>(
+        `
+          SELECT COUNT(*)::int AS count
+          FROM public.claim_document
+          WHERE claim_id = $1
+        `,
+        [claimId]
+      );
+      const docCount = docCountRes.rows[0]?.count ?? 0;
+      if (docCount < 1) {
+        throw new WorkflowError(400, "Cannot send claim without at least one supporting document");
+      }
+    }
+
+    if (action === "SEND_TO_HOSPITAL" && session.role === "hospital_admin") {
+      const createdBy = claim.created_by_user_id;
+      const hospId = claim.hospital_id;
+      if (!createdBy || !hospId) {
+        throw new WorkflowError(403, "Only hospital-created drafts can be submitted from this portal");
+      }
+
+      const originRes = await client.query(
+        `
+          SELECT 1
+          FROM public.user_role ur
+          WHERE ur.user_id = $1
+            AND ur.scope_type = 'HOSPITAL'
+            AND ur.scope_id = $2
+        `,
+        [createdBy, hospId]
+      );
+      if (originRes.rows.length === 0) {
+        throw new WorkflowError(
+          403,
+          "This action through the hospital portal applies only to claims opened here by hospital staff."
+        );
+      }
+    }
+
     const transition = resolveTransition({
       action,
       claim,

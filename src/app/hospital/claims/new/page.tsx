@@ -345,12 +345,18 @@ export default function NewClaimPage() {
             });
 
             if (res.ok) {
+                const data = await res.json().catch(() => ({} as { claim_id?: string }));
                 localStorage.removeItem(DRAFT_KEY);
                 toast({
-                    title: "Berhasil",
-                    description: "Klaim berhasil dibuat. Unggah dokumen pendukung di halaman detail jika akan disetujui.",
+                    title: "Disimpan sebagai draf",
+                    description:
+                        "Buka halaman detail klaim untuk mengunggah dokumen pendukung, lalu ajukan klaim. Alurnya sama dengan saat klaim dibuka dari portal agen (peninjauan RS lalu dapat dikembalikan ke agen).",
                 });
-                router.push("/hospital/claims");
+                if (typeof data?.claim_id === "string") {
+                    router.push(`/hospital/claims/${data.claim_id}`);
+                } else {
+                    router.push("/hospital/claims");
+                }
             } else {
                 const errPayload = await res.json().catch(() => ({} as { error?: string }));
                 toast({

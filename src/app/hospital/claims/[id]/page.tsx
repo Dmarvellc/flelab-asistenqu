@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, ArrowLeft, Check, X, FileQuestion, Plus, Trash2, FileText, User, Clock, AlertTriangle, Send } from "lucide-react";
+import { Loader2, ArrowLeft, Check, X, FileQuestion, Plus, Trash2, FileText, User, Clock, AlertTriangle, Send, Upload } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -29,6 +29,7 @@ import { extractClaimNotes } from "@/lib/claim-form-meta";
 import { ActionModal } from "@/components/ui/action-modal";
 import { ClientRequestsPanel } from "@/components/client-requests/requests-panel";
 import { ClaimTimeline } from "@/components/claims/claim-timeline";
+import { claimShowsHospitalVerificationActions } from "@/lib/hospital-claim-review";
 
 
 type ClaimDetail = {
@@ -115,6 +116,8 @@ export default function HospitalClaimDetailPage() {
     const [infoRequests, setInfoRequests] = useState<InfoRequest[]>([]);
     const [loading, setLoading] = useState(true);
     const [processing, setProcessing] = useState(false);
+    const [uploading, setUploading] = useState(false);
+    const [draftSubmitOpen, setDraftSubmitOpen] = useState(false);
     const [pendingStatus, setPendingStatus] = useState<null | 'APPROVED' | 'REJECTED'>(null);
     const [notice, setNotice] = useState<NoticeState>({
         open: false,
@@ -187,6 +190,78 @@ export default function HospitalClaimDetailPage() {
         }
     };
 
+    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (!e.target.files || e.target.files.length === 0) return;
+
+        const file = e.target.files[0];
+        const formData = new FormData();
+        formData.append("file", file);
+
+        setUploading(true);
+        try {
+            const res = await fetch(`/api/agent/claims/${params.id}/documents`, {
+                method: "POST",
+                body: formData,
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                if (data.document) {
+                    setDocuments((prev) => [data.document, ...prev]);
+                }
+                openNotice("Berhasil", "Dokumen berhasil diunggah.");
+            } else {
+                const err = await res.json().catch(() => null);
+                openNotice("Gagal", err?.error || "Gagal mengunggah dokumen.");
+            }
+        } catch (error) {
+            console.error("Error uploading document", error);
+            openNotice("Kesalahan Sistem", "Terjadi kesalahan saat mengunggah dokumen.");
+        } finally {
+            setUploading(false);
+            e.target.value = "";
+        }
+    };
+
+    const handleHospitalDraftSubmit = async () => {
+        setDraftSubmitOpen(false);
+        if (!claim || claim.status !== 'DRAFT') return;
+        if (documents.length === 0) {
+            openNotice(
+                "Dokumen Belum Lengkap",
+                "Minimal 1 dokumen pendukung wajib diunggah sebelum klaim diajukan."
+            );
+            return;
+        }
+
+        setProcessing(true);
+        try {
+            const res = await fetch(`/api/claims/${params.id}/workflow`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    action: "SEND_TO_HOSPITAL",
+                    notes: "Diajukan oleh Rumah Sakit",
+                }),
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                setClaim((prev) =>
+                    prev ? { ...prev, status: data.newStatus, stage: data.newStage } : null
+                );
+                openNotice("Berhasil", "Klaim masuk tahap peninjauan rumah sakit.");
+            } else {
+                const err = await res.json().catch(() => null);
+                openNotice("Gagal", err?.error || "Gagal mengajukan klaim.");
+            }
+        } catch (error) {
+            console.error("Error submitting draft claim", error);
+            openNotice("Kesalahan Sistem", "Terjadi kesalahan saat mengajukan klaim.");
+        } finally {
+            setProcessing(false);
+        }
+    };
 
 
     const addField = () => {
@@ -282,7 +357,9 @@ export default function HospitalClaimDetailPage() {
 
     const getStatusBadge = (status: string) => {
         switch (status) {
+            case 'DRAFT': return <Badge variant="secondary">Draf</Badge>;
             case 'SUBMITTED': return <Badge className="bg-blue-500">Diajukan</Badge>;
+            case 'IN_PROGRESS': return <Badge className="bg-sky-600">Dalam proses</Badge>;
             case 'APPROVED': return <Badge className="bg-green-500">Disetujui</Badge>;
             case 'REJECTED': return <Badge variant="destructive">Ditolak</Badge>;
             case 'PAID': return <Badge className="bg-emerald-500">Dibayar</Badge>;
@@ -296,12 +373,15 @@ export default function HospitalClaimDetailPage() {
 
     const hasPendingInfoRequest = infoRequests.some((req) => req.status !== "COMPLETED");
     const approvalBlockers: string[] = [];
+    const needsHospitalVerificationUi = claimShowsHospitalVerificationActions(claim);
 
-    if (documents.length === 0) {
-        approvalBlockers.push("Dokumen pendukung belum diunggah agen.");
-    }
-    if (hasPendingInfoRequest) {
-        approvalBlockers.push("Masih ada permintaan data tambahan yang belum dijawab.");
+    if (needsHospitalVerificationUi) {
+        if (documents.length === 0) {
+            approvalBlockers.push("Dokumen pendukung belum diunggah.");
+        }
+        if (hasPendingInfoRequest) {
+            approvalBlockers.push("Masih ada permintaan data tambahan yang belum dijawab.");
+        }
     }
 
     const canApprove = approvalBlockers.length === 0;
@@ -425,13 +505,45 @@ export default function HospitalClaimDetailPage() {
                     </Card>
 
                     <Card>
-                        <CardHeader>
+                        <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between space-y-0">
                             <CardTitle>Dokumen Pendukung</CardTitle>
+                            {claim.status === 'DRAFT' && (
+                                <div className="relative shrink-0">
+                                    <Input
+                                        type="file"
+                                        id="hospital-draft-doc-upload"
+                                        className="hidden"
+                                        accept=".pdf,.png,.jpg,.jpeg,.webp,image/jpeg,image/png,image/webp,application/pdf"
+                                        onChange={handleFileUpload}
+                                        disabled={uploading}
+                                    />
+                                    <Button
+                                        asChild
+                                        variant="outline"
+                                        size="sm"
+                                        disabled={uploading}
+                                    >
+                                        <label
+                                            htmlFor="hospital-draft-doc-upload"
+                                            className={`inline-flex items-center cursor-pointer ${uploading ? "pointer-events-none opacity-50" : ""}`}
+                                        >
+                                            {uploading ? (
+                                                <Loader2 className="h-4 w-4 animate-spin shrink-0" />
+                                            ) : (
+                                                <Upload className="h-4 w-4 shrink-0" />
+                                            )}
+                                            <span className="ml-2">Unggah</span>
+                                        </label>
+                                    </Button>
+                                </div>
+                            )}
                         </CardHeader>
                         <CardContent>
                             <div className="space-y-2">
                                 {documents.length === 0 ? (
-                                    <p className="text-sm text-muted-foreground text-center py-4">Belum ada dokumen yang diunggah agen.</p>
+                                    <p className="text-sm text-muted-foreground text-center py-4">
+                                        Belum ada dokumen pendukung.
+                                    </p>
                                 ) : (
                                     documents.map((doc) => (
                                         <div key={doc.document_id} className="flex items-center gap-3 p-3 border rounded-md bg-card">
@@ -465,7 +577,7 @@ export default function HospitalClaimDetailPage() {
                             <CardTitle>Tindakan</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                            {approvalBlockers.length > 0 && ['SUBMITTED', 'INFO_SUBMITTED', 'INFO_REQUESTED'].includes(claim.status) && (
+                            {approvalBlockers.length > 0 && needsHospitalVerificationUi && (
                                 <div className="rounded-md border border-amber-300 bg-white p-3 space-y-2">
                                     <p className="text-sm font-semibold text-amber-800 flex items-center gap-2">
                                         <AlertTriangle className="h-4 w-4" />
@@ -479,7 +591,32 @@ export default function HospitalClaimDetailPage() {
                                 </div>
                             )}
 
-                            {['SUBMITTED', 'INFO_SUBMITTED', 'INFO_REQUESTED'].includes(claim.status) ? (
+                            {claim.status === "DRAFT" ? (
+                                <div className="flex flex-col gap-4">
+                                    <p className="text-sm text-muted-foreground">
+                                        Unggah minimal satu dokumen pendukung (di blok Dokumen Pendukung), lalu ajukan klaim.
+                                        Jalannya sama seperti saat agen membuka klaim: setelah diajukan, tim RS dapat mengirimkan kembali ke agen atau meminta kelengkapan.
+                                    </p>
+                                    <Button
+                                        type="button"
+                                        onClick={() => setDraftSubmitOpen(true)}
+                                        disabled={processing || documents.length === 0}
+                                        className="w-full gap-2 bg-black hover:bg-black text-white relative z-10"
+                                    >
+                                        {processing ? (
+                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                        ) : (
+                                            <Send className="mr-2 h-4 w-4" />
+                                        )}
+                                        Ajukan klaim (kirim untuk peninjauan RS)
+                                    </Button>
+                                    {documents.length === 0 && (
+                                        <p className="text-xs text-muted-foreground text-center">
+                                            Tombol akan aktif setelah ada minimal satu dokumen.
+                                        </p>
+                                    )}
+                                </div>
+                            ) : needsHospitalVerificationUi ? (
                                 <div className="flex flex-col gap-4">
                                     <p className="text-sm text-muted-foreground">
                                         Periksa ringkasan, lalu pilih Setujui atau Tolak.
@@ -630,7 +767,7 @@ export default function HospitalClaimDetailPage() {
                                         <div className="flex flex-col items-center gap-2">
                                             {claim.status === 'APPROVED' && <Check className="h-8 w-8 text-green-500" />}
                                             {claim.status === 'REJECTED' && <X className="h-8 w-8 text-red-500" />}
-                                            <p>Klaim ini sudah diproses.</p>
+                                            <p>Klaim ini sudah diproses atau berada di tahap lain.</p>
                                         </div>
                                     )}
                                 </div>
@@ -701,6 +838,16 @@ export default function HospitalClaimDetailPage() {
                 </div>
             )}
 
+            <ActionModal
+                open={draftSubmitOpen}
+                onOpenChange={setDraftSubmitOpen}
+                title="Ajukan klaim?"
+                description="Pastikan dokumen pendukung sudah lengkap. Klaim akan masuk ke tahap yang sama seperti setelah dikirim dari portal agen (peninjauan rumah sakit)."
+                confirmText="Ya, Ajukan"
+                cancelText="Batal"
+                onConfirm={handleHospitalDraftSubmit}
+                loading={processing}
+            />
             <ActionModal
                 open={pendingStatus !== null}
                 onOpenChange={(open) => {

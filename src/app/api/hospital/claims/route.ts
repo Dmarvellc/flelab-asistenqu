@@ -109,8 +109,8 @@ export async function POST(req: Request) {
           $1, $2, $3, $4, $5,
           $6, $7, $8,
           $9, $10,
-          'SUBMITTED',
-          'HOSPITAL_INITIATED'
+          'DRAFT',
+          'DRAFT_AGENT'
         )
         RETURNING claim_id
       `,

@@ -1,6 +1,7 @@
 import { dbPool } from "@/lib/db";
 import { Claim } from "@/lib/claims-data";
 import { cached, CacheKeys, TTL } from "@/lib/cache";
+import { HOSPITAL_PORTAL_CLAIM_VISIBILITY_SQL } from "@/lib/hospital-portal-claim-visibility";
 
 export async function getHospitalIdByUserId(userId: string): Promise<string | null> {
   return cached(CacheKeys.hospitalId(userId), TTL.REFERENCE, () => fetchHospitalIdByUserId(userId));
@@ -50,7 +51,7 @@ async function fetchHospitalClaims(hospitalId: string | null): Promise<Claim[]> 
       LEFT JOIN public.contract ct ON c.contract_id = ct.contract_id
       LEFT JOIN public.disease d ON c.disease_id = d.disease_id
       LEFT JOIN public.hospital h ON c.hospital_id = h.hospital_id
-      WHERE c.status != 'DRAFT'
+      WHERE ${HOSPITAL_PORTAL_CLAIM_VISIBILITY_SQL}
     `;
 
     const queryParams: (string | null)[] = [];

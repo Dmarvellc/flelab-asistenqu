@@ -62,7 +62,9 @@ export default function HospitalClaimsPage() {
 
     const getStatusBadge = (status: string) => {
         switch (status) {
+            case 'DRAFT': return <Badge variant="secondary">Draf</Badge>;
             case 'SUBMITTED': return <Badge className="bg-blue-500">Diajukan</Badge>;
+            case 'IN_PROGRESS': return <Badge className="bg-sky-600">Dalam proses</Badge>;
             case 'APPROVED': return <Badge className="bg-green-500">Disetujui</Badge>;
             case 'REJECTED': return <Badge variant="destructive">Ditolak</Badge>;
             case 'PAID': return <Badge className="bg-emerald-500">Dibayar</Badge>;

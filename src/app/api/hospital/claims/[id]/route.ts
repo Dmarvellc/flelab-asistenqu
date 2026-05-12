@@ -6,6 +6,7 @@ import { type Role } from "@/lib/rbac";
 import { dbPool } from "@/lib/db";
 import { deleteCacheByPattern, getJsonCache, setJsonCache } from "@/lib/redis";
 import { logError } from "@/lib/logger";
+import { HOSPITAL_PORTAL_CLAIM_VISIBILITY_SQL } from "@/lib/hospital-portal-claim-visibility";
 
 export const dynamic = "force-dynamic";
 
@@ -127,7 +128,7 @@ async function getAuthorizedClaimSummary(
         c.updated_at
       FROM public.claim c
       WHERE c.claim_id = $1
-        AND c.status <> 'DRAFT'
+        AND ${HOSPITAL_PORTAL_CLAIM_VISIBILITY_SQL}
         AND (
           $2 IN ('super_admin', 'developer')
           OR (
@@ -184,7 +185,7 @@ async function getAuthorizedClaimDetail(
       LEFT JOIN public.disease d ON c.disease_id = d.disease_id
       LEFT JOIN public.hospital h ON c.hospital_id = h.hospital_id
       WHERE c.claim_id = $1
-        AND c.status <> 'DRAFT'
+        AND ${HOSPITAL_PORTAL_CLAIM_VISIBILITY_SQL}
         AND (
           $2 IN ('super_admin', 'developer')
           OR (
