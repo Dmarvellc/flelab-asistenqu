@@ -28,6 +28,7 @@ interface Analytics {
     activeAgents: number; totalAgents: number
     totalClaims: number; totalUsers: number
     activeUsers: number; pendingUsers: number
+    totalClients: number
   }
   recentUsers: { user_id: string; email: string; role: string; status: string; created_at: string; full_name?: string }[]
   roleGrowth30d: { role: string; count: number }[]
