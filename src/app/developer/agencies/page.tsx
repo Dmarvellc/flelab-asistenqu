@@ -781,8 +781,6 @@ export default function AgenciesPage() {
                 </div>
             )}
 
-            )}
-
             {/* Delete Confirmation */}
             {deleteTarget && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 animate-in fade-in duration-200">
