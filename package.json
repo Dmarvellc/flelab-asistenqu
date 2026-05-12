@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "db:migrate": "node scripts/run-migrations.js all",
+    "db:seed-wilayah": "node scripts/seed-idn-wilayah.mjs",
     "create:developer": "node scripts/create-developer.js"
   },
   "dependencies": {

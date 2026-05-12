@@ -1,22 +1,32 @@
 import { NextResponse } from "next/server";
-import { getVillages } from "idn-area-data";
+import { dbPool } from "@/lib/db";
 
 export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const districtCode = searchParams.get("district_code");
 
     try {
-        const allVillages = await getVillages(); // This reads 2.8MB CSV.
-
         if (districtCode) {
-            const filtered = allVillages.filter((village: any) => village.district_code === districtCode);
-            return NextResponse.json(filtered);
+            const result = await dbPool.query<{
+                code: string;
+                district_code: string;
+                name: string;
+            }>(
+                `SELECT code, district_code, name
+                 FROM public.idn_village
+                 WHERE district_code = $1
+                 ORDER BY code`,
+                [districtCode]
+            );
+            return NextResponse.json(result.rows);
         }
 
-        // Returning 83k items (2.8MB+) is bad. Only allow return if filter is present or limit it.
-        // If no filter, maybe return empty or first 100? Or error?
-        // Let's return error if no filter to prevent massive payload unless intentionally asked.
-        return NextResponse.json({ error: "district_code is required" }, { status: 400 });
+        const result = await dbPool.query<{
+            code: string;
+            district_code: string;
+            name: string;
+        }>(`SELECT code, district_code, name FROM public.idn_village ORDER BY code`);
+        return NextResponse.json(result.rows);
     } catch (error) {
         console.error("Failed to fetch villages", error);
         return NextResponse.json({ error: "Failed to fetch villages" }, { status: 500 });

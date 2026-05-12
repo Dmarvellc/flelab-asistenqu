@@ -1,21 +1,32 @@
 import { NextResponse } from "next/server";
-import { getDistricts } from "idn-area-data";
+import { dbPool } from "@/lib/db";
 
 export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const regencyCode = searchParams.get("regency_code");
 
     try {
-        const allDistricts = await getDistricts();
-
         if (regencyCode) {
-            const filtered = allDistricts.filter((district: any) => district.regency_code === regencyCode);
-            return NextResponse.json(filtered);
+            const result = await dbPool.query<{
+                code: string;
+                regency_code: string;
+                name: string;
+            }>(
+                `SELECT code, regency_code, name
+                 FROM public.idn_district
+                 WHERE regency_code = $1
+                 ORDER BY code`,
+                [regencyCode]
+            );
+            return NextResponse.json(result.rows);
         }
 
-        // Returning all districts (186KB) is fine for initial full fetch if needed, 
-        // but filtering is better.
-        return NextResponse.json(allDistricts);
+        const result = await dbPool.query<{
+            code: string;
+            regency_code: string;
+            name: string;
+        }>(`SELECT code, regency_code, name FROM public.idn_district ORDER BY code`);
+        return NextResponse.json(result.rows);
     } catch (error) {
         console.error("Failed to fetch districts", error);
         return NextResponse.json({ error: "Failed to fetch districts" }, { status: 500 });

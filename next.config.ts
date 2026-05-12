@@ -26,8 +26,6 @@ const nextConfig: NextConfig = {
       "radix-ui",
     ],
   },
-  serverExternalPackages: ["idn-area-data"],
-
   // ── Images ───────────────────────────────────────────────────
   images: {
     formats: ["image/avif", "image/webp"],
