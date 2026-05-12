@@ -18,7 +18,7 @@ export const dynamic = "force-dynamic";
 let claimDocumentColumnsCache: Set<string> | null = null;
 
 const claimIdSchema = z.string().uuid();
-const allowedRoles = ["agent", "agent_manager", "super_admin", "developer"] as const;
+const allowedRoles = ["agent", "agent_manager", "hospital_admin", "super_admin", "developer"] as const;
 const CLAIM_DOCUMENTS_BUCKET =
   process.env.SUPABASE_CLAIM_DOCUMENTS_BUCKET ?? "claim-documents";
 const MAX_DOCUMENT_BYTES = 10 * 1024 * 1024;
@@ -163,6 +163,16 @@ async function getAuthorizedAgentClaim(
               c.created_by_user_id = $3
               OR c.assigned_agent_id = $3
               OR cl.agent_id = $3
+            )
+          )
+          OR (
+            $2 = 'hospital_admin'
+            AND EXISTS (
+              SELECT 1
+              FROM public.user_role ur
+              WHERE ur.user_id = $3
+                AND ur.scope_type = 'HOSPITAL'
+                AND ur.scope_id = c.hospital_id
             )
           )
         )

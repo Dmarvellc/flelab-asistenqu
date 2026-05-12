@@ -122,7 +122,7 @@ async function fetchAgentClaims(userId: string): Promise<Claim[]> {
       LEFT JOIN public.contract ct ON c.contract_id = ct.contract_id
       LEFT JOIN public.disease d ON c.disease_id = d.disease_id
       LEFT JOIN public.hospital h ON c.hospital_id = h.hospital_id
-      WHERE c.created_by_user_id = $1
+      WHERE c.created_by_user_id = $1 OR cl.agent_id = $1
       ORDER BY c.created_at DESC
     `;
 

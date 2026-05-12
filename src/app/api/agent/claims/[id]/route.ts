@@ -45,7 +45,12 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
       JOIN public.person p ON cl.person_id = p.person_id
       LEFT JOIN public.disease d ON c.disease_id = d.disease_id
       LEFT JOIN public.hospital h ON c.hospital_id = h.hospital_id
-      WHERE c.claim_id = $1 AND c.created_by_user_id = $2
+      WHERE c.claim_id = $1
+        AND (
+          c.created_by_user_id = $2
+          OR cl.agent_id = $2
+          OR c.assigned_agent_id = $2
+        )
     `, [id, userId]);
 
     if (result.rows.length === 0) {
@@ -77,9 +82,13 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     const body = await req.json();
     const { status, total_amount, notes, claim_date, claim_meta } = body;
 
-    // Check if claim exists and belongs to agent
+    // Check if claim exists and servicing agent/creator access
     const check = await client.query(
-      "SELECT status FROM public.claim WHERE claim_id = $1 AND created_by_user_id = $2",
+      `SELECT c.status
+       FROM public.claim c
+       JOIN public.client cl ON c.client_id = cl.client_id
+       WHERE c.claim_id = $1
+         AND (c.created_by_user_id = $2 OR cl.agent_id = $2 OR c.assigned_agent_id = $2)`,
       [id, userId]
     );
 

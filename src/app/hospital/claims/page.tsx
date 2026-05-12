@@ -76,9 +76,12 @@ export default function HospitalClaimsPage() {
                 <div className="min-w-0">
                     <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-black">Daftar Klaim Masuk</h1>
                     <p className="mt-1.5 text-sm text-gray-500">
-                        Kelola klaim asuransi yang masuk dari agen.
+                        Kelola klaim asuransi yang masuk dari agen, atau buka klaim baru dari rumah sakit.
                     </p>
                 </div>
+                <Button asChild className="shrink-0">
+                    <Link href="/hospital/claims/new">Buat klaim baru</Link>
+                </Button>
             </div>
 
             <div className="flex items-center space-x-2">

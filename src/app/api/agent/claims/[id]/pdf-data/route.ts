@@ -83,12 +83,17 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
       JOIN public.person p  ON cl.person_id = p.person_id
       LEFT JOIN public.hospital h ON c.hospital_id = h.hospital_id
       LEFT JOIN public.disease d  ON c.disease_id  = d.disease_id
-      LEFT JOIN public.app_user agent_user ON c.created_by_user_id = agent_user.user_id
+      LEFT JOIN public.app_user agent_user ON agent_user.user_id = COALESCE(c.assigned_agent_id, c.created_by_user_id)
       LEFT JOIN public.user_person_link agent_upl ON agent_user.user_id = agent_upl.user_id
       LEFT JOIN public.person agent_person ON agent_upl.person_id = agent_person.person_id
       LEFT JOIN public.contract con ON c.contract_id = con.contract_id
       LEFT JOIN public.claim_coverage_period cp ON cp.claim_id = c.claim_id
-      WHERE c.claim_id = $1 AND c.created_by_user_id = $2
+      WHERE c.claim_id = $1
+        AND (
+          c.created_by_user_id = $2
+          OR cl.agent_id = $2
+          OR c.assigned_agent_id = $2
+        )
       GROUP BY
         c.claim_id, c.claim_number, c.claim_date, c.status, c.stage,
         c.total_amount, c.notes, c.log_number, c.log_issued_at,

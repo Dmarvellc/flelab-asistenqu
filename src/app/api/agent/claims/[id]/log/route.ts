@@ -17,7 +17,9 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
         c.log_sent_to_hospital_at, c.log_verified_at, c.insurance_name, c.insurance_contact,
         c.stage
       FROM public.claim c
-      WHERE c.claim_id = $1 AND c.created_by_user_id = $2
+      JOIN public.client cl ON c.client_id = cl.client_id
+      WHERE c.claim_id = $1
+        AND (c.created_by_user_id = $2 OR cl.agent_id = $2 OR c.assigned_agent_id = $2)
     `, [id, userId]);
 
         if (result.rows.length === 0) {
@@ -46,7 +48,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
         if (action === 'ISSUE_LOG') {
             // Agent got LOG from insurance, record it
             const result = await client.query(`
-        UPDATE public.claim
+        UPDATE public.claim c
         SET 
           log_number = $1,
           log_issued_at = NOW(),
@@ -56,8 +58,11 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
           log_file_url = $5,
           stage = 'LOG_ISSUED',
           updated_at = NOW()
-        WHERE claim_id = $6 AND created_by_user_id = $2
-        RETURNING claim_id, claim_number, stage
+        FROM public.client cl
+        WHERE c.client_id = cl.client_id
+          AND c.claim_id = $6
+          AND (c.created_by_user_id = $2 OR cl.agent_id = $2 OR c.assigned_agent_id = $2)
+        RETURNING c.claim_id, c.claim_number, c.stage
       `, [log_number, userId, insurance_name, insurance_contact, log_file_url || null, id]);
 
             if (result.rows.length === 0) return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -74,13 +79,16 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
         if (action === 'SEND_LOG_TO_HOSPITAL') {
             // Agent sent LOG to hospital
             const result = await client.query(`
-        UPDATE public.claim
+        UPDATE public.claim c
         SET 
           log_sent_to_hospital_at = NOW(),
           stage = 'LOG_SENT_TO_HOSPITAL',
           updated_at = NOW()
-        WHERE claim_id = $1 AND created_by_user_id = $2
-        RETURNING claim_id, claim_number, stage
+        FROM public.client cl
+        WHERE c.client_id = cl.client_id
+          AND c.claim_id = $1
+          AND (c.created_by_user_id = $2 OR cl.agent_id = $2 OR c.assigned_agent_id = $2)
+        RETURNING c.claim_id, c.claim_number, c.stage
       `, [id, userId]);
 
             if (result.rows.length === 0) return NextResponse.json({ error: "Not found" }, { status: 404 });

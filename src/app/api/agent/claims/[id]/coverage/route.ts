@@ -15,7 +15,9 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
       SELECT cp.* 
       FROM public.claim_coverage_period cp
       JOIN public.claim c ON cp.claim_id = c.claim_id
-      WHERE cp.claim_id = $1 AND c.created_by_user_id = $2
+      JOIN public.client cl ON c.client_id = cl.client_id
+      WHERE cp.claim_id = $1
+        AND (c.created_by_user_id = $2 OR cl.agent_id = $2 OR c.assigned_agent_id = $2)
       ORDER BY cp.period_type, cp.start_date
     `, [id, userId]);
 
@@ -48,7 +50,11 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 
         // Validate claim belongs to agent
         const claimCheck = await client.query(
-            "SELECT claim_id FROM public.claim WHERE claim_id = $1 AND created_by_user_id = $2",
+            `SELECT c.claim_id
+             FROM public.claim c
+             JOIN public.client cl ON c.client_id = cl.client_id
+             WHERE c.claim_id = $1
+               AND (c.created_by_user_id = $2 OR cl.agent_id = $2 OR c.assigned_agent_id = $2)`,
             [id, userId]
         );
         if (claimCheck.rows.length === 0) {
@@ -94,9 +100,10 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
         await client.query(`
       DELETE FROM public.claim_coverage_period cp
       USING public.claim c
+      INNER JOIN public.client cl ON c.client_id = cl.client_id
       WHERE cp.coverage_id = $1
         AND cp.claim_id = c.claim_id
-        AND c.created_by_user_id = $2
+        AND (c.created_by_user_id = $2 OR cl.agent_id = $2 OR c.assigned_agent_id = $2)
     `, [coverageId, userId]);
 
         return NextResponse.json({ success: true });
