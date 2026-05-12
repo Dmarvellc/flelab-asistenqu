@@ -79,7 +79,7 @@ function StatsCard() {
           }}
         />
 
-        {/* #1 hero row */}
+        {/* portal overview row */}
         <div className="px-8 py-7 border-b border-blue-100/60 bg-blue-600 relative overflow-hidden">
           <div
             className="absolute inset-0 opacity-20"
@@ -88,22 +88,22 @@ function StatsCard() {
               backgroundSize: "20px 20px",
             }}
           />
-          <p className="relative text-[11px] font-bold uppercase tracking-[0.18em] text-blue-200 mb-1">Platform Asuransi</p>
+          <p className="relative text-[11px] font-bold uppercase tracking-[0.18em] text-blue-200 mb-1">Workspace Asuransi</p>
           <div className="relative flex items-end gap-3">
             <span className="font-black text-white leading-none tracking-tight" style={{ fontSize: "clamp(56px, 8vw, 88px)" }}>
-              #1
+              3
             </span>
             <span className="text-blue-200 text-sm font-medium mb-3 leading-snug max-w-[140px]">
-              di Indonesia untuk ekosistem asuransi digital
+              portal kerja untuk koordinasi operasional
             </span>
           </div>
         </div>
 
         {/* Stat rows */}
         {[
-          { value: "10.000+", label: "Agen Aktif",        sub: "di seluruh Indonesia" },
-          { value: "350+",    label: "Rumah Sakit Mitra", sub: "jaringan klaim terintegrasi" },
-          { value: "2 Juta+", label: "Klaim Diproses",    sub: "akurasi 98,6%" },
+          { value: "Agen", label: "Portal kerja", sub: "untuk hubungan nasabah" },
+          { value: "Agensi", label: "Koordinasi tim", sub: "untuk monitoring operasional" },
+          { value: "RS", label: "Mitra layanan", sub: "untuk alur klaim dan kunjungan" },
         ].map((s, i, arr) => (
           <div
             key={s.label}
@@ -145,9 +145,9 @@ export function HeroSection() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.95, ease }}
           >
-            Satu platform.
+            Satu ruang kerja.
             <br />
-            <span className="text-blue-600">Seluruh ekosistem.</span>
+            <span className="text-blue-600">Koordinasi lebih jelas.</span>
           </motion.h1>
 
           <motion.div
@@ -157,14 +157,14 @@ export function HeroSection() {
             transition={{ duration: 0.85, ease, delay: 0.22 }}
           >
             <p className="text-gray-500 text-sm sm:text-base leading-[1.7] sm:leading-[1.8] max-w-[280px] sm:max-w-[260px]">
-              Menghubungkan agensi, agen, dan rumah sakit
-              dalam satu workspace yang cerdas.
+              Membantu agensi, agen, dan mitra layanan menata nasabah, klaim,
+              dan komunikasi dalam workspace yang lebih rapi.
             </p>
             <Link
               href="#contact"
               className="group inline-flex items-center gap-2 text-gray-400 hover:text-gray-800 text-sm font-medium transition-colors duration-300 border-b border-gray-200 hover:border-gray-500 pb-0.5 whitespace-nowrap"
             >
-              Hubungi kami
+              Diskusikan kebutuhan tim
               <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-0.5 transition-transform duration-200" />
             </Link>
           </motion.div>

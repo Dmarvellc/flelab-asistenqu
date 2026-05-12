@@ -22,7 +22,7 @@ const instrumentSerif = Instrument_Serif({
 
 export const metadata: Metadata = {
   title: "AsistenQu",
-  description: "Ruang kerja multi-dashboard untuk operasional dan analitik.",
+  description: "Ruang kerja digital untuk membantu koordinasi asuransi, klaim, dan layanan kesehatan secara lebih tertata.",
 };
 
 export default function RootLayout({

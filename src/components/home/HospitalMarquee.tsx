@@ -106,7 +106,7 @@ export function HospitalMarquee() {
     <section className="bg-white py-8 sm:py-14 overflow-hidden border-b border-gray-100">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 mb-6 sm:mb-10 text-center">
         <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-gray-300">
-          Jaringan rumah sakit &amp; mitra terpercaya
+          Contoh ekosistem layanan kesehatan yang kami dukung
         </p>
       </div>
 
@@ -114,7 +114,7 @@ export function HospitalMarquee() {
         <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-16 sm:w-40 z-10 bg-gradient-to-r from-white to-transparent" />
         <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-16 sm:w-40 z-10 bg-gradient-to-l from-white to-transparent" />
 
-        <div className="flex animate-marquee items-center whitespace-nowrap w-max">
+        <div className="flex animate-marquee items-center whitespace-nowrap w-max" aria-label="Contoh ekosistem layanan kesehatan">
           {items.map((h, i) => <LogoItem key={i} hospital={h} />)}
         </div>
       </div>
